@@ -67,6 +67,7 @@ stock_fundamental/
 │ ├── Indian_stocks_nifty_200_analyzed.csv
 │ └── ...
 │
+├── install_library.py
 ├── analyze_stocks.py
 └── README.md
 ```
