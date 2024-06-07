@@ -19,6 +19,7 @@ This project is designed to automate the analysis of Indian stock market data fr
 ## Usage
 1. **Place Input Files**:
    Ensure all input CSV files are placed in the `input` directory. The supported files are:
+   ```sh
    - `Indian_stocks_nifty_200.csv`
    - `Indian_stocks_nifty_500.csv`
    - `Indian_stocks_nifty_50.csv`
