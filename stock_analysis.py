@@ -4,101 +4,106 @@ import os
 
 # Function to select the file
 def select_file():
+    input_files = [
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_200.csv",
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_500.csv",
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_50.csv",
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_large_midcap_250.csv",
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_midcap_100.csv",
+        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_smallcap_250.csv"
+    ]
+
+    # Sort input files by size (ascending order)
+    input_files = sorted(input_files, key=os.path.getsize)
+
     print("Select the dataset:")
-    print("1. Indian_stocks_nifty_200.csv")
-    print("2. Indian_stocks_nifty_500.csv")
-    print("3. Indian_stocks_nifty_50.csv")
-    print("4. Indian_stocks_nifty_large_midcap_250.csv")
-    print("5. Indian_stocks_nifty_midcap_100.csv")
-    print("6. Indian_stocks_nifty_smallcap_250.csv")
+    for idx, file in enumerate(input_files, start=1):
+        print(f"{idx}. {os.path.basename(file)}")
     print("7. All files")
-    choice = input("Enter 1, 2, 3, 4, 5, 6, or 7: ")
-    
-    if choice == '1':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_200.csv"]
-    elif choice == '2':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_500.csv"]
-    elif choice == '3':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_50.csv"]
-    elif choice == '4':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_large_midcap_250.csv"]
-    elif choice == '5':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_midcap_100.csv"]
-    elif choice == '6':
-        return ["D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_smallcap_250.csv"]
-    elif choice == '7':
-        return [
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_200.csv",
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_500.csv",
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_50.csv",
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_large_midcap_250.csv",
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_midcap_100.csv",
-            "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_smallcap_250.csv"
-        ]
+
+    choice = input("Enter your choice: ")
+
+    if choice == '7':
+        return input_files
     else:
-        print("Invalid choice")
-        return select_file()
-
-# Select the files
-csv_paths = select_file()
-
-# Create a common output directory
-output_dir = "D:\\repo\\stock_fundamental\\output"
-os.makedirs(output_dir, exist_ok=True)
-
-def fetch_and_analyze(csv_path):
-    # Read the CSV file
-    df = pd.read_csv(csv_path)
-
-    # Function to fetch financial data
-    def fetch_stock_data(ticker):
-        stock = yf.Ticker(ticker)
-        info = stock.info
-
-        # Fetch additional data if needed
-        if 'regularMarketPrice' in info:
-            market_price = info['regularMarketPrice']
-        else:
-            hist = stock.history(period="1d")
-            if not hist.empty:
-                market_price = hist['Close'].iloc[0]
+        try:
+            choice = int(choice)
+            if 1 <= choice <= 6:
+                return [input_files[choice - 1]]
             else:
-                market_price = None
+                raise ValueError
+        except ValueError:
+            print("Invalid choice")
+            return select_file()
 
-        eps = info.get('trailingEps', None)
-        book_value = info.get('bookValue', None)
-        pe_ratio = info.get('trailingPE', None)
-        pb_ratio = info.get('priceToBook', None)
+# Function to fetch financial data
+def fetch_stock_data(ticker):
+    stock = yf.Ticker(ticker)
+    info = stock.info
 
-        return {
-            "ticker": ticker,
-            "market_price": market_price,
-            "eps": eps,
-            "book_value": book_value,
-            "pe_ratio": pe_ratio,
-            "pb_ratio": pb_ratio
-        }
-
-    # Fetch financial data for all tickers
-    print(f"Analyzing stocks from {csv_path}...")
-    financial_data = []
-    for idx, row in df.iterrows():
-        ticker = row['Ticker']
-        company_name = row['Company Name']
-        data = fetch_stock_data(ticker + ".NS")
-        if data["market_price"] is not None and data["eps"] is not None and data["book_value"] is not None and data["pe_ratio"] is not None and data["pb_ratio"] is not None:
-            data["company_name"] = company_name
-            data["sector"] = row['Industry']
-            financial_data.append(data)
+    # Fetch additional data if needed
+    if 'regularMarketPrice' in info:
+        market_price = info['regularMarketPrice']
+    else:
+        hist = stock.history(period="1d")
+        if not hist.empty:
+            market_price = hist['Close'].iloc[0]
         else:
-            print(f"Missing or incomplete data for {ticker}")
-    print(f"Analysis done for {csv_path}.")
+            market_price = None
 
-    # Convert financial data to DataFrame
-    financial_df = pd.DataFrame(financial_data)
+    eps = info.get('trailingEps', None)
+    book_value = info.get('bookValue', None)
+    pe_ratio = info.get('trailingPE', None)
+    pb_ratio = info.get('priceToBook', None)
+
+    return {
+        "ticker": ticker,
+        "market_price": market_price,
+        "eps": eps,
+        "book_value": book_value,
+        "pe_ratio": pe_ratio,
+        "pb_ratio": pb_ratio
+    }
+
+# Function to process a chunk of data
+def process_chunk(df_chunk):
+    financial_data = []
+    for idx, row in df_chunk.iterrows():
+        ticker = str(row['Ticker']).strip()
+        company_name = row['Company Name']
+        if ticker and ticker.lower() != "nan":  # Ensure ticker is not NaN
+            data = fetch_stock_data(ticker + ".NS")
+            if all(value is not None for value in data.values()):
+                data["company_name"] = company_name
+                data["sector"] = row['Industry']
+                financial_data.append(data)
+            else:
+                print(f"Missing or incomplete data for {ticker}")
+        else:
+            print(f"Invalid ticker format for row {idx}: {ticker}")
+    return pd.DataFrame(financial_data)
+
+# Function to analyze the entire CSV file in chunks
+def analyze_csv_in_chunks(csv_path, chunk_size=100):
+    output_dir = "D:\\repo\\stock_fundamental\\output"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    financial_data = []
+    for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
+        chunk_df = process_chunk(chunk)
+        financial_data.append(chunk_df)
+    
+    combined_df = pd.concat(financial_data, ignore_index=True)
+    return combined_df
+
+# Function to perform rating and save results
+def rate_and_save_results(combined_df, csv_path):
+    if combined_df.empty:
+        print("No data to analyze.")
+        return
 
     # Calculate industry averages
-    industry_averages = financial_df.groupby('sector').agg({
+    industry_averages = combined_df.groupby('sector').agg({
         'pe_ratio': 'mean',
         'pb_ratio': 'mean',
         'eps': 'mean',
@@ -109,7 +114,7 @@ def fetch_and_analyze(csv_path):
     }).reset_index()
 
     # Merge industry averages back into the main dataframe
-    financial_df = financial_df.merge(industry_averages, on='sector')
+    combined_df = combined_df.merge(industry_averages, on='sector')
 
     # Define weights for scoring
     weights = {
@@ -120,28 +125,28 @@ def fetch_and_analyze(csv_path):
 
     # Ensure the DataFrame contains the expected columns
     required_columns = ['pe_ratio', 'pb_ratio', 'eps']
-    missing_columns = [col for col in required_columns if col not in financial_df.columns]
+    missing_columns = [col for col in required_columns if col not in combined_df.columns]
 
     if missing_columns:
         print(f"Missing columns in the DataFrame: {missing_columns}")
     else:
         # Calculate score for each stock
-        financial_df['score'] = (
-            financial_df['pe_ratio'] * weights['pe_ratio'] +
-            financial_df['pb_ratio'] * weights['pb_ratio'] +
-            financial_df['eps'] * weights['eps']
+        combined_df['score'] = (
+            combined_df['pe_ratio'] * weights['pe_ratio'] +
+            combined_df['pb_ratio'] * weights['pb_ratio'] +
+            combined_df['eps'] * weights['eps']
         )
 
         # Normalize score to a 0-100 rating within each sector
-        financial_df['rating'] = financial_df.groupby('sector')['score'].transform(lambda x: (x - x.min()) / (x.max() - x.min()) * 100)
+        combined_df['rating'] = combined_df.groupby('sector')['score'].transform(lambda x: (x - x.min()) / (x.max() - x.min()) * 100)
 
         # Sort stocks by rating within each sector and get top 10 for each sector
-        top_stocks = financial_df.groupby('sector', group_keys=False).apply(lambda x: x.sort_values(by='rating', ascending=False).head(10)).reset_index(drop=True)
+        top_stocks = combined_df.groupby('sector', group_keys=False).apply(lambda x: x.sort_values(by='rating', ascending=False).head(10)).reset_index(drop=True)
 
         # Create output filenames
         base_filename = os.path.splitext(os.path.basename(csv_path))[0]
-        txt_output_path = os.path.join(output_dir, f"{base_filename}_analyzed.txt")
-        csv_output_path = os.path.join(output_dir, f"{base_filename}_analyzed.csv")
+        txt_output_path = os.path.join("D:\\repo\\stock_fundamental\\output", f"{base_filename}_analyzed.txt")
+        csv_output_path = os.path.join("D:\\repo\\stock_fundamental\\output", f"{base_filename}_analyzed.csv")
 
         # Save the sorted data to a text file with descriptions
         with open(txt_output_path, "w") as file:
@@ -168,11 +173,20 @@ def fetch_and_analyze(csv_path):
         # Save the sorted data to a CSV file with values
         try:
             top_stocks[['company_name', 'sector', 'ticker', 'market_price', 'eps', 'book_value', 'pe_ratio', 'pb_ratio', 'rating']].to_csv(csv_output_path, index=False)
+            print(f"Data successfully saved to {csv_output_path} and {txt_output_path}")
         except PermissionError:
             print(f"Permission denied: {csv_output_path}. Please close the file if it's open and try again.")
-            csv_output_path = os.path.join(output_dir, f"{base_filename}_analyzed_new.csv")
+            csv_output_path = os.path.join("D:\\repo\\stock_fundamental\\output", f"{base_filename}_analyzed_new.csv")
             top_stocks[['company_name', 'sector', 'ticker', 'market_price', 'eps', 'book_value', 'pe_ratio', 'pb_ratio', 'rating']].to_csv(csv_output_path, index=False)
             print(f"Saved to {csv_output_path} instead.")
 
-for path in csv_paths:
-    fetch_and_analyze(path)
+# Main function to run the analysis
+def main():
+    csv_files = select_file()
+    for csv_file in csv_files:
+        print(f"Processing {csv_file}...")
+        combined_df = analyze_csv_in_chunks(csv_file)
+        rate_and_save_results(combined_df, csv_file)
+
+if __name__ == "__main__":
+    main()
