@@ -19,7 +19,6 @@ This project is designed to automate the analysis of Indian stock market data fr
 ## Usage
 1. **Place Input Files**:
    Ensure all input CSV files are placed in the `input` directory. The supported files are:
-   ```sh
    - `Indian_stocks_nifty_200.csv`
    - `Indian_stocks_nifty_500.csv`
    - `Indian_stocks_nifty_50.csv`
@@ -35,6 +34,7 @@ This project is designed to automate the analysis of Indian stock market data fr
 3. **Select Dataset**:
    When prompted, select the dataset you want to analyze:
    Select the dataset:
+   ```sh
    1. Indian_stocks_nifty_200.csv
    2. Indian_stocks_nifty_500.csv
    3. Indian_stocks_nifty_50.csv
@@ -51,6 +51,7 @@ The output files are saved in the `output` directory with the original input fil
 
 ## File Structure
 
+```
 stock_fundamental/
 │
 ├── input/
@@ -68,7 +69,7 @@ stock_fundamental/
 │
 ├── analyze_stocks.py
 └── README.md
-
+```
 
 ## Contribution
 Feel free to contribute to this project by submitting pull requests. For major changes, please open an issue first to discuss what you would like to change.
