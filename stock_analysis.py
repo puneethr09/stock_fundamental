@@ -5,12 +5,12 @@ import os
 # Function to select the file
 def select_file():
     input_files = [
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_200.csv",
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_500.csv",
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_50.csv",
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_large_midcap_250.csv",
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_midcap_100.csv",
-        "D:\\repo\\stock_fundamental\\input\\Indian_stocks_nifty_smallcap_250.csv"
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_200.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_500.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_50.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_large_midcap_250.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_midcap_100.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_smallcap_250.csv"
     ]
 
     # Sort input files by size (ascending order)
@@ -85,7 +85,7 @@ def process_chunk(df_chunk):
 
 # Function to analyze the entire CSV file in chunks
 def analyze_csv_in_chunks(csv_path, chunk_size=100):
-    output_dir = "D:\\repo\\stock_fundamental\\output"
+    output_dir = "/Users/puneeth/Documents/repo/stock_fundamental/output"
     os.makedirs(output_dir, exist_ok=True)
     
     financial_data = []
@@ -145,8 +145,8 @@ def rate_and_save_results(combined_df, csv_path):
 
         # Create output filenames
         base_filename = os.path.splitext(os.path.basename(csv_path))[0]
-        txt_output_path = os.path.join("D:\\repo\\stock_fundamental\\output", f"{base_filename}_analyzed.txt")
-        csv_output_path = os.path.join("D:\\repo\\stock_fundamental\\output", f"{base_filename}_analyzed.csv")
+        txt_output_path = os.path.join("/Users/puneeth/Documents/repo/stock_fundamental/output", f"{base_filename}_analyzed.txt")
+        csv_output_path = os.path.join("/Users/puneeth/Documents/repo/stock_fundamental/output", f"{base_filename}_analyzed.csv")
 
         # Save the sorted data to a text file with descriptions
         with open(txt_output_path, "w") as file:
