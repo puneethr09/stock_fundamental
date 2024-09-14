@@ -21,7 +21,12 @@ def select_file():
         print(f"{idx}. {os.path.basename(file)}")
     print("7. All files")
 
-    choice = input("Enter your choice: ")
+    choice = input("Enter your choice (multiple choice separated by commas): ")
+    # Handle multiple choice
+    if ',' in choice:
+        choices = [int(x) for x in choice.split(',')]
+        if all(1 <= x <= 6 for x in choices):
+            return [input_files[x-1] for x in choices]
 
     if choice == '7':
         return input_files
