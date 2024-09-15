@@ -1,0 +1,82 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled Files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages and Dependencies
+node_modules/
+vendor/
+*.log
+
+# Build Directories
+/build/
+/dist/
+/output/
+
+# Environment Files
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary Files
+*.tmp
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# Java
+*.jar
+*.war
+*.ear
+
+# C#
+bin/
+obj/
+
+# Ruby
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# JavaScript
+/coverage
+/.nyc_output
+
+# Miscellaneous
+*.log
+*.sql
+*.sqlite
