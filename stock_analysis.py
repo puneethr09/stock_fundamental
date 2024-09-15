@@ -4,6 +4,16 @@ import os
 
 # Function to select the file
 def select_file():
+    """
+    Selects a dataset from a list of available files.
+
+    The function prompts the user to select a dataset by providing a list of available files.
+    The user can select a single file or multiple files by entering their corresponding numbers.
+    If the user selects '7', all files are returned.
+
+    Returns:
+        A list of selected file paths or a single file path if only one file is selected.
+    """
     input_files = [
         "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_200.csv",
         "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_500.csv",
@@ -43,6 +53,21 @@ def select_file():
 
 # Function to fetch financial data
 def fetch_stock_data(ticker):
+    """
+    Fetches financial data for a given stock ticker.
+
+    Parameters:
+        ticker (str): The stock ticker symbol.
+
+    Returns:
+        dict: A dictionary containing the stock's financial data, including:
+            - ticker (str): The stock ticker symbol.
+            - market_price (float): The current market price of the stock.
+            - eps (float): The stock's earnings per share.
+            - book_value (float): The stock's book value.
+            - pe_ratio (float): The stock's price-to-earnings ratio.
+            - pb_ratio (float): The stock's price-to-book ratio.
+    """
     stock = yf.Ticker(ticker)
     info = stock.info
 
@@ -72,6 +97,20 @@ def fetch_stock_data(ticker):
 
 # Function to process a chunk of data
 def process_chunk(df_chunk):
+    """
+    Process a chunk of data and fetch stock data for each ticker.
+
+    Parameters:
+        df_chunk (pandas.DataFrame): A chunk of data containing 'Ticker' and 'Company Name' columns.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the financial data for each ticker. The DataFrame has the following columns:
+            - 'ticker' (str): The stock ticker symbol.
+            - 'company_name' (str): The name of the company.
+            - 'sector' (str): The industry sector of the company.
+
+    This function iterates over each row in the input DataFrame and fetches stock data for each ticker using the 'fetch_stock_data' function. It checks if the ticker is valid and not NaN, and if the data is complete. If the data is complete, it appends the data to the 'financial_data' list along with the company name and sector. If the data is incomplete or the ticker is invalid, it prints a message. Finally, it returns a DataFrame containing the financial data for each ticker.
+    """
     financial_data = []
     for idx, row in df_chunk.iterrows():
         ticker = str(row['Ticker']).strip()
@@ -90,6 +129,16 @@ def process_chunk(df_chunk):
 
 # Function to analyze the entire CSV file in chunks
 def analyze_csv_in_chunks(csv_path, chunk_size=100):
+    """
+    Analyzes a CSV file in chunks and returns the combined financial data.
+
+    Parameters:
+        csv_path (str): The path to the CSV file to be analyzed.
+        chunk_size (int): The number of rows to read from the CSV file at a time (default is 100).
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the combined financial data.
+    """
     output_dir = "/Users/puneeth/Documents/repo/stock_fundamental/output"
     os.makedirs(output_dir, exist_ok=True)
     
@@ -103,6 +152,22 @@ def analyze_csv_in_chunks(csv_path, chunk_size=100):
 
 # Function to perform rating and save results
 def rate_and_save_results(combined_df, csv_path):
+    """
+    This function rates and saves the results of a stock analysis based on the provided DataFrame.
+    
+    It calculates industry averages for P/E ratio, P/B ratio, and EPS, and then merges these averages back into the main DataFrame.
+    
+    The function then defines weights for scoring, calculates a score for each stock based on these weights, and normalizes the score to a 0-100 rating within each sector.
+    
+    Finally, it saves the sorted data to a text file with descriptions and a CSV file with values.
+    
+    Parameters:
+        combined_df (DataFrame): The DataFrame containing the stock data.
+        csv_path (str): The path to the CSV file where the data will be saved.
+    
+    Returns:
+        None
+    """
     if combined_df.empty:
         print("No data to analyze.")
         return
@@ -187,6 +252,18 @@ def rate_and_save_results(combined_df, csv_path):
 
 # Main function to run the analysis
 def main():
+    """
+    The main entry point of the program, responsible for processing CSV files.
+
+    This function selects the CSV files to be processed, analyzes each file in chunks,
+    and then rates and saves the results.
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
     csv_files = select_file()
     for csv_file in csv_files:
         print(f"Processing {csv_file}...")
