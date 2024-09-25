@@ -26,6 +26,7 @@ vendor/
 /build/
 /dist/
 /output/
+/financials/
 
 # Environment Files
 .env
