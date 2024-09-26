@@ -112,125 +112,133 @@ def generate_insights(ratios, trends):
     return insights
 
 
+import csv
+
+
 def extract_financials(ticker):
     stock = yf.Ticker(ticker)
     company_name = stock.info.get("longName", "Unknown Company")
 
+    # Create financials directory if it doesn't exist
     os.makedirs("financials", exist_ok=True)
 
-    filename = generate_filename(company_name)
-    filepath = os.path.join("financials", filename)
+    # Generate annual report
+    annual_filename = os.path.join(
+        "financials", generate_filename(company_name + "_annual")
+    )
+    generate_annual_report(stock, annual_filename)
 
-    with open(filepath, "w") as f:
-        f.write(f"Financial Analysis for {company_name} ({ticker})\n")
-        f.write("=" * 50 + "\n\n")
+    # Generate quarterly report
+    quarterly_filename = os.path.join(
+        "financials", generate_filename(company_name + "_quarterly")
+    )
+    generate_quarterly_report(stock, quarterly_filename)
 
-        # Extract Income Statement
-        income_stmt = stock.financials.iloc[:, :3]  # Last 3 years
-        income_stmt.columns = income_stmt.columns.map(format_date)
-        f.write("Income Statement (Last 3 Years):\n")
-        f.write(trim_df(income_stmt.map(to_crores)).to_string() + "\n\n")
 
-        # Extract Balance Sheet
-        balance_sheet = stock.balance_sheet.iloc[:, :3]  # Last 3 years
-        balance_sheet.columns = balance_sheet.columns.map(format_date)
-        f.write("Balance Sheet (Last 3 Years):\n")
-        f.write(trim_df(balance_sheet.map(to_crores)).to_string() + "\n\n")
+def generate_annual_report(stock, filepath):
+    # Existing code for annual report generation
+    income_stmt = stock.financials.iloc[:, :3]
+    balance_sheet = stock.balance_sheet.iloc[:, :3]
+    cash_flow = stock.cashflow.iloc[:, :3]
 
-        # Extract Cash Flow Statement
-        cash_flow = stock.cashflow.iloc[:, :3]  # Last 3 years
-        cash_flow.columns = cash_flow.columns.map(format_date)
-        f.write("Cash Flow Statement (Last 3 Years):\n")
-        f.write(trim_df(cash_flow.map(to_crores)).to_string() + "\n\n")
+    with open(filepath, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
 
-        f.write("Key Insights (Income Statement):\n")
-        for year in income_stmt.columns:
-            revenue = to_crores(
-                income_stmt.loc["Total Revenue", year]
-                if "Total Revenue" in income_stmt.index
-                else None
-            )
-            net_income = to_crores(
-                income_stmt.loc["Net Income", year]
-                if "Net Income" in income_stmt.index
-                else None
-            )
-            gross_profit = to_crores(
-                income_stmt.loc["Gross Profit", year]
-                if "Gross Profit" in income_stmt.index
-                else None
-            )
+        writer.writerow(
+            [
+                "FINANCIAL ANALYSIS FOR",
+                stock.info.get("longName", "Unknown Company").upper(),
+                stock.ticker.upper(),
+            ]
+        )
+        writer.writerow([])
+        # Write Income Statement with all column headers
+        writer.writerow(["-" * 50])
+        writer.writerow(["INCOME STATEMENT (LAST 3 YEARS)"])
+        writer.writerow(["-" * 50])
+        writer.writerow(["YEAR"] + list(income_stmt.columns))
+        income_stmt_csv = income_stmt.map(to_crores).reset_index()
+        writer.writerows(income_stmt_csv.values)
+        writer.writerow([])
 
-            f.write(f"\n{year}:\n")
-            f.write(f"Revenue: {format_crores(revenue)}\n")
-            f.write(f"Net Income: {format_crores(net_income)}\n")
+        # Write Balance Sheet with all column headers
+        writer.writerow(["-" * 50])
+        writer.writerow(["BALANCE SHEET (LAST 3 YEARS)"])
+        writer.writerow(["-" * 50])
+        writer.writerow(["YEAR"] + list(balance_sheet.columns))
+        balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
+        writer.writerows(balance_sheet_csv.values)
+        writer.writerow([])
+        writer.writerow([])
 
-            if revenue and gross_profit:
-                gross_profit_margin = (gross_profit / revenue) * 100
-                f.write(f"Gross Profit Margin: {gross_profit_margin:.2f}%\n")
-            else:
-                f.write("Gross Profit Margin: Not available\n")
-
-        f.write("\nKey Insights (Balance Sheet):\n")
-        for year in balance_sheet.columns:
-            total_assets = to_crores(
-                balance_sheet.loc["Total Assets", year]
-                if "Total Assets" in balance_sheet.index
-                else None
-            )
-            total_liabilities = to_crores(
-                balance_sheet.loc["Total Liabilities Net Minority Interest", year]
-                if "Total Liabilities Net Minority Interest" in balance_sheet.index
-                else None
-            )
-            total_equity = to_crores(
-                balance_sheet.loc["Total Stockholder Equity", year]
-                if "Total Stockholder Equity" in balance_sheet.index
-                else None
-            )
-
-            f.write(f"\n{year}:\n")
-            f.write(f"Total Assets: {format_crores(total_assets)}\n")
-            f.write(f"Total Liabilities: {format_crores(total_liabilities)}\n")
-
-            if total_liabilities and total_equity and total_equity != 0:
-                debt_to_equity = total_liabilities / total_equity
-                f.write(f"Debt to Equity Ratio: {debt_to_equity:.2f}\n")
-            else:
-                f.write("Debt to Equity Ratio: Not available\n")
-
-        f.write("\nKey Insights (Cash Flow):\n")
-        for year in cash_flow.columns:
-            operating_cash_flow = to_crores(
-                cash_flow.loc["Operating Cash Flow", year]
-                if "Operating Cash Flow" in cash_flow.index
-                else None
-            )
-            capital_expenditures = to_crores(
-                cash_flow.loc["Capital Expenditures", year]
-                if "Capital Expenditures" in cash_flow.index
-                else None
-            )
-            free_cash_flow = to_crores(
-                cash_flow.loc["Free Cash Flow", year]
-                if "Free Cash Flow" in cash_flow.index
-                else None
-            )
-
-            f.write(f"\n{year}:\n")
-            f.write(f"Operating Cash Flow: {format_crores(operating_cash_flow)}\n")
-            f.write(f"Capital Expenditures: {format_crores(capital_expenditures)}\n")
-            f.write(f"Free Cash Flow: {format_crores(free_cash_flow)}\n")
-
-        advanced_ratios = calculate_advanced_ratios(income_stmt, balance_sheet, cash_flow)
+        # Write Cash Flow Statement with all column headers
+        writer.writerow(["-" * 50])
+        writer.writerow(["CASH FLOW STATEMENT (LAST 3 YEARS)"])
+        writer.writerow(["-" * 50])
+        writer.writerow(["YEAR"] + list(cash_flow.columns))
+        cash_flow_csv = cash_flow.map(to_crores).reset_index()
+        writer.writerows(cash_flow_csv.values)
+        writer.writerow([])
+        writer.writerow([])
+        # Write Key Insights with caps and underline
+        writer.writerow(["-" * 20])
+        writer.writerow(["KEY INSIGHTS"])
+        writer.writerow(["-" * 20])
+        advanced_ratios = calculate_advanced_ratios(
+            income_stmt, balance_sheet, cash_flow
+        )
         trends = analyze_trends(income_stmt, balance_sheet, cash_flow)
-        insights = generate_insights(advanced_ratios, trends)
 
-        f.write("\n\nDetailed Analysis and Insights:\n")
-        f.write("=" * 30 + "\n")
-        f.write(insights)
+        for key, value in advanced_ratios.items():
+            writer.writerow([key, value])
+
+        for key, value in trends.items():
+            writer.writerow([key, value])
 
     print(f"Enhanced financial analysis saved to {filepath}")
+
+
+def generate_quarterly_report(stock, filepath):
+    income_stmt = stock.quarterly_financials.iloc[:, :4]
+    balance_sheet = stock.quarterly_balance_sheet.iloc[:, :4]
+    cash_flow = stock.quarterly_cashflow.iloc[:, :4]
+
+    with open(filepath, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+
+        writer.writerow(["QUARTERLY FINANCIAL ANALYSIS"])
+        writer.writerow(["-" * 30])
+
+        # Write Income Statement
+        writer.writerow(["INCOME STATEMENT (LAST 4 QUARTERS)"])
+        writer.writerow(["-" * 30])
+        writer.writerow(
+            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(income_stmt.columns))]
+        )
+        income_stmt_csv = income_stmt.map(to_crores).reset_index()
+        writer.writerows(income_stmt_csv.values)
+        writer.writerow([])
+
+        # Write Balance Sheet
+        writer.writerow(["BALANCE SHEET (LAST 4 QUARTERS)"])
+        writer.writerow(["-" * 30])
+        writer.writerow(
+            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(balance_sheet.columns))]
+        )
+        balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
+        writer.writerows(balance_sheet_csv.values)
+        writer.writerow([])
+
+        # Write Cash Flow Statement
+        writer.writerow(["CASH FLOW STATEMENT (LAST 4 QUARTERS)"])
+        writer.writerow(["-" * 30])
+        writer.writerow(
+            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(cash_flow.columns))]
+        )
+        cash_flow_csv = cash_flow.map(to_crores).reset_index()
+        writer.writerows(cash_flow_csv.values)
+        writer.writerow([])
+
 
 def find_nearest_ticker(input_ticker):
     # List of Indian stock tickers (you may need to update this list)
@@ -255,7 +263,7 @@ def find_nearest_ticker(input_ticker):
 def generate_filename(company_name):
     clean_name = "".join(c for c in company_name if c.isalnum() or c.isspace())
     filename = clean_name.replace(" ", "_").lower()
-    return f"{filename}_financials.txt"
+    return f"{filename}_financials.csv"
 
 
 def main():
