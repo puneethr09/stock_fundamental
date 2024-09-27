@@ -12,18 +12,37 @@ pd.set_option("display.max_colwidth", None)
 
 
 def to_crores(value):
-    return value / 10000000 if isinstance(value, (int, float)) else value
+    """
+    Converts a given value to crores.
 
+    Args:
+        value: The value to be converted. It can be an integer, float, or string.
 
-def format_crores(value):
-    return f"₹{value:.2f} cr." if isinstance(value, (int, float)) else value
-
-
-def trim_df(df):
-    return df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-
+    Returns:
+        The converted value in crores. If the input value is NaN, returns "-" if it's a number or "N/A" if it's not. If the input value is not a number, returns the original value.
+    """
+    if pd.isna(value):
+        return "-" if isinstance(value, (int, float)) else "N/A"
+    if isinstance(value, (int, float)) or (isinstance(value, str)):
+        try:
+            float_value = float(value)
+            if abs(float_value) < 1e-6:
+                return 0
+            return float_value / 10000000
+        except ValueError:
+            return value
+    return value
 
 def format_date(date):
+    """
+    Formats a given date into a human-readable string.
+
+    Args:
+        date: The date to be formatted. It can be a string in the format "%Y-%m-%d" or a pandas Timestamp object.
+
+    Returns:
+        A string representing the formatted date in the format "%b %d, %Y". If the input date is not a string or a pandas Timestamp object, returns its string representation.
+    """
     if isinstance(date, str):
         return datetime.strptime(date, "%Y-%m-%d").strftime("%b %d, %Y")
     elif isinstance(date, pd.Timestamp):
@@ -33,6 +52,31 @@ def format_date(date):
 
 
 def calculate_advanced_ratios(income_stmt, balance_sheet, cash_flow):
+    """
+    Calculate advanced ratios based on income statement, balance sheet, and cash flow data.
+
+    Args:
+        income_stmt (pandas.DataFrame): Income statement data.
+        balance_sheet (pandas.DataFrame): Balance sheet data.
+        cash_flow (pandas.DataFrame): Cash flow data.
+
+    Returns:
+        dict: A dictionary containing the calculated ratios. The keys are the ratio names and the values are the calculated ratios.
+
+    Raises:
+        None
+
+    Notes:
+        - The function calculates the following ratios:
+            - ROA (Return on Assets)
+            - ROE (Return on Equity)
+            - Current Ratio
+            - Quick Ratio
+            - Debt to Equity
+        - The function uses the first column of each DataFrame as the index.
+        - If any exception occurs during the calculation, the function catches the exception and continues without raising an error.
+
+    """
     ratios = {}
     try:
         ratios["ROA"] = (
@@ -63,6 +107,25 @@ def calculate_advanced_ratios(income_stmt, balance_sheet, cash_flow):
 
 
 def analyze_trends(income_stmt, balance_sheet, cash_flow):
+    """
+    Analyzes financial trends based on income statement, balance sheet, and cash flow data.
+
+    Args:
+        income_stmt (pandas.DataFrame): Income statement data.
+        balance_sheet (pandas.DataFrame): Balance sheet data.
+        cash_flow (pandas.DataFrame): Cash flow data.
+
+    Returns:
+        dict: A dictionary containing the calculated trends. The keys are the trend names and the values are the calculated trends.
+
+    Notes:
+        - The function calculates the following trends:
+            - Revenue Growth
+            - Net Income Growth
+            - Operating Cash Flow Growth
+        - The function uses the first and last columns of each DataFrame as the index and the most recent data respectively.
+        - If any exception occurs during the calculation, the function catches the exception and continues without raising an error.
+    """
     trends = {}
     try:
         trends["Revenue Growth"] = (
@@ -83,6 +146,16 @@ def analyze_trends(income_stmt, balance_sheet, cash_flow):
 
 
 def generate_insights(ratios, trends):
+    """
+    Generates financial insights based on the provided ratios and trends.
+
+    Args:
+        ratios (dict): A dictionary containing financial ratios.
+        trends (dict): A dictionary containing financial trends.
+
+    Returns:
+        str: A string containing the generated financial insights.
+    """
     insights = "Financial Analysis Insights:\n\n"
 
     if "ROA" in ratios:
@@ -116,131 +189,203 @@ import csv
 
 
 def extract_financials(ticker):
+    """
+    Extracts financial data for a given stock ticker and generates annual and quarterly reports.
+
+    Args:
+        ticker (str): The stock ticker symbol.
+
+    Returns:
+        None
+    """
     stock = yf.Ticker(ticker)
     company_name = stock.info.get("longName", "Unknown Company")
 
     # Create financials directory if it doesn't exist
     os.makedirs("financials", exist_ok=True)
 
-    # Generate annual report
+    # Create directoriy of company name seperate inside financials directory
+    os.makedirs(os.path.join("financials", company_name), exist_ok=True)
+
+    # Generate annual report inside the company directory
     annual_filename = os.path.join(
-        "financials", generate_filename(company_name + "_annual")
+        "financials", company_name, generate_filename("annual")
     )
     generate_annual_report(stock, annual_filename)
 
     # Generate quarterly report
     quarterly_filename = os.path.join(
-        "financials", generate_filename(company_name + "_quarterly")
+        "financials", company_name, generate_filename("quarterly")
     )
     generate_quarterly_report(stock, quarterly_filename)
 
+    print(f"\nFinancial analysis for {company_name} is complete.")
+    print(f"Annual report saved as: {annual_filename}")
+    print(f"Quarterly report saved as: {quarterly_filename}")
+    print("\nAnalysis finished. You can find the reports in the 'financials' folder.")
+
 
 def generate_annual_report(stock, filepath):
-    # Existing code for annual report generation
+    """
+    Generates an annual financial report for a given stock and saves it to a CSV file.
+
+    Args:
+        stock: A stock object containing financial data.
+        filepath: The path to save the annual report CSV file.
+
+    Returns:
+        None
+    """
     income_stmt = stock.financials.iloc[:, :3]
     balance_sheet = stock.balance_sheet.iloc[:, :3]
     cash_flow = stock.cashflow.iloc[:, :3]
 
-    with open(filepath, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
+    formatted_dates = [f"MARCH {date.year}" for date in income_stmt.columns]
 
-        writer.writerow(
-            [
-                "FINANCIAL ANALYSIS FOR",
-                stock.info.get("longName", "Unknown Company").upper(),
-                stock.ticker.upper(),
-            ]
-        )
-        writer.writerow([])
-        # Write Income Statement with all column headers
-        writer.writerow(["-" * 50])
-        writer.writerow(["INCOME STATEMENT (LAST 3 YEARS)"])
-        writer.writerow(["-" * 50])
-        writer.writerow(["YEAR"] + list(income_stmt.columns))
-        income_stmt_csv = income_stmt.map(to_crores).reset_index()
-        writer.writerows(income_stmt_csv.values)
-        writer.writerow([])
-
-        # Write Balance Sheet with all column headers
-        writer.writerow(["-" * 50])
-        writer.writerow(["BALANCE SHEET (LAST 3 YEARS)"])
-        writer.writerow(["-" * 50])
-        writer.writerow(["YEAR"] + list(balance_sheet.columns))
-        balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
-        writer.writerows(balance_sheet_csv.values)
-        writer.writerow([])
-        writer.writerow([])
-
-        # Write Cash Flow Statement with all column headers
-        writer.writerow(["-" * 50])
-        writer.writerow(["CASH FLOW STATEMENT (LAST 3 YEARS)"])
-        writer.writerow(["-" * 50])
-        writer.writerow(["YEAR"] + list(cash_flow.columns))
-        cash_flow_csv = cash_flow.map(to_crores).reset_index()
-        writer.writerows(cash_flow_csv.values)
-        writer.writerow([])
-        writer.writerow([])
-        # Write Key Insights with caps and underline
-        writer.writerow(["-" * 20])
-        writer.writerow(["KEY INSIGHTS"])
-        writer.writerow(["-" * 20])
-        advanced_ratios = calculate_advanced_ratios(
-            income_stmt, balance_sheet, cash_flow
-        )
-        trends = analyze_trends(income_stmt, balance_sheet, cash_flow)
-
-        for key, value in advanced_ratios.items():
-            writer.writerow([key, value])
-
-        for key, value in trends.items():
-            writer.writerow([key, value])
-
-    print(f"Enhanced financial analysis saved to {filepath}")
-
-
-def generate_quarterly_report(stock, filepath):
-    income_stmt = stock.quarterly_financials.iloc[:, :4]
-    balance_sheet = stock.quarterly_balance_sheet.iloc[:, :4]
-    cash_flow = stock.quarterly_cashflow.iloc[:, :4]
+    advanced_ratios = calculate_advanced_ratios(income_stmt, balance_sheet, cash_flow)
+    trends = analyze_trends(income_stmt, balance_sheet, cash_flow)
+    insights = generate_insights(advanced_ratios, trends)
 
     with open(filepath, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
-        writer.writerow(["QUARTERLY FINANCIAL ANALYSIS"])
-        writer.writerow(["-" * 30])
+        writer.writerow(["ANNUAL FINANCIAL ANALYSIS"] + [stock.info["longName"]])
 
         # Write Income Statement
-        writer.writerow(["INCOME STATEMENT (LAST 4 QUARTERS)"])
         writer.writerow(["-" * 30])
-        writer.writerow(
-            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(income_stmt.columns))]
-        )
+        writer.writerow(["INCOME STATEMENT (LAST 3 YEARS)"] + ["all figures in Cr."])
+        writer.writerow(["-" * 30])
+        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
         income_stmt_csv = income_stmt.map(to_crores).reset_index()
         writer.writerows(income_stmt_csv.values)
         writer.writerow([])
 
         # Write Balance Sheet
-        writer.writerow(["BALANCE SHEET (LAST 4 QUARTERS)"])
         writer.writerow(["-" * 30])
-        writer.writerow(
-            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(balance_sheet.columns))]
-        )
+        writer.writerow(["BALANCE SHEET (LAST 3 YEARS)"] + ["all figures in Cr."])
+        writer.writerow(["-" * 30])
+        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
         balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
         writer.writerows(balance_sheet_csv.values)
         writer.writerow([])
 
         # Write Cash Flow Statement
-        writer.writerow(["CASH FLOW STATEMENT (LAST 4 QUARTERS)"])
         writer.writerow(["-" * 30])
-        writer.writerow(
-            ["Year"] + [f"<b>Q{i+1}</b>" for i in range(len(cash_flow.columns))]
-        )
+        writer.writerow(["CASH FLOW STATEMENT (LAST 3 YEARS)"] + ["all figures in Cr."])
+        writer.writerow(["-" * 30])
+        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
         cash_flow_csv = cash_flow.map(to_crores).reset_index()
         writer.writerows(cash_flow_csv.values)
         writer.writerow([])
 
+        # Write Advanced Analysis
+        writer.writerow(["-" * 30])
+        writer.writerow(["ADVANCED FINANCIAL ANALYSIS"])
+        writer.writerow(["-" * 30])
+
+        writer.writerow(["Advanced Ratios"])
+        for ratio, value in advanced_ratios.items():
+            writer.writerow([ratio, value])
+        writer.writerow([])
+
+        writer.writerow(["Trends"])
+        for trend, value in trends.items():
+            writer.writerow([trend, value])
+        writer.writerow([])
+
+        writer.writerow(["Insights"])
+        writer.writerow([insights])
+
+
+def generate_quarterly_report(stock, filepath):
+    """
+    Generates a quarterly financial report for a given stock and saves it to a CSV file.
+
+    Args:
+        stock: A stock object containing quarterly financial data.
+        filepath: The path to save the quarterly report CSV file.
+
+    Returns:
+        None
+    """
+    income_stmt = stock.quarterly_financials.iloc[:, :4]
+    balance_sheet = stock.quarterly_balance_sheet.iloc[:, :4]
+    cash_flow = stock.quarterly_cashflow.iloc[:, :4]
+
+    advanced_ratios = calculate_advanced_ratios(income_stmt, balance_sheet, cash_flow)
+    trends = analyze_trends(income_stmt, balance_sheet, cash_flow)
+    insights = generate_insights(advanced_ratios, trends)
+
+    with open(filepath, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+
+        writer.writerow(["QUARTERLY FINANCIAL ANALYSIS"] + [stock.info["longName"]])
+
+        # Get the dates for each quarter
+        quarter_dates = income_stmt.columns
+
+        # Format the dates as month-year in caps
+        formatted_dates = [date.strftime("%b %Y").upper() for date in quarter_dates]
+
+        # Write Income Statement
+        writer.writerow(["-" * 30])
+        writer.writerow(["INCOME STATEMENT (LAST 4 QUARTERS)"] + ["all figures in Cr."])
+        writer.writerow(["-" * 30])
+        writer.writerow(["QUARTER"] + [f"{date}" for date in formatted_dates])
+        income_stmt_csv = income_stmt.map(to_crores).reset_index()
+        writer.writerows(income_stmt_csv.values)
+        writer.writerow([])
+
+        # Write Balance Sheet
+        writer.writerow(["-" * 30])
+        writer.writerow(["BALANCE SHEET (LAST 4 QUARTERS)"] + ["all figures in Cr."])
+        writer.writerow(["-" * 30])
+        writer.writerow(["QUARTER"] + [f"{date}" for date in formatted_dates])
+        balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
+        writer.writerows(balance_sheet_csv.values)
+        writer.writerow([])
+
+        # Write Cash Flow Statement
+        writer.writerow(["-" * 30])
+        writer.writerow(
+            ["CASH FLOW STATEMENT (LAST 4 QUARTERS)"] + ["all figures in Cr."]
+        )
+        writer.writerow(["-" * 30])
+        writer.writerow(["QUARTER"] + [f"{date}" for date in formatted_dates])
+        cash_flow_csv = cash_flow.map(to_crores).reset_index()
+        writer.writerows(cash_flow_csv.values)
+        writer.writerow([])
+
+        # Write Advanced Analysis
+        writer.writerow(["-" * 30])
+        writer.writerow(["ADVANCED FINANCIAL ANALYSIS"])
+        writer.writerow(["-" * 30])
+
+        writer.writerow(["Advanced Ratios"])
+        for ratio, value in advanced_ratios.items():
+            writer.writerow([ratio, value])
+        writer.writerow([])
+
+        writer.writerow(["Trends"])
+        for trend, value in trends.items():
+            writer.writerow([trend, value])
+        writer.writerow([])
+
+        writer.writerow(["Insights"])
+        writer.writerow([insights])
+        writer.writerow([])
+
 
 def find_nearest_ticker(input_ticker):
+    """
+    Finds the nearest matching Indian stock ticker to the input ticker.
+
+    Args:
+        input_ticker (str): The ticker symbol to search for.
+
+    Returns:
+        str: The nearest matching ticker symbol, or None if no match is found.
+    """
     # List of Indian stock tickers (you may need to update this list)
     indian_tickers = yf.Ticker("^NSEI").info["components"]
 
@@ -261,12 +406,34 @@ def find_nearest_ticker(input_ticker):
 
 
 def generate_filename(company_name):
+    """
+    Generates a filename for a company's financial reports based on its name.
+
+    Args:
+        company_name (str): The name of the company.
+
+    Returns:
+        str: A filename in the format "{company_name}_reports.csv".
+    """
     clean_name = "".join(c for c in company_name if c.isalnum() or c.isspace())
     filename = clean_name.replace(" ", "_").lower()
-    return f"{filename}_financials.csv"
+    return f"{filename}_reports.csv"
 
 
 def main():
+    """
+    The main function that serves as the entry point of the program.
+    
+    It prompts the user to input a stock ticker symbol, attempts to retrieve the stock's information,
+    and extracts the financial data if the ticker is valid. If the ticker is not found, it searches
+    for the nearest matching ticker and uses that instead.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     ticker = input(
         "Enter the stock ticker symbol (e.g., reliance for Reliance Industries): "
     )
