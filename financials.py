@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime
 from difflib import get_close_matches
 import os
+import logging
+import csv
 
 
 pd.set_option("display.max_rows", None)
@@ -32,6 +34,7 @@ def to_crores(value):
         except ValueError:
             return value
     return value
+
 
 def format_date(date):
     """
@@ -185,9 +188,6 @@ def generate_insights(ratios, trends):
     return insights
 
 
-import csv
-
-
 def extract_financials(ticker):
     """
     Extracts financial data for a given stock ticker and generates annual and quarterly reports.
@@ -220,9 +220,6 @@ def extract_financials(ticker):
     generate_quarterly_report(stock, quarterly_filename)
 
     print(f"\nFinancial analysis for {company_name} is complete.")
-    print(f"Annual report saved as: {annual_filename}")
-    print(f"Quarterly report saved as: {quarterly_filename}")
-    print("\nAnalysis finished. You can find the reports in the 'financials' folder.")
 
 
 def generate_annual_report(stock, filepath):
@@ -420,36 +417,124 @@ def generate_filename(company_name):
     return f"{filename}_reports.csv"
 
 
-def main():
+def select_input_file():
     """
-    The main function that serves as the entry point of the program.
-    
-    It prompts the user to input a stock ticker symbol, attempts to retrieve the stock's information,
-    and extracts the financial data if the ticker is valid. If the ticker is not found, it searches
-    for the nearest matching ticker and uses that instead.
+    Selects a dataset from a list of available input files.
 
     Args:
         None
 
     Returns:
+        list: A list of selected file paths or a single file path if only one file is selected.
+    """
+    input_files = [
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_200.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_500.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_50.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_large_midcap_250.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_midcap_100.csv",
+        "/Users/puneeth/Documents/repo/stock_fundamental/input/Indian_stocks_nifty_smallcap_250.csv",
+    ]
+
+    print("Select the dataset:")
+    for idx, file in enumerate(input_files, start=1):
+        print(f"{idx}. {os.path.basename(file)}")
+    print("7. All files")
+
+    choice = input("Enter your choice (1-7): ")
+    if choice == "7":
+        return input_files
+    else:
+        return [input_files[int(choice) - 1]]
+
+
+def extract_tickers(file_path):
+    """
+    Reads a CSV file at the given file path and extracts the values in the "Ticker" column.
+
+    Args:
+        file_path (str): The path to the CSV file.
+
+    Returns:
+        list: A list of the values in the "Ticker" column.
+    """
+    df = pd.read_csv(file_path)
+    return df["Ticker"].tolist()
+    df = pd.read_csv(file_path)
+    return df["Ticker"].tolist()
+
+
+def main():
+    """
+    The main function that serves as the entry point for the financial analysis application.
+
+    It sets up logging, prompts the user to choose between analyzing a single company or multiple companies from input files,
+    and then extracts financial data for the selected companies.
+
+    Parameters:
+        None
+
+    Returns:
         None
     """
-    ticker = input(
-        "Enter the stock ticker symbol (e.g., reliance for Reliance Industries): "
+    # Set up logging
+    log_file = "financials_log.txt"
+    # clean the file if it exists
+    if os.path.exists(log_file):
+        with open(log_file, "w") as f:
+            f.write("")
+            print("Log file cleaned.")
+
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
     )
-    ticker = ticker.upper() + ".NS"
 
-    try:
-        yf.Ticker(ticker).info
-    except:
-        nearest_ticker = find_nearest_ticker(ticker[:-3])
-        if nearest_ticker:
-            ticker = nearest_ticker + ".NS"
-        else:
-            print("No matching ticker found.")
-            return
+    print("Choose the type of analysis:")
+    print("1. Analyze a single company (default)")
+    print("2. Automated analysis from input files")
 
-    extract_financials(ticker)
+    choice = input("Enter your choice (press Enter for default): ")
+
+    if choice == "" or choice == "1":
+        ticker = input(
+            "Enter the stock ticker symbol (e.g., reliance for Reliance Industries): "
+        )
+        ticker = ticker.upper() + ".NS"
+
+        try:
+            yf.Ticker(ticker).info
+        except:
+            nearest_ticker = find_nearest_ticker(ticker[:-3])
+            if nearest_ticker:
+                ticker = nearest_ticker + ".NS"
+            else:
+                print("No matching ticker found.")
+                return
+
+        extract_financials(ticker)
+
+    elif choice == "2":
+        selected_files = select_input_file()
+        all_tickers = set()
+
+        for file in selected_files:
+            tickers = extract_tickers(file)
+            all_tickers.update(tickers)
+
+        logging.info("Generating reports for %d unique stocks...", len(all_tickers))
+        for ticker in all_tickers:
+            try:
+                extract_financials(ticker + ".NS")
+            except Exception as e:
+                logging.error("Error processing %s: %s", ticker, str(e))
+
+        print("All reports generated successfully.")
+
+    else:
+        print("Invalid choice. Defaulting to single company analysis.")
+        main()
 
 
 if __name__ == "__main__":
