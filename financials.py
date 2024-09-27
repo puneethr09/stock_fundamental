@@ -460,8 +460,6 @@ def extract_tickers(file_path):
     """
     df = pd.read_csv(file_path)
     return df["Ticker"].tolist()
-    df = pd.read_csv(file_path)
-    return df["Ticker"].tolist()
 
 
 def main():
@@ -479,7 +477,7 @@ def main():
     """
     # Set up logging
     log_file = "financials_log.txt"
-    # clean the file if it exists
+    # Clean the file if it exists
     if os.path.exists(log_file):
         with open(log_file, "w") as f:
             f.write("")
