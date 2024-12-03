@@ -10,7 +10,25 @@ def get_financial_ratios(ticker):
     stock = yf.Ticker(ticker)
     company_name = stock.info.get("longName", "Unknown Company")
 
-    # Get the balance sheet data
+    # Get historical data for the maximum available period
+    historical_data = stock.history(period="max")  # Use "max" to get all available data
+    if historical_data.empty:
+        print(f"No historical data available for {ticker}.")
+        return None
+
+    # Check if the index is timezone-naive and localize if necessary
+    if historical_data.index.tz is not None:
+        historical_data.index = historical_data.index.tz_localize(None)
+
+    # Check how many years of data are available
+    available_years = historical_data.index.year.unique()
+    num_years = len(available_years)
+
+    if num_years < 1:
+        print(f"No historical data available for {ticker}.")
+        return None  # Or handle as needed
+
+    # Proceed with data retrieval and calculations
     balance_sheet = stock.balance_sheet / 1000000  # Convert to millions
     cash_flow = stock.cashflow / 1000000  # Convert to millions
     income_stmt = stock.financials / 1000000  # Convert to millions
@@ -52,16 +70,6 @@ def get_financial_ratios(ticker):
         / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
     )
 
-    # New Ratios
-    # Price to Earnings (P/E) Ratio for each year
-
-    historical_data = stock.history(
-        period="5y"
-    )  # Get historical data for the last 5 years
-    historical_data.index = historical_data.index.tz_localize(
-        None
-    )  # Make index timezone-naive
-
     eps = (
         income_stmt.loc["Diluted EPS", income_stmt.columns] * 1000000
     )  # Convert to millions
@@ -101,56 +109,24 @@ def get_financial_ratios(ticker):
     roe = roe * 100
     roa = roa * 100
     roic = roic * 100
-    # Fill NaN values with the maximum value of the respective series
-    roe.fillna(roe.max(), inplace=True)
-    roa.fillna(roa.max(), inplace=True)
-    roic.fillna(roic.max(), inplace=True)
-    quick_ratio.fillna(quick_ratio.max(), inplace=True)
-    current_ratio.fillna(current_ratio.max(), inplace=True)
-    debt_to_equity.fillna(debt_to_equity.max(), inplace=True)
-
-    # Fill P/E ratios and infer object types
-    pe_ratios.fillna(pe_ratios.max(), inplace=True)
-    pe_ratios = pe_ratios.infer_objects()  # Ensure correct dtype inference
-
-    ebit_margin.fillna(ebit_margin.max(), inplace=True)
-    roi.fillna(roi.max(), inplace=True)
-    # Align all ratios to the same index (years)
-    common_index = (
-        roe.index.intersection(roa.index)
-        .intersection(roic.index)
-        .intersection(quick_ratio.index)
-        .intersection(current_ratio.index)
-        .intersection(debt_to_equity.index)
-        .intersection(pe_ratios.index)
-        .intersection(ebit_margin.index)
-        .intersection(roi.index)
-    )
 
     # Create a DataFrame to store the financial ratios
-    ratios_df = pd.DataFrame(
-        {
-            "Year": common_index,
-            "ROE": roe[common_index].values,
-            "ROA": roa[common_index].values,
-            "ROIC": roic[common_index].values,
-            "Quick Ratio": quick_ratio[common_index].values,
-            "Current Ratio": current_ratio[common_index].values,
-            "Debt to Equity": debt_to_equity[common_index].values,
-            "P/E Ratio": pe_ratios[common_index].values,
-            "EBIT Margin": ebit_margin[common_index].values,
-            "ROI": roi[common_index].values,
-            "Company": [company_name] * len(common_index),
-        }
-    )
+    ratios_df = pd.DataFrame({
+        "Year": available_years,
+        "ROE": roe.reindex(available_years).values,
+        "ROA": roa.reindex(available_years).values,
+        "ROIC": roic.reindex(available_years).values,
+        "Quick Ratio": quick_ratio.reindex(available_years).values,
+        "Current Ratio": current_ratio.reindex(available_years).values,
+        "Debt to Equity": debt_to_equity.reindex(available_years).values,
+        "P/E Ratio": pe_ratios.reindex(available_years).values,
+        "EBIT Margin": ebit_margin.reindex(available_years).values,
+        "ROI": roi.reindex(available_years).values,
+        "Company": [company_name] * len(available_years),
+    })
 
-    # Print the entire DataFrame for debugging
-    print("Retrieved Financial Ratios DataFrame:")
-    print(ratios_df)
-
-    # Filter for the last 3 years
-    current_year = datetime.now().year
-    ratios_df = ratios_df[ratios_df["Year"] >= (current_year - 3)]
+    # Drop years with all NaN values
+    ratios_df = ratios_df.dropna(how='all', subset=ratios_df.columns[1:-1])  # Exclude 'Year' and 'Company' columns
 
     return ratios_df
 
@@ -159,12 +135,12 @@ def analyze_ratios(ratios_df):
     company_name = ratios_df["Company"].unique()[0]
 
     # Print all financial ratios for the last three years
-    print(f"\nFinancial Ratios for {company_name} (Last 3 Years):")
+    print(f"\nFinancial Ratios for '{company_name}' :")
     print(ratios_df)
 
     # Get the latest financial ratios
     latest_ratios = ratios_df.iloc[-1]
-    print(f"\nLatest Financial Ratios for {company_name}:")
+    print(f"\nLatest Financial Ratios for '{company_name}' :")
     print(latest_ratios)
 
     # Simple Risk Assessment
@@ -199,6 +175,9 @@ def analyze_ratios(ratios_df):
 
     # Plotting all financial ratios
     plt.figure(figsize=(12, 8))
+
+    # remove "Company" from plotting
+    ratios_df = ratios_df.drop("Company", axis=1)
 
     for column in ratios_df.columns:
         plt.plot(ratios_df.index, ratios_df[column], marker="o", label=column)
