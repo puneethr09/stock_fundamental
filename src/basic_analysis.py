@@ -111,27 +111,43 @@ def get_financial_ratios(ticker):
     roic = roic * 100
 
     # Create a DataFrame to store the financial ratios
-    ratios_df = pd.DataFrame({
-        "Year": available_years,
-        "ROE": roe.reindex(available_years).values,
-        "ROA": roa.reindex(available_years).values,
-        "ROIC": roic.reindex(available_years).values,
-        "Quick Ratio": quick_ratio.reindex(available_years).values,
-        "Current Ratio": current_ratio.reindex(available_years).values,
-        "Debt to Equity": debt_to_equity.reindex(available_years).values,
-        "P/E Ratio": pe_ratios.reindex(available_years).values,
-        "EBIT Margin": ebit_margin.reindex(available_years).values,
-        "ROI": roi.reindex(available_years).values,
-        "Company": [company_name] * len(available_years),
-    })
-
+    ratios_df = pd.DataFrame(
+        {
+            "Year": available_years,
+            "ROE": roe.reindex(available_years).values,
+            "ROA": roa.reindex(available_years).values,
+            "ROIC": roic.reindex(available_years).values,
+            "Quick Ratio": quick_ratio.reindex(available_years).values,
+            "Current Ratio": current_ratio.reindex(available_years).values,
+            "Debt to Equity": debt_to_equity.reindex(available_years).values,
+            "P/E Ratio": pe_ratios.reindex(available_years).values,
+            "EBIT Margin": ebit_margin.reindex(available_years).values,
+            "ROI": roi.reindex(available_years).values,
+            "Company": [company_name] * len(available_years),
+        }
+    )
     # Drop years with all NaN values
-    ratios_df = ratios_df.dropna(how='all', subset=ratios_df.columns[1:-1])  # Exclude 'Year' and 'Company' columns
+    ratios_df = ratios_df.dropna(
+        how="all", subset=ratios_df.columns[1:-1]
+    )  # Exclude 'Year' and 'Company' columns
 
     return ratios_df
 
 
+def normalize_data(ratios_df):
+    normalized_df = ratios_df.copy()
+    for column in normalized_df.columns[1:-1]:  # Skip 'Year' and 'Company'
+        mean_val = normalized_df[column].mean()
+        std_dev = normalized_df[column].std()
+        normalized_df[column] = (normalized_df[column] - mean_val) / std_dev
+    return normalized_df
+
+
 def analyze_ratios(ratios_df):
+    if ratios_df is None or len(ratios_df) == 0:
+        print("No financial ratios available for analysis.")
+        return
+
     company_name = ratios_df["Company"].unique()[0]
 
     # Print all financial ratios for the last three years
@@ -169,22 +185,30 @@ def analyze_ratios(ratios_df):
     # Create directories if they do not exist
     os.makedirs(full_path, exist_ok=True)
 
-    # Prepare data for plotting
-    years = ratios_df["Year"]
-    ratios_df.set_index("Year", inplace=True)
+    # Normalize the data using Z-Score normalization
+    normalized_ratios_df = normalize_data(ratios_df)
 
-    # Plotting all financial ratios
+    # Prepare data for plotting
+    # years = normalized_ratios_df["Year"]
+    normalized_ratios_df.set_index("Year", inplace=True)
+
+    # Plotting all normalized financial ratios
     plt.figure(figsize=(12, 8))
 
     # remove "Company" from plotting
-    ratios_df = ratios_df.drop("Company", axis=1)
+    normalized_ratios_df = normalized_ratios_df.drop("Company", axis=1)
 
-    for column in ratios_df.columns:
-        plt.plot(ratios_df.index, ratios_df[column], marker="o", label=column)
+    for column in normalized_ratios_df.columns:
+        plt.plot(
+            normalized_ratios_df.index,
+            normalized_ratios_df[column],
+            marker="o",
+            label=column,
+        )
 
-    plt.title(f"Financial Ratios for {company_name} Over the Years")
+    plt.title(f"Normalized Financial Ratios for {company_name} Over the Years")
     plt.xlabel("Year")
-    plt.ylabel("Value")
+    plt.ylabel("Z-Score Normalized Value")
     plt.xticks(rotation=45)
     plt.legend()
     plt.grid()
@@ -192,7 +216,7 @@ def analyze_ratios(ratios_df):
     plt.savefig(
         os.path.join(
             full_path,
-            f"{company_name.replace(' ', '_')}_financial_ratios_line_plot.png",
+            f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png",
         )
     )
     plt.close()
