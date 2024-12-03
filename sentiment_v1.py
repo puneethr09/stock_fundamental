@@ -64,7 +64,8 @@ def main():
         choice = 0
 
     if choice == 0:
-        url = "https://www.cnbc.com/markets/"
+        # url = "https://www.businesstoday.in/markets/stocks"
+        url = "https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=6&ssid=25&smid=0"
         headlines = get_news_headlines(url)
     elif choice == 1:
         url = "https://www.financialexpress.com/market/"

@@ -199,27 +199,34 @@ def extract_financials(ticker):
         None
     """
     stock = yf.Ticker(ticker)
-    company_name = stock.info.get("longName", "Unknown Company")
+    # company_name = stock.info.get("longName", "Unknown Company")
 
-    # Create financials directory if it doesn't exist
-    os.makedirs("financials", exist_ok=True)
+    # # Create financials directory if it doesn't exist
+    # os.makedirs("financials", exist_ok=True)
 
-    # Create directoriy of company name seperate inside financials directory
-    os.makedirs(os.path.join("financials", company_name), exist_ok=True)
+    # # Create directoriy of company name seperate inside financials directory
+    # os.makedirs(os.path.join("financials", company_name), exist_ok=True)
 
-    # Generate annual report inside the company directory
-    annual_filename = os.path.join(
-        "financials", company_name, generate_filename("annual")
-    )
-    generate_annual_report(stock, annual_filename)
+    # # Generate annual report inside the company directory
+    # annual_filename = os.path.join(
+    #     "financials", company_name, generate_filename("annual")
+    # )
+    # generate_annual_report(stock, annual_filename)
 
-    # Generate quarterly report
-    quarterly_filename = os.path.join(
-        "financials", company_name, generate_filename("quarterly")
-    )
-    generate_quarterly_report(stock, quarterly_filename)
+    # # Generate quarterly report
+    # quarterly_filename = os.path.join(
+    #     "financials", company_name, generate_filename("quarterly")
+    # )
+    # generate_quarterly_report(stock, quarterly_filename)
 
-    print(f"\nFinancial analysis for {company_name} is complete.")
+    # print(f"\nFinancial analysis for {company_name} is complete.")
+
+    print("\n\n recommendation summary --------------\n", stock.recommendations_summary)
+    print("\n\n price targets --------------\n", stock.analyst_price_targets)
+    print("\n\n dividends info --------------\n", stock.dividends)
+    print("\n\n earning estimate --------------\n", stock.earnings_estimate)
+    print("\n\n earning history --------------\n", stock.earnings_history)
+    print("\n\n fast info --------------\n", stock.fast_info.fifty_day_average)
 
 
 def generate_annual_report(stock, filepath):
@@ -233,9 +240,9 @@ def generate_annual_report(stock, filepath):
     Returns:
         None
     """
-    income_stmt = stock.financials.iloc[:, :3]
-    balance_sheet = stock.balance_sheet.iloc[:, :3]
-    cash_flow = stock.cashflow.iloc[:, :3]
+    income_stmt = stock.financials.iloc[::-1, :3]
+    balance_sheet = stock.balance_sheet.iloc[::-1, :3]
+    cash_flow = stock.cashflow.iloc[::-1, :3]
 
     formatted_dates = [f"MARCH {date.year}" for date in income_stmt.columns]
 
@@ -243,37 +250,68 @@ def generate_annual_report(stock, filepath):
     trends = analyze_trends(income_stmt, balance_sheet, cash_flow)
     insights = generate_insights(advanced_ratios, trends)
 
+    def write_statement(writer, title, statement, sub_rows):
+        writer.writerow(["-" * 30])
+        writer.writerow([title] + ["all figures in Cr."])
+        writer.writerow(["Metric"] + formatted_dates)
+        for index, row in statement.iterrows():
+            if index in sub_rows:
+                writer.writerow([f"---  {index}"] + row.values.tolist())
+            else:
+                writer.writerow([index] + row.values.tolist())
+
     with open(filepath, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
         writer.writerow(["ANNUAL FINANCIAL ANALYSIS"] + [stock.info["longName"]])
 
+        # Specify sub-rows for each statement
+        income_stmt_sub_rows = [
+            "Total Revenue",
+            "Operating Revenue",
+            "Operating Expense",
+            "Other Operating Expenses",
+            "Rent And Landing Fees",
+            "General And Administrative Expense",
+            "Selling And Marketing Expense",
+            "Selling General And Administration",
+            "Net Non Operating Interest Income Expense",
+            "Total Other Finance Cost",
+            "Interest Expense Non Operating",
+            "Interest Income Non Operating",
+            "Net Income Continuous Operations",
+            "Net Income Including Noncontrolling Interests",
+            "Minority Interests",
+            "Net Income",
+            "Otherunder Preferred Stock Dividend",
+            "Net Income Common Stockholders",
+        ]
+        balance_sheet_sub_rows = []
+        cash_flow_sub_rows = []
+
         # Write Income Statement
-        writer.writerow(["-" * 30])
-        writer.writerow(["INCOME STATEMENT (LAST 3 YEARS)"] + ["all figures in Cr."])
-        writer.writerow(["-" * 30])
-        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
-        income_stmt_csv = income_stmt.map(to_crores).reset_index()
-        writer.writerows(income_stmt_csv.values)
-        writer.writerow([])
+        write_statement(
+            writer,
+            "INCOME STATEMENT (LAST 3 YEARS)",
+            income_stmt.map(to_crores),
+            income_stmt_sub_rows,
+        )
 
         # Write Balance Sheet
-        writer.writerow(["-" * 30])
-        writer.writerow(["BALANCE SHEET (LAST 3 YEARS)"] + ["all figures in Cr."])
-        writer.writerow(["-" * 30])
-        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
-        balance_sheet_csv = balance_sheet.map(to_crores).reset_index()
-        writer.writerows(balance_sheet_csv.values)
-        writer.writerow([])
+        write_statement(
+            writer,
+            "BALANCE SHEET (LAST 3 YEARS)",
+            balance_sheet.map(to_crores),
+            balance_sheet_sub_rows,
+        )
 
         # Write Cash Flow Statement
-        writer.writerow(["-" * 30])
-        writer.writerow(["CASH FLOW STATEMENT (LAST 3 YEARS)"] + ["all figures in Cr."])
-        writer.writerow(["-" * 30])
-        writer.writerow(["YEAR"] + [f"{date}" for date in formatted_dates])
-        cash_flow_csv = cash_flow.map(to_crores).reset_index()
-        writer.writerows(cash_flow_csv.values)
-        writer.writerow([])
+        write_statement(
+            writer,
+            "CASH FLOW STATEMENT (LAST 3 YEARS)",
+            cash_flow.map(to_crores),
+            cash_flow_sub_rows,
+        )
 
         # Write Advanced Analysis
         writer.writerow(["-" * 30])
