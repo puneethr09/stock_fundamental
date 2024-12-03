@@ -189,38 +189,35 @@ def analyze_ratios(ratios_df):
     normalized_ratios_df = normalize_data(ratios_df)
 
     # Prepare data for plotting
-    # years = normalized_ratios_df["Year"]
+    years = normalized_ratios_df["Year"]
     normalized_ratios_df.set_index("Year", inplace=True)
 
     # Plotting all normalized financial ratios
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(14, 8))
 
     # remove "Company" from plotting
     normalized_ratios_df = normalized_ratios_df.drop("Company", axis=1)
 
     for column in normalized_ratios_df.columns:
-        plt.plot(
-            normalized_ratios_df.index,
-            normalized_ratios_df[column],
-            marker="o",
-            label=column,
-        )
+        plt.plot(normalized_ratios_df.index, normalized_ratios_df[column], marker='o', label=column)
 
     plt.title(f"Normalized Financial Ratios for {company_name} Over the Years")
     plt.xlabel("Year")
     plt.ylabel("Z-Score Normalized Value")
     plt.xticks(rotation=45)
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(
-        os.path.join(
-            full_path,
-            f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png",
-        )
-    )
-    plt.close()
+    
+    # Set y-axis limits if necessary
+    plt.ylim(-2, 2)  # Adjust based on expected Z-score range
 
+    # Enable grid with minor ticks
+    plt.grid(which='both', linestyle='--', linewidth=0.5)
+    plt.minorticks_on()  # Enable minor ticks
+    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')  # Minor grid lines
+
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(full_path, f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png"))
+    plt.close()
 
 def main():
     ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"
