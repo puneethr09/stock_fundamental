@@ -9,9 +9,35 @@
 <body>
     <h1>Stock Analysis</h1>
     <form action="/analyze" method="post">
-        <label for="ticker">Enter Stock Ticker:</label>
-        <input type="text" id="ticker" name="ticker" required>
+        <label for="ticker-input">Enter Stock Ticker:</label>
+        <input type="text" id="ticker-input" name="ticker" placeholder="Enter company name or ticker" autocomplete="off" required>
+        <ul id="suggestions-list"></ul>
         <button type="submit">Analyze</button>
     </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#ticker-input').on('input', function() {
+                let query = $(this).val();
+                if (query.length > 1) {
+                    $.get('/suggest', { query: query }, function(data) {
+                        $('#suggestions-list').empty();
+                        $.each(data.suggestions, function(name, ticker) {
+                            $('#suggestions-list').append(`<li>${name} (${ticker})</li>`);
+                        });
+                    });
+                } else {
+                    $('#suggestions-list').empty();
+                }
+            });
+
+            // Handle suggestion click
+            $(document).on('click', '#suggestions-list li', function() {
+                $('#ticker-input').val($(this).text());
+                $('#suggestions-list').empty();
+            });
+        });
+    </script>
 </body>
 </html>

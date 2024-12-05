@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request
 import pandas as pd
+import os
 from src.basic_analysis import get_financial_ratios, analyze_ratios
+
 app = Flask(__name__)
 
 
@@ -9,20 +11,64 @@ def home():
     return render_template("index.html")
 
 
-@app.route('/analyze', methods=['POST'])
+@app.route("/analyze", methods=["POST"])
 def analyze():
-    ticker = request.form['ticker'].upper() + ".NS"  # Ensure ticker is formatted correctly
+    ticker = (
+        request.form["ticker"].upper() + ".NS"
+    )  # Ensure ticker is formatted correctly
     try:
         ratios_df = get_financial_ratios(ticker)
 
         if ratios_df is not None and not ratios_df.empty:
-            plot_filename = analyze_ratios(ratios_df)  # Call analyze_ratios to get the plot filename
-            company_name = ratios_df["Company"].iloc[0]  # Get the company name from the DataFrame
-            return render_template('results.html', tables=[ratios_df.to_html(classes='data')], titles=ratios_df.columns.values, plot=plot_filename, company_name=company_name)
+            plot_filename = analyze_ratios(
+                ratios_df
+            )  # Call analyze_ratios to get the plot filename
+            company_name = ratios_df["Company"].iloc[
+                0
+            ]  # Get the company name from the DataFrame
+            return render_template(
+                "results.html",
+                tables=[ratios_df.to_html(classes="data")],
+                titles=ratios_df.columns.values,
+                plot=plot_filename,
+                company_name=company_name,
+            )
         else:
-            return render_template('results.html', error="No data available for the provided ticker.")
+            return render_template(
+                "results.html", error="No data available for the provided ticker."
+            )
     except Exception as e:
-        return render_template('results.html', error=f"An error occurred: {e}")
+        return render_template("results.html", error=f"An error occurred: {e}")
+
+
+# Load company data from CSV files in the input directory
+def load_company_data():
+    input_dir = "input"
+    company_data = pd.DataFrame()
+
+    for file in os.listdir(input_dir):
+        if file.endswith(".csv"):
+            df = pd.read_csv(os.path.join(input_dir, file))
+            company_data = pd.concat([company_data, df], ignore_index=True)
+
+    return company_data[["Company Name", "Ticker"]]
+
+
+# Load the company data at the start
+company_data = load_company_data()
+
+
+@app.route("/suggest", methods=["GET"])
+def suggest():
+    query = request.args.get("query", "").strip()
+    suggestions = company_data[
+        company_data["Company Name"].str.contains(query, case=False, na=False)
+    ]
+    result = {
+        row["Company Name"]: row["Ticker"] for index, row in suggestions.iterrows()
+    }
+    return {"suggestions": result}
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
