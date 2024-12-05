@@ -24,7 +24,7 @@
                     $.get('/suggest', { query: query }, function(data) {
                         $('#suggestions-list').empty();
                         $.each(data.suggestions, function(name, ticker) {
-                            $('#suggestions-list').append(`<li>${name} (${ticker})</li>`);
+                            $('#suggestions-list').append(`<li data-ticker="${ticker}">${name} (${ticker})</li>`);
                         });
                     });
                 } else {
@@ -34,7 +34,8 @@
 
             // Handle suggestion click
             $(document).on('click', '#suggestions-list li', function() {
-                $('#ticker-input').val($(this).text());
+                // Set the input value to the ticker symbol
+                $('#ticker-input').val($(this).data('ticker'));
                 $('#suggestions-list').empty();
             });
         });
