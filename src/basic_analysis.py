@@ -1,5 +1,9 @@
 import yfinance as yf
 import pandas as pd
+
+import matplotlib
+
+matplotlib.use("Agg")  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -143,6 +147,9 @@ def normalize_data(ratios_df):
     return normalized_df
 
 
+import os
+
+
 def analyze_ratios(ratios_df):
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
@@ -175,15 +182,9 @@ def analyze_ratios(ratios_df):
             "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
         )
 
-    # Create directory structure
-    main_folder = "Stock_Analysis"  # Main folder name
-    company_folder = company_name.replace(
-        " ", "_"
-    )  # Replace spaces with underscores for folder name
-    full_path = os.path.join(main_folder, company_folder)
-
-    # Create directories if they do not exist
-    os.makedirs(full_path, exist_ok=True)
+    # Create a static directory if it doesn't exist
+    static_folder = os.path.join(os.getcwd(), "static")
+    os.makedirs(static_folder, exist_ok=True)
 
     # Normalize the data using Z-Score normalization
     normalized_ratios_df = normalize_data(ratios_df)
@@ -194,30 +195,37 @@ def analyze_ratios(ratios_df):
 
     # Plotting all normalized financial ratios
     plt.figure(figsize=(14, 8))
-
-    # remove "Company" from plotting
     normalized_ratios_df = normalized_ratios_df.drop("Company", axis=1)
 
     for column in normalized_ratios_df.columns:
-        plt.plot(normalized_ratios_df.index, normalized_ratios_df[column], marker='o', label=column)
+        plt.plot(
+            normalized_ratios_df.index,
+            normalized_ratios_df[column],
+            marker="o",
+            label=column,
+        )
 
     plt.title(f"Normalized Financial Ratios for {company_name} Over the Years")
     plt.xlabel("Year")
     plt.ylabel("Z-Score Normalized Value")
     plt.xticks(rotation=45)
-    
-    # Set y-axis limits if necessary
     plt.ylim(-2, 2)  # Adjust based on expected Z-score range
-
-    # Enable grid with minor ticks
-    plt.grid(which='both', linestyle='--', linewidth=0.5)
-    plt.minorticks_on()  # Enable minor ticks
-    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')  # Minor grid lines
-
+    plt.grid(which="both", linestyle="--", linewidth=0.5)
+    plt.minorticks_on()
+    plt.grid(which="minor", linestyle=":", linewidth="0.5", color="gray")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(full_path, f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png"))
+
+    # Save the plot in the static folder
+    plot_filename = os.path.join(
+        static_folder,
+        f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png",
+    )
+    plt.savefig(plot_filename)
     plt.close()
+
+    return plot_filename  # Return the path to the saved plot
+
 
 def main():
     ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"
