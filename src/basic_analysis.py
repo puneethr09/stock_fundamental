@@ -183,7 +183,7 @@ def analyze_ratios(ratios_df):
         )
 
     # Create a static directory if it doesn't exist
-    static_folder = os.path.join(os.getcwd(), 'static')
+    static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
     # Normalize the data using Z-Score normalization
@@ -198,25 +198,34 @@ def analyze_ratios(ratios_df):
     normalized_ratios_df = normalized_ratios_df.drop("Company", axis=1)
 
     for column in normalized_ratios_df.columns:
-        plt.plot(normalized_ratios_df.index, normalized_ratios_df[column], marker='o', label=column)
+        plt.plot(
+            normalized_ratios_df.index,
+            normalized_ratios_df[column],
+            marker="o",
+            label=column,
+        )
 
     plt.title(f"Normalized Financial Ratios for {company_name} Over the Years")
     plt.xlabel("Year")
     plt.ylabel("Z-Score Normalized Value")
     plt.xticks(rotation=45)
     plt.ylim(-2, 2)  # Adjust based on expected Z-score range
-    plt.grid(which='both', linestyle='--', linewidth=0.5)
+    plt.grid(which="both", linestyle="--", linewidth=0.5)
     plt.minorticks_on()
-    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
+    plt.grid(which="minor", linestyle=":", linewidth="0.5", color="gray")
     plt.legend()
     plt.tight_layout()
 
     # Save the plot in the static folder
-    plot_filename = os.path.join(static_folder, f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png")
+    plot_filename = os.path.join(
+        static_folder,
+        f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png",
+    )
     plt.savefig(plot_filename)
     plt.close()
 
     return plot_filename  # Return the path to the saved plot
+
 
 def main():
     ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"
