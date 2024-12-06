@@ -1,0 +1,8 @@
+services:
+  stock-analysis-app:
+    build: .
+    ports:
+      - "5000:5000"  # Replace with your app's port if different
+    volumes:
+      - ./data:/app/data  # Mount a local folder for persistent storage
+    restart: always
