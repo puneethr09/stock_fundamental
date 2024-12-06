@@ -11,21 +11,18 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/analyze", methods=["POST"])
+@app.route("/analyze", methods=["POST", "GET"])
 def analyze():
-    ticker = (
-        request.form["ticker"].upper() + ".NS"
-    )  # Ensure ticker is formatted correctly
+    if request.method == "POST":
+        ticker = request.form["ticker"].upper() + ".NS"
+    else:
+        ticker = request.args.get("ticker", "").upper() + ".NS"
+
     try:
         ratios_df = get_financial_ratios(ticker)
-
         if ratios_df is not None and not ratios_df.empty:
-            plot_filename = analyze_ratios(
-                ratios_df
-            )  # Call analyze_ratios to get the plot filename
-            company_name = ratios_df["Company"].iloc[
-                0
-            ]  # Get the company name from the DataFrame
+            plot_filename = analyze_ratios(ratios_df)
+            company_name = ratios_df["Company"].iloc[0]
             return render_template(
                 "results.html",
                 tables=[ratios_df.to_html(classes="data")],
@@ -71,4 +68,4 @@ def suggest():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5010, debug=True)
