@@ -1,63 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ company_name }} analysis</title>
-</head>
-<body>
-  <div class="search-container">
-      <input type="text" id="ticker-input" placeholder="Enter company name or ticker" autocomplete="off">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ company_name }} analysis</title>
+  </head>
+  <body>
+    <div class="search-container">
+      <input
+        type="text"
+        id="ticker-input"
+        placeholder="Enter company name or ticker"
+        autocomplete="off"
+      />
       <ul id="suggestions-list"></ul>
       <button onclick="analyzeStock()">Analyze</button>
-  </div>
+    </div>
 
-  {% if error %}
-      <p class="error">{{ error }}</p>
-  {% else %}
-      <h2>Analysis Results for {{ company_name }}</h2>
-      <h2>Financial Ratios</h2>
-      {% for table in tables %} {{ table|safe }} {% endfor %}
-      <h2>Normalized Financial Ratios Plot</h2>
-      <img
-        src="{{ url_for('static', filename=plot.split('/')[-1]) }}"
-        alt="Normalized Financial Ratios Plot"
-        style="max-width: 100%; height: auto"
-      />
-  {% endif %}
-  <a href="/">Back</a>
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% else %}
+    <h1 style="text-decoration: underline">Analysis for {{ company_name }}</h1>
+    <h2>Financial Ratios</h2>
+    {% for table in tables %} {{ table|safe }} {% endfor %}
+    <h2>Normalized Financial Ratios Plot</h2>
+    <img
+      src="{{ url_for('static', filename=plot.split('/')[-1]) }}"
+      alt="Normalized Financial Ratios Plot"
+      style="max-width: 100%; height: auto"
+    />
+    <h2>Financial Ratios Warnings</h2>
+    <div class="warning">
+      {% if not warnings %}
+      <p>None</p>
+      {% endif %} {% for warning in warnings %}
+      <p>{{ warning }}</p>
+      {% endfor %}
+    </div>
+    <div class="explanation">
+      {% for explanation in explanations %}
+      <p>{{ explanation }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <!-- add blank lines to the bottom of the html file -->
+    <br />
+    <br />
+    <a href="/">Back</a>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-      $(document).ready(function() {
-          // Autocomplete functionality
-          $('#ticker-input').on('input', function() {
-              let query = $(this).val();
-              if (query.length > 1) {
-                  $.get('/suggest', { query: query }, function(data) {
-                      $('#suggestions-list').empty();
-                      $.each(data.suggestions, function(name, ticker) {
-                          $('#suggestions-list').append(`<li data-ticker="${ticker}">${name} (${ticker})</li>`);
-                      });
-                  });
-              } else {
-                  $('#suggestions-list').empty();
-              }
-          });
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Autocomplete functionality
+        $("#ticker-input").on("input", function () {
+          let query = $(this).val();
+          if (query.length > 1) {
+            $.get("/suggest", { query: query }, function (data) {
+              $("#suggestions-list").empty();
+              $.each(data.suggestions, function (name, ticker) {
+                $("#suggestions-list").append(
+                  `<li data-ticker="${ticker}">${name} (${ticker})</li>`
+                );
+              });
+            });
+          } else {
+            $("#suggestions-list").empty();
+          }
+        });
 
-          // Handle suggestion click
-          $(document).on('click', '#suggestions-list li', function() {
-              $('#ticker-input').val($(this).data('ticker'));
-              $('#suggestions-list').empty();
-          });
+        // Handle suggestion click
+        $(document).on("click", "#suggestions-list li", function () {
+          $("#ticker-input").val($(this).data("ticker"));
+          $("#suggestions-list").empty();
+        });
       });
 
       function analyzeStock() {
-          const ticker = $('#ticker-input').val();
-          if (ticker) {
-              window.location.href = `/analyze?ticker=${ticker}`;
-          }
+        const ticker = $("#ticker-input").val();
+        if (ticker) {
+          window.location.href = `/analyze?ticker=${ticker}`;
+        }
       }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

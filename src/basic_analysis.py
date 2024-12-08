@@ -43,60 +43,110 @@ def get_financial_ratios(ticker):
     income_stmt = income_stmt.apply(pd.to_numeric, errors="coerce")
 
     # Calculate financial ratios
-    roe = (
-        income_stmt.loc["Net Income", income_stmt.columns]
-        / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
-    )
+    try:
+        roe = (
+            income_stmt.loc["Net Income", income_stmt.columns]
+            / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
+        )
+    except:
+        # Handle the case where the calculation fails roe should be NaN for all  years
+        roe = pd.Series(np.nan, index=income_stmt.columns)
 
-    roa = (
-        income_stmt.loc["Net Income", income_stmt.columns]
-        / balance_sheet.loc["Total Assets", balance_sheet.columns]
-    )
+    try:
+        roa = (
+            income_stmt.loc["Net Income", income_stmt.columns]
+            / balance_sheet.loc["Total Assets", balance_sheet.columns]
+        )
+    except:
+        # Handle the case where the calculation fails roa should be NaN for all  years
+        roa = pd.Series(np.nan, index=income_stmt.columns)
 
-    roic = (
-        cash_flow.loc["Operating Cash Flow", cash_flow.columns]
-        / income_stmt.loc["Total Revenue", income_stmt.columns]
-    )
+    try:
+        roic = (
+            cash_flow.loc["Operating Cash Flow", cash_flow.columns]
+            / income_stmt.loc["Total Revenue", income_stmt.columns]
+        )
+    except:
+        # Handle the case where the calculation fails roic should be NaN for all  years
+        roic = pd.Series(np.nan, index=cash_flow.columns)
 
-    quick_ratio = (
-        balance_sheet.loc["Current Assets", balance_sheet.columns]
-        - balance_sheet.loc["Inventory", balance_sheet.columns]
-        - balance_sheet.loc["Prepaid Assets", balance_sheet.columns]
-    ) / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
+    try:
+        quick_ratio = (
+            balance_sheet.loc["Current Assets", balance_sheet.columns]
+            - (
+                balance_sheet.loc["Inventory", balance_sheet.columns]
+                if "Inventory" in balance_sheet.index
+                else pd.Series(0, index=balance_sheet.columns)
+            )
+            - balance_sheet.loc["Prepaid Assets", balance_sheet.columns]
+        ) / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
+    except:
+        # Handle the case where the calculation fails quick_ratio should be NaN for all  years
+        quick_ratio = pd.Series(np.nan, index=balance_sheet.columns)
 
-    current_ratio = (
-        balance_sheet.loc["Current Assets", balance_sheet.columns]
-        / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
-    )
+    try:
+        current_ratio = (
+            balance_sheet.loc["Current Assets", balance_sheet.columns]
+            / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
+        )
+    except:
+        # Handle the case where the calculation fails current_ratio should be NaN for all  years
+        current_ratio = pd.Series(np.nan, index=balance_sheet.columns)
 
-    debt_to_equity = (
-        balance_sheet.loc["Total Debt", balance_sheet.columns]
-        / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
-    )
+    try:
+        debt_to_equity = (
+            balance_sheet.loc["Total Debt", balance_sheet.columns]
+            / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
+        )
+    except:
+        # Handle the case where the calculation fails debt_to_equity should be NaN for all  years
+        debt_to_equity = pd.Series(np.nan, index=balance_sheet.columns)
 
-    eps = (
-        income_stmt.loc["Diluted EPS", income_stmt.columns] * 1000000
-    )  # Convert to millions
-    eps.index = eps.index.tz_localize(None)  # Make EPS index timezone-naive
+    try:
+        eps = (
+            income_stmt.loc["Diluted EPS", income_stmt.columns] * 1000000
+        )  # Convert to millions
+        eps.index = eps.index.tz_localize(None)  # Make EPS index timezone-naive
+    except:
+        # Handle the case where the calculation fails eps should be NaN for all  years
+        eps = pd.Series(np.nan, index=income_stmt.columns)
 
-    pe_ratios = (
-        historical_data["Close"].reindex(eps.index) / eps
-    )  # Calculate P/E for each year
+    try:
+        pe_ratios = (
+            historical_data["Close"].reindex(eps.index) / eps
+        )  # Calculate P/E for each year
+    except:
+        # Handle the case where the calculation fails pe_ratios should be NaN for all  years
+        pe_ratios = pd.Series(np.nan, index=eps.index)
 
     # Earnings Before Interest and Taxes (EBIT)
-    ebit = (
-        income_stmt.loc["Total Revenue", income_stmt.columns]
-        - income_stmt.loc["Operating Expense", income_stmt.columns]
-    )
+    try:
+        ebit = (
+            income_stmt.loc["Total Revenue", income_stmt.columns]
+            - income_stmt.loc["Operating Expense", income_stmt.columns]
+        )
+    except:
+        # Handle the case where the calculation fails ebit should be NaN for all  years
+        ebit = pd.Series(np.nan, index=income_stmt.columns)
 
     # EBIT Margin
-    ebit_margin = (ebit / income_stmt.loc["Total Revenue", income_stmt.columns]) * 100
+    try:
+        ebit_margin = (
+            ebit / income_stmt.loc["Total Revenue", income_stmt.columns]
+        ) * 100
+    except:
+        # Handle the case where the calculation fails ebit_margin should be NaN for all  years
+        ebit_margin = pd.Series(np.nan, index=income_stmt.columns)
 
     # Return on Investment (ROI)
-    roi = (
-        income_stmt.loc["Net Income", income_stmt.columns]
-        / balance_sheet.loc["Total Assets", balance_sheet.columns]
-    ) * 100
+    try:
+        roi = (
+            income_stmt.loc["Net Income", income_stmt.columns]
+            / balance_sheet.loc["Total Assets", balance_sheet.columns]
+        ) * 100
+    except:
+        # Handle the case where the calculation fails roi should be NaN for all  years
+        roi = pd.Series(np.nan, index=income_stmt.columns)
 
     # Set the index to be the years
     roe.index = pd.to_datetime(roe.index, format="%Y-%m-%d").year
@@ -153,9 +203,11 @@ import os
 def analyze_ratios(ratios_df):
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
-        return
+        return [], []
 
     company_name = ratios_df["Company"].unique()[0]
+    warnings = []
+    explanations = []
 
     # Print all financial ratios for the last three years
     print(f"\nFinancial Ratios for '{company_name}' :")
@@ -168,19 +220,15 @@ def analyze_ratios(ratios_df):
 
     # Simple Risk Assessment
     if latest_ratios["ROE"] < 10:
-        print(
-            "Warning: Low Return on Equity (ROE) indicates potential underperformance."
-        )
+        warnings.append("Warning: Low Return on Equity (ROE) indicates potential underperformance.")
+
     if latest_ratios["Current Ratio"] < 1:
-        print("Warning: Current Ratio below 1 indicates potential liquidity issues.")
-        print(
-            "Explanation: A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems."
-        )
+        warnings.append("Warning: Current Ratio below 1 indicates potential liquidity issues.")
+        explanations.append("Explanation: A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems.")
+
     if latest_ratios["Debt to Equity"] > 1:
-        print("Warning: High Debt to Equity ratio indicates higher financial risk.")
-        print(
-            "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
-        )
+        warnings.append("Warning: High Debt to Equity ratio indicates higher financial risk.")
+        explanations.append("Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk.")
 
     # Create a static directory if it doesn't exist
     static_folder = os.path.join(os.getcwd(), "static")
@@ -224,8 +272,7 @@ def analyze_ratios(ratios_df):
     plt.savefig(plot_filename)
     plt.close()
 
-    return plot_filename  # Return the path to the saved plot
-
+    return warnings, explanations, plot_filename  # Return the path to the saved plot
 
 def main():
     ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"

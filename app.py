@@ -21,13 +21,15 @@ def analyze():
     try:
         ratios_df = get_financial_ratios(ticker)
         if ratios_df is not None and not ratios_df.empty:
-            plot_filename = analyze_ratios(ratios_df)
+            warnings, explanations, plot_filename = analyze_ratios(ratios_df)
             company_name = ratios_df["Company"].iloc[0]
             return render_template(
                 "results.html",
                 tables=[ratios_df.to_html(classes="data")],
                 titles=ratios_df.columns.values,
                 plot=plot_filename,
+                warnings=warnings,
+                explanations=explanations,
                 company_name=company_name,
             )
         else:
