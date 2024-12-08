@@ -27,17 +27,23 @@ def analyze():
                 "results.html",
                 tables=[ratios_df.to_html(classes="data")],
                 titles=ratios_df.columns.values,
-                plot=plot_filename,
+                plot_filename=plot_filename,
                 warnings=warnings,
                 explanations=explanations,
                 company_name=company_name,
             )
         else:
             return render_template(
-                "results.html", error="No data available for the provided ticker."
+                "results.html", 
+                error="No data available for the provided ticker.",
+                plot_filename=[]
             )
     except Exception as e:
-        return render_template("results.html", error=f"An error occurred: {e}")
+        return render_template(
+            "results.html", 
+            error=f"An error occurred: {e}",
+            plot_filename=[]
+        )
 
 
 # Load company data from CSV files in the input directory
@@ -70,4 +76,4 @@ def suggest():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5010, debug=True)

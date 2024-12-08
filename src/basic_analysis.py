@@ -197,9 +197,6 @@ def normalize_data(ratios_df):
     return normalized_df
 
 
-import os
-
-
 def analyze_ratios(ratios_df):
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
@@ -220,59 +217,119 @@ def analyze_ratios(ratios_df):
 
     # Simple Risk Assessment
     if latest_ratios["ROE"] < 10:
-        warnings.append("Warning: Low Return on Equity (ROE) indicates potential underperformance.")
+        warnings.append(
+            "Warning: Low Return on Equity (ROE) indicates potential underperformance."
+        )
 
     if latest_ratios["Current Ratio"] < 1:
-        warnings.append("Warning: Current Ratio below 1 indicates potential liquidity issues.")
-        explanations.append("Explanation: A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems.")
+        warnings.append(
+            "Warning: Current Ratio below 1 indicates potential liquidity issues."
+        )
+        explanations.append(
+            "Explanation: A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems."
+        )
 
     if latest_ratios["Debt to Equity"] > 1:
-        warnings.append("Warning: High Debt to Equity ratio indicates higher financial risk.")
-        explanations.append("Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk.")
+        warnings.append(
+            "Warning: High Debt to Equity ratio indicates higher financial risk."
+        )
+        explanations.append(
+            "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
+        )
 
     # Create a static directory if it doesn't exist
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Normalize the data using Z-Score normalization
-    normalized_ratios_df = normalize_data(ratios_df)
+    # Plot ratios
+    plots = plot_ratios(ratios_df, company_name)
 
-    # Prepare data for plotting
-    years = normalized_ratios_df["Year"]
-    normalized_ratios_df.set_index("Year", inplace=True)
+    return warnings, explanations, plots
 
-    # Plotting all normalized financial ratios
+
+def plot_ratios(ratios_df, company_name):
+    # Create a directory for saving plots
+    static_folder = os.path.join(os.getcwd(), "static")
+    os.makedirs(static_folder, exist_ok=True)
+
+    # Plot 1: ROE, ROA, ROIC, ROI
+    plt.figure(figsize=(10, 6))
+    plt.plot(ratios_df["Year"], ratios_df["ROE"], marker="o", label="ROE")
+    plt.plot(ratios_df["Year"], ratios_df["ROA"], marker="o", label="ROA")
+    plt.plot(ratios_df["Year"], ratios_df["ROIC"], marker="o", label="ROIC")
+    plt.plot(ratios_df["Year"], ratios_df["ROI"], marker="o", label="ROI")
+    plt.title(f"ROE, ROA, ROIC, ROI for {company_name}")
+    plt.xlabel("Year")
+    plt.ylabel("Percentage")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_folder, f"{company_name}_roe_roa_roic_roi.png"))
+    plt.close()
+
+    # Plot 2: Quick Ratio and Current Ratio
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        ratios_df["Year"], ratios_df["Quick Ratio"], marker="o", label="Quick Ratio"
+    )
+    plt.plot(
+        ratios_df["Year"], ratios_df["Current Ratio"], marker="o", label="Current Ratio"
+    )
+    plt.title(f"Quick Ratio and Current Ratio for {company_name}")
+    plt.xlabel("Year")
+    plt.ylabel("Ratio")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_folder, f"{company_name}_quick_current_ratio.png"))
+    plt.close()
+
+    # Plot 3: Debt to Equity, P/E Ratio, EBIT Margin
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        ratios_df["Year"],
+        ratios_df["Debt to Equity"],
+        marker="o",
+        label="Debt to Equity",
+    )
+    plt.plot(ratios_df["Year"], ratios_df["P/E Ratio"], marker="o", label="P/E Ratio")
+    plt.plot(
+        ratios_df["Year"], ratios_df["EBIT Margin"], marker="o", label="EBIT Margin"
+    )
+    plt.title(f"Debt to Equity, P/E Ratio, EBIT Margin for {company_name}")
+    plt.xlabel("Year")
+    plt.ylabel("Ratio")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_folder, f"{company_name}_debt_pe_ebit_margin.png"))
+    plt.close()
+
+    # Plot 4: Normalized Ratios
+    normalized_df = normalize_data(ratios_df)
     plt.figure(figsize=(14, 8))
-    normalized_ratios_df = normalized_ratios_df.drop("Company", axis=1)
-
-    for column in normalized_ratios_df.columns:
-        plt.plot(
-            normalized_ratios_df.index,
-            normalized_ratios_df[column],
-            marker="o",
-            label=column,
-        )
-
-    plt.title(f"Normalized Financial Ratios for {company_name} Over the Years")
+    for column in normalized_df.columns[1:-1]:  # Skip Year and Company columns
+        plt.plot(normalized_df["Year"], normalized_df[column], marker="o", label=column)
+    plt.title(f"Normalized Financial Ratios for {company_name}")
     plt.xlabel("Year")
     plt.ylabel("Z-Score Normalized Value")
     plt.xticks(rotation=45)
-    plt.ylim(-2, 2)  # Adjust based on expected Z-score range
+    plt.ylim(-2, 2)
     plt.grid(which="both", linestyle="--", linewidth=0.5)
     plt.minorticks_on()
     plt.grid(which="minor", linestyle=":", linewidth="0.5", color="gray")
     plt.legend()
     plt.tight_layout()
-
-    # Save the plot in the static folder
-    plot_filename = os.path.join(
-        static_folder,
-        f"{company_name.replace(' ', '_')}_normalized_financial_ratios_line_plot.png",
-    )
-    plt.savefig(plot_filename)
+    plt.savefig(os.path.join(static_folder, f"{company_name}_normalized_ratios.png"))
     plt.close()
 
-    return warnings, explanations, plot_filename  # Return the path to the saved plot
+    return [
+        f"{company_name}_normalized_ratios.png",
+        f"{company_name}_roe_roa_roic_roi.png",
+        f"{company_name}_quick_current_ratio.png",
+        f"{company_name}_debt_pe_ebit_margin.png",
+    ]
+
 
 def main():
     ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"

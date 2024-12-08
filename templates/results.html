@@ -3,37 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ company_name }} analysis</title>
+    <title>Financial Ratios Analysis</title>
+    <style>
+      table {
+        width: 70%;
+        margin: 20px auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .warning {
+        color: red;
+        font-weight: bold;
+        text-align: center;
+      }
+      .explanation {
+        color: orange;
+        text-align: center;
+      }
+      .plot {
+        text-align: center;
+        margin: 20px;
+      }
+      .search-box {
+        text-align: center;
+        margin: 20px;
+      }
+      .home-button {
+        text-align: center;
+        margin: 20px;
+      }
+    </style>
   </head>
   <body>
-    <div class="search-container">
-      <input
-        type="text"
-        id="ticker-input"
-        placeholder="Enter company name or ticker"
-        autocomplete="off"
-      />
-      <ul id="suggestions-list"></ul>
-      <button onclick="analyzeStock()">Analyze</button>
+    <h1 style="text-align: center">
+      <!-- underline the title-->
+      <u>Financial Ratios Analysis for {{company_name}}</u>
+    </h1>
+    <br />
+    <h2 style="text-align: center">Ratios</h2>
+    <div style="text-align: center">
+      {% for table in tables %} {{ table|safe }} {% endfor %}
     </div>
-
-    {% if error %}
-    <p class="error">{{ error }}</p>
-    {% else %}
-    <h1 style="text-decoration: underline">Analysis for {{ company_name }}</h1>
-    <h2>Financial Ratios</h2>
-    {% for table in tables %} {{ table|safe }} {% endfor %}
-    <h2>Normalized Financial Ratios Plot</h2>
-    <img
-      src="{{ url_for('static', filename=plot.split('/')[-1]) }}"
-      alt="Normalized Financial Ratios Plot"
-      style="max-width: 100%; height: auto"
-    />
-    <h2>Financial Ratios Warnings</h2>
     <div class="warning">
-      {% if not warnings %}
-      <p>None</p>
-      {% endif %} {% for warning in warnings %}
+      {% for warning in warnings %}
       <p>{{ warning }}</p>
       {% endfor %}
     </div>
@@ -42,16 +62,46 @@
       <p>{{ explanation }}</p>
       {% endfor %}
     </div>
-    {% endif %}
-    <!-- add blank lines to the bottom of the html file -->
     <br />
+    <div class="plot">
+      <h2>Generated Plots</h2>
+      <img
+        src="{{ url_for('static', filename=plot_filename[0]) }}"
+        alt="Normalized Ratios Plot"
+      />
+      <img
+        src="{{ url_for('static', filename=plot_filename[1]) }}"
+        alt="ROE, ROA, ROIC, ROI Plot"
+      />
+      <img
+        src="{{ url_for('static', filename=plot_filename[2]) }}"
+        alt="Quick Ratio and Current Ratio Plot"
+      />
+      <img
+        src="{{ url_for('static', filename=plot_filename[3]) }}"
+        alt="Debt to Equity, P/E Ratio, EBIT Margin Plot"
+      />
+    </div>
     <br />
-    <a href="/">Back</a>
+    <div class="search-box">
+      <h2>Search for Another Stock</h2>
+      <form action="{{ url_for('analyze') }}" method="get">
+        <input
+          type="text"
+          id="ticker-input"
+          name="ticker"
+          placeholder="Enter company name or ticker"
+          autocomplete="off"
+          required
+        />
+        <ul id="suggestions-list"></ul>
+        <input type="submit" value="Search" />
+      </form>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
-        // Autocomplete functionality
         $("#ticker-input").on("input", function () {
           let query = $(this).val();
           if (query.length > 1) {
@@ -74,13 +124,12 @@
           $("#suggestions-list").empty();
         });
       });
-
-      function analyzeStock() {
-        const ticker = $("#ticker-input").val();
-        if (ticker) {
-          window.location.href = `/analyze?ticker=${ticker}`;
-        }
-      }
     </script>
+    <!-- Home Button -->
+    <div class="home-button">
+      <a href="{{ url_for('home') }}">
+        <button>Home</button>
+      </a>
+    </div>
   </body>
 </html>
