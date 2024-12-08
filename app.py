@@ -34,15 +34,13 @@ def analyze():
             )
         else:
             return render_template(
-                "results.html", 
+                "results.html",
                 error="No data available for the provided ticker.",
-                plot_filename=[]
+                plot_filename=[],
             )
     except Exception as e:
         return render_template(
-            "results.html", 
-            error=f"An error occurred: {e}",
-            plot_filename=[]
+            "results.html", error=f"An error occurred: {e}", plot_filename=[]
         )
 
 
@@ -76,4 +74,4 @@ def suggest():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5010, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
