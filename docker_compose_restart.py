@@ -7,6 +7,9 @@ def run_shell_command(command):
 
 # Main function to execute all steps
 def main():
+    # git cheeck for update and do it
+    run_shell_command('git pull')
+
     # Stop any running containers
     run_shell_command('docker compose down')
     
