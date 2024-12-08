@@ -5,6 +5,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Analysis</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        form {
+            text-align: center;
+        }
+
+        label {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        #ticker-input {
+            width: 400px;
+            height: 50px;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 0.8rem 2rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #suggestions-list {
+            width: 400px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        #suggestions-list li {
+            padding: 0.5rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        #suggestions-list li:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
     <h1>Stock Analysis</h1>
