@@ -43,16 +43,16 @@
         padding: 10px;
         text-align: right;
         border: 1px solid #ddd;
-        background-color: white;  /* White background for cells */
+        background-color: white; /* White background for cells */
       }
 
       /* Zebra striping for rows */
       .data tr:nth-child(even) td {
-        background-color: #f0f7ff;  /* Lighter blue for alternate rows */
+        background-color: #f0f7ff; /* Lighter blue for alternate rows */
       }
       /* Hover effect */
       .data tr:hover td {
-        background-color: #f5f5f5 !important;  /* Use !important to override other styles */
+        background-color: #f5f5f5 !important; /* Use !important to override other styles */
       }
       /* Color coding for values */
       .positive {
@@ -63,15 +63,15 @@
         color: #dc3545;
       }
       .warning {
-        color: #e74c3c;  /* Softer red */
-        /* or #ff6b6b */  /* Even softer coral red */
-        font-weight: 500;  /* Slightly less bold */
+        /* color: #e74c3c;  Softer red */
+        color: #ff6b6b; /* Even softer coral red */
+        font-weight: 500; /* Slightly less bold */
         text-align: center;
         padding: 10px;
         line-height: 1.5;
       }
       .explanation {
-        color: #2c3e50;  /* Dark blue color */
+        color: #2c3e50; /* Dark blue color */
         text-align: center;
       }
       .plot {
@@ -191,7 +191,6 @@
       <u>Financial Ratios Analysis for {{company_name}}</u>
     </h1>
     <br />
-    <h2 style="text-align: center">Ratios</h2>
     <div style="text-align: center">
       {% for table in tables %}
       <div class="table-responsive">{{ table|safe }}</div>
@@ -209,7 +208,6 @@
     </div>
     <br />
     <div class="plot">
-      <h2>Generated Plots</h2>
       <img
         src="{{ url_for('static', filename=plot_filename[0]) }}"
         alt="Normalized Ratios Plot"
@@ -289,20 +287,21 @@
       });
     </script>
     <script>
-      $(document).ready(function() {
+      $(document).ready(function () {
         // Format numbers in table
-        $('.data td').each(function() {
+        $(".data td").each(function () {
           let value = parseFloat($(this).text());
           if (!isNaN(value)) {
             // Special handling for Year column
-            if ($(this).index() === 0) {  // First column (Year)
-              $(this).text(Math.round(value));  // Round to whole number
+            if ($(this).index() === 0) {
+              // First column (Year)
+              $(this).text(Math.round(value)); // Round to whole number
             } else {
               // Add color classes based on value
               if (value > 0) {
-                $(this).addClass('positive');
+                $(this).addClass("positive");
               } else if (value < 0) {
-                $(this).addClass('negative');
+                $(this).addClass("negative");
               }
               // Format number to 2 decimal places
               $(this).text(value.toFixed(2));
