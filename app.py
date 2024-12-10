@@ -75,6 +75,5 @@ def suggest():
     }
     return {"suggestions": result}
 
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5010, debug=True)

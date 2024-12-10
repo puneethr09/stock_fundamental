@@ -1,9 +1,26 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Add this in the <head> section -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Financial Ratios Analysis</title>
+    <!-- Add Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5"
+      crossorigin="anonymous"
+    />
     <style>
       table {
         width: 70%;
@@ -49,9 +66,72 @@
         border: 2px solid #ccc;
         border-radius: 5px;
       }
+      /* New styles for the search button */
+      .search-box input[type="submit"] {
+        font-size: 1.5rem; /* Increase font size */
+        padding: 0.8rem 2rem; /* Increase padding */
+        background-color: #007bff; /* Button color */
+        color: white; /* Text color */
+        border: none; /* Remove border */
+        border-radius: 5px; /* Rounded corners */
+        cursor: pointer; /* Pointer cursor */
+      }
+
+      .search-box input[type="submit"]:hover {
+        background-color: #0056b3; /* Hover color */
+      }
+
+      /* New styles for the home button */
+      .home-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+
+      .home-button button {
+        font-size: 1.5rem; /* Increase font size */
+        padding: 0.8rem 2rem; /* Increase padding */
+        background-color: #007bff; /* Button color */
+        color: white; /* Text color */
+        border: none; /* Remove border */
+        border-radius: 5px; /* Rounded corners */
+        cursor: pointer; /* Pointer cursor */
+      }
+
+      .home-button button:hover {
+        background-color: #0056b3; /* Hover color */
+      }
     </style>
   </head>
   <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#analysis">Analysis</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about">About</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
     <h1 style="text-align: center">
       <!-- underline the title-->
       <u>Financial Ratios Analysis for {{company_name}}</u>
@@ -103,7 +183,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
-        $("#ticker-input").on("input", function () {
+        $("#another-ticker-input").on("input", function () {
           let query = $(this).val();
           if (query.length > 1) {
             $.get("/suggest", { query: query }, function (data) {
@@ -121,16 +201,20 @@
 
         // Handle suggestion click
         $(document).on("click", "#suggestions-list li", function () {
-          $("#ticker-input").val($(this).data("ticker"));
+          $("#another-ticker-input").val($(this).data("ticker"));
           $("#suggestions-list").empty();
         });
       });
     </script>
     <!-- Home Button -->
+    <!--
     <div class="home-button">
       <a href="{{ url_for('home') }}">
-        <button>Home</button>
+        <button>
+          <i class="fas fa-home"></i> Home
+        </button>
       </a>
     </div>
+    -->
   </body>
 </html>
