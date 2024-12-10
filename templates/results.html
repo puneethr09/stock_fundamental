@@ -40,6 +40,15 @@
         text-align: center;
         margin: 20px;
       }
+      #another-ticker-input {
+        width: 400px; /* Increased width */
+        height: 40px; /* Increased height */
+        font-size: 1.5rem; /* Increased font size */
+        padding: 0.5rem;
+        margin-top: 1rem;
+        border: 2px solid #ccc;
+        border-radius: 5px;
+      }
     </style>
   </head>
   <body>
@@ -71,15 +80,7 @@
       />
       <img
         src="{{ url_for('static', filename=plot_filename[1]) }}"
-        alt="ROE, ROA, ROIC, ROI Plot"
-      />
-      <img
-        src="{{ url_for('static', filename=plot_filename[2]) }}"
-        alt="Quick Ratio and Current Ratio Plot"
-      />
-      <img
-        src="{{ url_for('static', filename=plot_filename[3]) }}"
-        alt="Debt to Equity, P/E Ratio, EBIT Margin Plot"
+        alt="All Ratios Plot"
       />
     </div>
     <br />
@@ -88,7 +89,7 @@
       <form action="{{ url_for('analyze') }}" method="get">
         <input
           type="text"
-          id="ticker-input"
+          id="another-ticker-input"
           name="ticker"
           placeholder="Enter company name or ticker"
           autocomplete="off"

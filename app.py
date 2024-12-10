@@ -23,6 +23,9 @@ def analyze():
         if ratios_df is not None and not ratios_df.empty:
             warnings, explanations, plot_filename = analyze_ratios(ratios_df)
             company_name = ratios_df["Company"].iloc[0]
+            # remove company name from ratios_df
+            ratios_df = ratios_df.drop(columns=["Company"])
+
             return render_template(
                 "results.html",
                 tables=[ratios_df.to_html(classes="data")],
@@ -74,4 +77,4 @@ def suggest():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5010, debug=True)

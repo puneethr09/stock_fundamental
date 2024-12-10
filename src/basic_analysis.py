@@ -252,60 +252,65 @@ def plot_ratios(ratios_df, company_name):
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Plot 1: ROE, ROA, ROIC, ROI
-    plt.figure(figsize=(10, 6))
-    plt.plot(ratios_df["Year"], ratios_df["ROE"], marker="o", label="ROE")
-    plt.plot(ratios_df["Year"], ratios_df["ROA"], marker="o", label="ROA")
-    plt.plot(ratios_df["Year"], ratios_df["ROIC"], marker="o", label="ROIC")
-    plt.plot(ratios_df["Year"], ratios_df["ROI"], marker="o", label="ROI")
-    plt.title(f"ROE, ROA, ROIC, ROI for {company_name}")
-    plt.xlabel("Year")
-    plt.ylabel("Percentage")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(os.path.join(static_folder, f"{company_name}_roe_roa_roic_roi.png"))
-    plt.close()
+    # Create a single figure with 2x2 subplots
+    fig, axes = plt.subplots(2, 2, figsize=(14, 8))
 
-    # Plot 2: Quick Ratio and Current Ratio
-    plt.figure(figsize=(10, 6))
-    plt.plot(
+    # Plot 1: ROE, ROA, ROIC, ROI (top-left)
+    axes[0, 0].plot(ratios_df["Year"], ratios_df["ROE"], marker="o", label="ROE")
+    axes[0, 0].plot(ratios_df["Year"], ratios_df["ROA"], marker="o", label="ROA")
+    axes[0, 0].plot(ratios_df["Year"], ratios_df["ROIC"], marker="o", label="ROIC")
+    axes[0, 0].plot(ratios_df["Year"], ratios_df["ROI"], marker="o", label="ROI")
+    axes[0, 0].set_title(f"ROE, ROA, ROIC, ROI for {company_name}")
+    axes[0, 0].set_xlabel("Year")
+    axes[0, 0].set_ylabel("Percentage")
+    axes[0, 0].legend()
+    axes[0, 0].grid()
+
+    # Plot 2: Quick Ratio and Current Ratio (top-right)
+    axes[0, 1].plot(
         ratios_df["Year"], ratios_df["Quick Ratio"], marker="o", label="Quick Ratio"
     )
-    plt.plot(
+    axes[0, 1].plot(
         ratios_df["Year"], ratios_df["Current Ratio"], marker="o", label="Current Ratio"
     )
-    plt.title(f"Quick Ratio and Current Ratio for {company_name}")
-    plt.xlabel("Year")
-    plt.ylabel("Ratio")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(os.path.join(static_folder, f"{company_name}_quick_current_ratio.png"))
-    plt.close()
+    axes[0, 1].set_title(f"Quick Ratio and Current Ratio for {company_name}")
+    axes[0, 1].set_xlabel("Year")
+    axes[0, 1].set_ylabel("Ratio")
+    axes[0, 1].legend()
+    axes[0, 1].grid()
 
-    # Plot 3: Debt to Equity, P/E Ratio, EBIT Margin
-    plt.figure(figsize=(10, 6))
-    plt.plot(
+    # Plot 3: P/E Ratio, EBIT Margin (bottom-left)
+    axes[1, 0].plot(
+        ratios_df["Year"], ratios_df["P/E Ratio"], marker="o", label="P/E Ratio"
+    )
+    axes[1, 0].plot(
+        ratios_df["Year"], ratios_df["EBIT Margin"], marker="o", label="EBIT Margin"
+    )
+    axes[1, 0].set_title(f"P/E Ratio, EBIT Margin for {company_name}")
+    axes[1, 0].set_xlabel("Year")
+    axes[1, 0].set_ylabel("Ratio")
+    axes[1, 0].legend()
+    axes[1, 0].grid()
+
+    # Plot 4: Debt to Equity (bottom-right)
+    axes[1, 1].plot(
         ratios_df["Year"],
         ratios_df["Debt to Equity"],
         marker="o",
         label="Debt to Equity",
     )
-    plt.plot(ratios_df["Year"], ratios_df["P/E Ratio"], marker="o", label="P/E Ratio")
-    plt.plot(
-        ratios_df["Year"], ratios_df["EBIT Margin"], marker="o", label="EBIT Margin"
-    )
-    plt.title(f"Debt to Equity, P/E Ratio, EBIT Margin for {company_name}")
-    plt.xlabel("Year")
-    plt.ylabel("Ratio")
-    plt.legend()
-    plt.grid()
+    axes[1, 1].set_title(f"Debt to Equity for {company_name}")
+    axes[1, 1].set_xlabel("Year")
+    axes[1, 1].set_ylabel("Ratio")
+    axes[1, 1].legend()
+    axes[1, 1].grid()
+
+    # Adjust layout and save
     plt.tight_layout()
-    plt.savefig(os.path.join(static_folder, f"{company_name}_debt_pe_ebit_margin.png"))
+    plt.savefig(os.path.join(static_folder, f"{company_name}_all_ratios.png"))
     plt.close()
 
-    # Plot 4: Normalized Ratios
+    # Plot 5: Normalized Ratios
     normalized_df = normalize_data(ratios_df)
     plt.figure(figsize=(14, 8))
     for column in normalized_df.columns[1:-1]:  # Skip Year and Company columns
@@ -325,9 +330,7 @@ def plot_ratios(ratios_df, company_name):
 
     return [
         f"{company_name}_normalized_ratios.png",
-        f"{company_name}_roe_roa_roic_roi.png",
-        f"{company_name}_quick_current_ratio.png",
-        f"{company_name}_debt_pe_ebit_margin.png",
+        f"{company_name}_all_ratios.png",
     ]
 
 

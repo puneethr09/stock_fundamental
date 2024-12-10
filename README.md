@@ -1,89 +1,77 @@
-# Stock Analysis Automation Project
+# Stock Fundamental Analysis
 
-## Overview
-This project is designed to automate the analysis of Indian stock market data from various indexes including Nifty 200, Nifty 500, Nifty 50, Nifty Large Midcap 250, Nifty Midcap 100, and Nifty Smallcap 250. The script fetches financial data using Yahoo Finance, calculates industry averages, and scores each stock based on predefined weights, ultimately providing a sorted list of top-performing stocks.
+This repository provides a comprehensive toolkit for analyzing the financial health of companies using their historical financial data. It includes functions to load, process, and analyze financial ratios, as well as generate visualizations to aid in understanding a company's financial performance.
 
 ## Features
-- **Automated Data Fetching**: Retrieves financial data for each stock ticker from Yahoo Finance.
-- **Industry Averages Calculation**: Computes average P/E ratio, P/B ratio, and EPS for each sector.
-- **Stock Scoring**: Scores each stock based on P/E ratio, P/B ratio, and EPS.
-- **Top Stocks Selection**: Identifies and lists the top 10 stocks within each sector.
-- **Customizable Analysis**: Allows selection of specific datasets or analysis of all available datasets.
-- **Detailed Output**: Generates both text and CSV files with detailed analysis and scores.
 
-## Requirements
+- **Data Loading**: Load and concatenate company data from CSV files.
+- **Financial Ratio Analysis**: Calculate and analyze key financial ratios such as Return on Equity (ROE), Current Ratio, and Debt to Equity.
+- **Data Normalization**: Normalize financial data for comparative analysis.
+- **Visualization**: Generate plots to visualize financial ratios over time.
+- **Data Retrieval**: Fetch historical financial data using Yahoo Finance.
+
+## Prerequisites
+
 - Python 3.x
-- Pandas
-- yfinance
+- Required Python packages: `pandas`, `matplotlib`, `yfinance`, `numpy`, `os`
 
-## Usage
-1. **Place Input Files**:
-   Ensure all input CSV files are placed in the `input` directory. The supported files are:
-   - `Indian_stocks_nifty_200.csv`
-   - `Indian_stocks_nifty_500.csv`
-   - `Indian_stocks_nifty_50.csv`
-   - `Indian_stocks_nifty_large_midcap_250.csv`
-   - `Indian_stocks_nifty_midcap_100.csv`
-   - `Indian_stocks_nifty_smallcap_250.csv`
+## Setup
 
-2. **Run the Script**:
-   Execute the script to start the analysis:
-   ```sh
-   python analyze_stocks.py
+1. **Clone the repository:**
 
-3. **Select Dataset**:
-   When prompted, select the dataset you want to analyze:
-   Select the dataset:
-   ```sh
-   1. Indian_stocks_nifty_200.csv
-   2. Indian_stocks_nifty_500.csv
-   3. Indian_stocks_nifty_50.csv
-   4. Indian_stocks_nifty_large_midcap_250.csv
-   5. Indian_stocks_nifty_midcap_100.csv
-   6. Indian_stocks_nifty_smallcap_250.csv
-   7. All files
-   Enter 1, 2, 3, 4, 5, 6, or 7:
+   ```bash
+   git clone https://github.com/yourusername/stock-fundamental-analysis.git
+   cd stock-fundamental-analysis
 
-## Output
-The output files are saved in the `output` directory with the original input file name appended with `_analyzed`. For example, if analyzing `Indian_stocks_nifty_200.csv`, the output files will be:
-- `Indian_stocks_nifty_200_analyzed.txt`
-- `Indian_stocks_nifty_200_analyzed.csv`
+   ```
 
-## File Structure
+2. **Install the required packages:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```
-stock_fundamental/
-│
-├── input/
-│ ├── Indian_stocks_nifty_200.csv
-│ ├── Indian_stocks_nifty_500.csv
-│ ├── Indian_stocks_nifty_50.csv
-│ ├── Indian_stocks_nifty_large_midcap_250.csv
-│ ├── Indian_stocks_nifty_midcap_100.csv
-│ └── Indian_stocks_nifty_smallcap_250.csv
-│
-├── output/
-│ ├── Indian_stocks_nifty_200_analyzed.txt
-│ ├── Indian_stocks_nifty_200_analyzed.csv
-│ └── ...
-│
-├── install_library.py
-├── analyze_stocks.py
-└── README.md
-```
+3. **Prepare the Input Data:**
 
-## Contribution
-Feel free to contribute to this project by submitting pull requests. For major changes, please open an issue first to discuss what you would like to change.
+   Ensure that your CSV files containing company data are placed in the input directory. These files should contain the necessary financial data for analysis.
+
+4. **Run the Web Application:**
+
+   Start the web server by running the following command:
+   ```bash
+   python app.py
+   ```
+   Open your web browser and navigate to http://localhost:5000 to access the web interface.
+
+5. **Run the Analysis: *Independent Manuel analysis***
+
+   You can start analyzing financial data by executing the main script or using the functions provided in the codebase. For example, to analyze a specific company's financial ratios, you can use the following script:
+   
+   ```python
+   from src.basic_analysis import get_financial_ratios, analyze_ratios
+
+   ticker = "VBL"  # Example stock ticker
+   ratios_df = get_financial_ratios(ticker)
+   warnings, explanations = analyze_ratios(ratios_df)
+
+   for warning in warnings:
+      print(warning)
+
+   for explanation in explanations:
+      print(explanation)
+   ```
+
+6. **View the Results:**
+
+   The analysis will output warnings and explanations based on the financial ratios calculated. Additionally, visualizations will be saved in the static directory for further inspection.
+
+## Contributing
+   Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+   This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Contact
-For any questions or feedback, please contact:
-- **Puneethraddy M R**
-- **Email**: puneethr09@gmail.com
-- **GitHub**: [puneethr09](https://github.com/puneethr09)
+   For any questions or issues, please open an issue in the repository or contact the maintainer at [puneethr09@gmail.com].
 
----
-
-Happy Analyzing! 📈
+## Acknowledgments
+This `README.md` provides a step-by-step guide to setting up and running the project, ensuring that users can directly apply the instructions and have the project work as expected. Adjust any placeholders, such as the GitHub repository URL and contact email, to fit your specific project details.
