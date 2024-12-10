@@ -101,6 +101,31 @@
       .home-button button:hover {
         background-color: #0056b3; /* Hover color */
       }
+
+      .loader {
+        display: none;
+        text-align: center;
+        margin: 20px;
+      }
+
+      .loader-spinner {
+        border: 4px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -180,6 +205,11 @@
       </form>
     </div>
 
+    <!-- Add the loader right here, after the search-box div -->
+    <div class="loader">
+      <div class="loader-spinner"></div>
+      <p>Analyzing stock data...</p>
+    </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
@@ -199,10 +229,14 @@
           }
         });
 
-        // Handle suggestion click
+        // Add click handler for suggestions
         $(document).on("click", "#suggestions-list li", function () {
           $("#another-ticker-input").val($(this).data("ticker"));
           $("#suggestions-list").empty();
+          // Show loader
+          $('.loader').show();
+          // Automatically submit the form
+          $('form').submit();
         });
       });
     </script>
@@ -216,5 +250,12 @@
       </a>
     </div>
     -->
+    <script>
+      $(document).ready(function () {
+        $("form").on("submit", function () {
+          $(".loader").show();
+        });
+      });
+    </script>
   </body>
 </html>
