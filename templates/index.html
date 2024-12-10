@@ -23,15 +23,21 @@
         margin: 0;
         font-family: Arial, sans-serif;
       }
-
       h1 {
         font-size: 3rem;
         margin-bottom: 2rem;
-        color: #333;
+        color: black;
+        background-color: #007bff;
+        padding: 15px 30px;
+        border-radius: 5px;
+        display: inline-block;
       }
-
       form {
         text-align: center;
+        position: relative; /* Required for absolute positioning */
+        display: flex; /* Add this */
+        flex-direction: column; /* Add this */
+        align-items: center; /* Add this */
       }
 
       label {
@@ -73,25 +79,35 @@
       }
 
       #suggestions-list {
-        width: 600px;
+        position: absolute;
+        top: calc(100% - 1rem);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px; /* Same width as input */
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-top: 5px;
         list-style: none;
         padding: 0;
-        margin: 0;
-        text-align: left;
       }
 
       #suggestions-list li {
-        padding: 0.5rem;
-        font-size: 1.2rem;
+        padding: 8px 10px;
         cursor: pointer;
         border-bottom: 1px solid #eee;
       }
 
-      #suggestions-list li:hover {
-        background-color: #f0f0f0;
+      #suggestions-list li:last-child {
+        border-bottom: none;
       }
+
       #suggestions-list li:hover {
-        background-color: #f0f0f0;
+        background-color: #f5f5f5;
       }
       .loader {
         display: none;
@@ -131,9 +147,7 @@
         required
       />
       <ul id="suggestions-list"></ul>
-      <button type="submit">Analyze</button>
     </form>
-
     <!-- Add loader here -->
     <div class="loader">
       <div class="loader-spinner"></div>
