@@ -23,12 +23,14 @@ def analyze():
         if ratios_df is not None and not ratios_df.empty:
             warnings, explanations, plot_filename = analyze_ratios(ratios_df)
             company_name = ratios_df["Company"].iloc[0]
-            # remove company name from ratios_df
+            # Format DataFrame
             ratios_df = ratios_df.drop(columns=["Company"])
-
+            # Round numbers to 2 decimal places
+            ratios_df = ratios_df.round(2)
+            
             return render_template(
                 "results.html",
-                tables=[ratios_df.to_html(classes="data")],
+                tables=[ratios_df.to_html(classes="data table-hover", index=False)],
                 titles=ratios_df.columns.values,
                 plot_filename=plot_filename,
                 warnings=warnings,
@@ -45,7 +47,6 @@ def analyze():
         return render_template(
             "results.html", error=f"An error occurred: {e}", plot_filename=[]
         )
-
 
 # Load company data from CSV files in the input directory
 def load_company_data():
