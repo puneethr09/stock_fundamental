@@ -50,6 +50,8 @@
         margin-bottom: 1rem;
         border: 2px solid #ccc;
         border-radius: 5px;
+        border-width: 4px;
+        border-color: #007bff;
       }
       #another-ticker-input {
         width: 600px; /* Increased width */
@@ -125,8 +127,12 @@
       }
 
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
@@ -172,9 +178,9 @@
           $("#ticker-input").val($(this).data("ticker"));
           $("#suggestions-list").empty();
           // Show loader
-          $('.loader').show();
+          $(".loader").show();
           // Automatically submit the form
-          $('form').submit();
+          $("form").submit();
         });
       });
     </script>
