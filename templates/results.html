@@ -88,8 +88,11 @@
       }
       .navbar-search {
         position: relative;
-        width: 100%;
-        max-width: 400px;
+        display: flex;
+        justify-content: center; /* Center the search box */
+        align-items: center;
+        width: auto; /* Adjust width as needed */
+        /* Remove margin-right or any other positioning adjustments */
       }
       #another-ticker-input {
         width: 250px;
@@ -98,11 +101,6 @@
         padding: 5px 10px;
         border: 1px solid #ccc;
         border-radius: 4px;
-      }
-      .navbar-search {
-        position: relative;
-        display: flex;
-        justify-content: center; /* Center the search form */
       }
       #suggestions-list {
         position: absolute;
@@ -165,22 +163,6 @@
         background-color: #0056b3; /* Hover color */
       }
 
-      .loader {
-        display: none;
-        text-align: center;
-        margin: 20px;
-      }
-
-      .loader-spinner {
-        border: 4px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 4px solid #3498db;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-      }
-
       @keyframes spin {
         0% {
           transform: rotate(0deg);
@@ -195,13 +177,16 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+        
+        <div class="navbar-nav ml-auto">
+          <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+          <a class="nav-link" href="#analysis">Analysis</a>
+          <a class="nav-link" href="#about">About</a>
+        </div>
+
         <!-- Centered search box -->
-        <div class="navbar-search d-flex justify-content-center flex-grow-1">
-          <form
-            action="{{ url_for('analyze') }}"
-            method="get"
-            class="form-inline"
-          >
+        <div class="navbar-search">
+          <form action="{{ url_for('analyze') }}" method="get" class="form-inline">
             <input
               type="text"
               id="another-ticker-input"
@@ -212,11 +197,6 @@
             />
             <ul id="suggestions-list"></ul>
           </form>
-        </div>
-        <div class="navbar-nav">
-          <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-          <a class="nav-link" href="#analysis">Analysis</a>
-          <a class="nav-link" href="#about">About</a>
         </div>
       </div>
     </nav>
@@ -252,11 +232,6 @@
       />
     </div>
     <br />
-    <!-- Add the loader right here, after the search-box div -->
-    <div class="loader">
-      <div class="loader-spinner"></div>
-      <p>Analyzing stock data...</p>
-    </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
@@ -276,12 +251,10 @@
           }
         });
 
-        // Add click handler for suggestions
+        // Handle suggestion click
         $(document).on("click", "#suggestions-list li", function () {
           $("#another-ticker-input").val($(this).data("ticker"));
           $("#suggestions-list").empty();
-          // Show loader
-          $(".loader").show();
           // Automatically submit the form
           $("form").submit();
         });
