@@ -148,6 +148,63 @@ def get_financial_ratios(ticker):
         # Handle the case where the calculation fails roi should be NaN for all  years
         roi = pd.Series(np.nan, index=income_stmt.columns)
 
+    # Calculate new ratios individually
+    try:
+        asset_turnover = (
+            income_stmt.loc["Total Revenue", income_stmt.columns]
+            / balance_sheet.loc["Total Assets", balance_sheet.columns]
+        )
+        # ratios_df["Asset Turnover"] = asset_turnover.reindex(available_years).values
+    except Exception as e:
+        print(f"Could not calculate Asset Turnover: {e}")
+        asset_turnover = pd.Series(np.nan, index=income_stmt.columns)
+
+    try:
+        operating_margin = (
+            income_stmt.loc["Operating Income", income_stmt.columns]
+            / income_stmt.loc["Total Revenue", income_stmt.columns]
+        ) * 100
+        # ratios_df["Operating Margin"] = operating_margin.reindex(available_years).values
+    except Exception as e:
+        print(f"Could not calculate Operating Margin: {e}")
+        operating_margin = pd.Series(np.nan, index=income_stmt.columns)
+
+    try:
+        net_profit_margin = (
+            income_stmt.loc["Net Income", income_stmt.columns]
+            / income_stmt.loc["Total Revenue", income_stmt.columns]
+        ) * 100
+        # ratios_df["Net Profit Margin"] = net_profit_margin.reindex(
+    #     available_years
+    #  ).values
+    except Exception as e:
+        print(f"Could not calculate Net Profit Margin: {e}")
+        net_profit_margin = pd.Series(np.nan, index=income_stmt.columns)
+
+    try:
+        working_capital_ratio = (
+            balance_sheet.loc["Current Assets", balance_sheet.columns]
+            / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
+        )
+        # ratios_df["Working Capital Ratio"] = working_capital_ratio.reindex(
+        #     available_years
+        # ).values
+    except Exception as e:
+        print(f"Could not calculate Working Capital Ratio: {e}")
+        working_capital_ratio = pd.Series(np.nan, index=income_stmt.columns)
+
+    try:
+        interest_coverage = (
+            income_stmt.loc["Operating Income", income_stmt.columns]
+            / income_stmt.loc["Interest Expense", income_stmt.columns]
+        )
+        # ratios_df["Interest Coverage"] = interest_coverage.reindex(
+        #     available_years
+        # ).values
+    except Exception as e:
+        print(f"Could not calculate Interest Coverage: {e}")
+        interest_coverage = pd.Series(np.nan, index=income_stmt.columns)
+
     # Set the index to be the years
     roe.index = pd.to_datetime(roe.index, format="%Y-%m-%d").year
     roa.index = pd.to_datetime(roa.index, format="%Y-%m-%d").year
@@ -158,11 +215,27 @@ def get_financial_ratios(ticker):
     pe_ratios.index = pd.to_datetime(pe_ratios.index, format="%Y-%m-%d").year
     ebit_margin.index = pd.to_datetime(ebit_margin.index, format="%Y-%m-%d").year
     roi.index = pd.to_datetime(roi.index, format="%Y-%m-%d").year
+    asset_turnover.index = pd.to_datetime(asset_turnover.index, format="%Y-%m-%d").year
+    operating_margin.index = pd.to_datetime(
+        operating_margin.index, format="%Y-%m-%d"
+    ).year
+    net_profit_margin.index = pd.to_datetime(
+        net_profit_margin.index, format="%Y-%m-%d"
+    ).year
+    working_capital_ratio.index = pd.to_datetime(
+        working_capital_ratio.index, format="%Y-%m-%d"
+    ).year
+    interest_coverage.index = pd.to_datetime(
+        interest_coverage.index, format="%Y-%m-%d"
+    ).year
 
     # Change to percentages
     roe = roe * 100
     roa = roa * 100
     roic = roic * 100
+    # Convert to percentages where applicable
+    operating_margin = operating_margin * 100
+    net_profit_margin = net_profit_margin * 100
 
     # Create a DataFrame to store the financial ratios
     ratios_df = pd.DataFrame(
@@ -177,6 +250,13 @@ def get_financial_ratios(ticker):
             "P/E Ratio": pe_ratios.reindex(available_years).values,
             "EBIT Margin": ebit_margin.reindex(available_years).values,
             "ROI": roi.reindex(available_years).values,
+            "Asset Turnover": asset_turnover.reindex(available_years).values,
+            "Operating Margin": operating_margin.reindex(available_years).values,
+            "Net Profit Margin": net_profit_margin.reindex(available_years).values,
+            "Working Capital Ratio": working_capital_ratio.reindex(
+                available_years
+            ).values,
+            "Interest Coverage": interest_coverage.reindex(available_years).values,
             "Company": [company_name] * len(available_years),
         }
     )
@@ -184,7 +264,6 @@ def get_financial_ratios(ticker):
     ratios_df = ratios_df.dropna(
         how="all", subset=ratios_df.columns[1:-1]
     )  # Exclude 'Year' and 'Company' columns
-
     return ratios_df
 
 
@@ -237,80 +316,149 @@ def analyze_ratios(ratios_df):
             "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
         )
 
+    # Add new ratio analysis
+    if latest_ratios["Operating Margin"] < 15:
+        warnings.append(
+            "Warning: Low Operating Margin indicates potential operational inefficiency."
+        )
+        explanations.append(
+            "Explanation: An operating margin below 15% suggests the company may need to improve its operational efficiency or pricing strategy."
+        )
+
+    if latest_ratios["Net Profit Margin"] < 10:
+        warnings.append(
+            "Warning: Low Net Profit Margin indicates reduced profitability."
+        )
+        explanations.append(
+            "Explanation: A net profit margin below 10% indicates the company might need to control costs or improve revenue generation."
+        )
+
+    if latest_ratios["Asset Turnover"] < 0.5:
+        warnings.append(
+            "Warning: Low Asset Turnover indicates inefficient use of assets."
+        )
+        explanations.append(
+            "Explanation: An asset turnover ratio below 0.5 suggests the company might not be using its assets efficiently to generate revenue."
+        )
+
+    if latest_ratios["Interest Coverage"] < 2:
+        warnings.append(
+            "Warning: Low Interest Coverage Ratio indicates potential debt servicing issues."
+        )
+        explanations.append(
+            "Explanation: An interest coverage ratio below 2 suggests the company might have difficulty meeting its interest payment obligations."
+        )
+
     # Create a static directory if it doesn't exist
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Plot ratios
+    # Create plots with new ratios included
     plots = plot_ratios(ratios_df, company_name)
 
     return warnings, explanations, plots
 
 
 def plot_ratios(ratios_df, company_name):
-    # Create a directory for saving plots
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Create a single figure with 2x2 subplots
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8))
+    # Create a single figure with 3x2 subplots (increased from 2x2)
+    fig, axes = plt.subplots(3, 2, figsize=(16, 12))
 
-    # Plot 1: ROE, ROA, ROIC, ROI (top-left)
+    # Original Plot 1: ROE, ROA, ROIC, ROI (top-left)
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROE"], marker="o", label="ROE")
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROA"], marker="o", label="ROA")
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROIC"], marker="o", label="ROIC")
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROI"], marker="o", label="ROI")
-    axes[0, 0].set_title(f"ROE, ROA, ROIC, ROI for {company_name}")
+    axes[0, 0].set_title(f"Return Ratios for {company_name}")
     axes[0, 0].set_xlabel("Year")
     axes[0, 0].set_ylabel("Percentage")
     axes[0, 0].legend()
     axes[0, 0].grid()
 
-    # Plot 2: Quick Ratio and Current Ratio (top-right)
+    # Original Plot 2: Quick Ratio and Current Ratio (top-right)
     axes[0, 1].plot(
         ratios_df["Year"], ratios_df["Quick Ratio"], marker="o", label="Quick Ratio"
     )
     axes[0, 1].plot(
         ratios_df["Year"], ratios_df["Current Ratio"], marker="o", label="Current Ratio"
     )
-    axes[0, 1].set_title(f"Quick Ratio and Current Ratio for {company_name}")
+    axes[0, 1].set_title(f"Liquidity Ratios for {company_name}")
     axes[0, 1].set_xlabel("Year")
     axes[0, 1].set_ylabel("Ratio")
     axes[0, 1].legend()
     axes[0, 1].grid()
 
-    # Plot 3: P/E Ratio, EBIT Margin (bottom-left)
+    # Original Plot 3: P/E Ratio, EBIT Margin (middle-left)
     axes[1, 0].plot(
         ratios_df["Year"], ratios_df["P/E Ratio"], marker="o", label="P/E Ratio"
     )
     axes[1, 0].plot(
         ratios_df["Year"], ratios_df["EBIT Margin"], marker="o", label="EBIT Margin"
     )
-    axes[1, 0].set_title(f"P/E Ratio, EBIT Margin for {company_name}")
+    axes[1, 0].set_title(f"Market and Profitability Metrics for {company_name}")
     axes[1, 0].set_xlabel("Year")
     axes[1, 0].set_ylabel("Ratio")
     axes[1, 0].legend()
     axes[1, 0].grid()
 
-    # Plot 4: Debt to Equity (bottom-right)
+    # Original Plot 4: Debt to Equity (middle-right)
     axes[1, 1].plot(
         ratios_df["Year"],
         ratios_df["Debt to Equity"],
         marker="o",
         label="Debt to Equity",
     )
-    axes[1, 1].set_title(f"Debt to Equity for {company_name}")
+    axes[1, 1].set_title(f"Leverage Ratio for {company_name}")
     axes[1, 1].set_xlabel("Year")
     axes[1, 1].set_ylabel("Ratio")
     axes[1, 1].legend()
     axes[1, 1].grid()
 
-    # Adjust layout and save
+    # New Plot 5: Operating and Net Profit Margins (bottom-left)
+    axes[2, 0].plot(
+        ratios_df["Year"],
+        ratios_df["Operating Margin"],
+        marker="o",
+        label="Operating Margin",
+    )
+    axes[2, 0].plot(
+        ratios_df["Year"],
+        ratios_df["Net Profit Margin"],
+        marker="o",
+        label="Net Profit Margin",
+    )
+    axes[2, 0].set_title(f"Margin Analysis for {company_name}")
+    axes[2, 0].set_xlabel("Year")
+    axes[2, 0].set_ylabel("Percentage")
+    axes[2, 0].legend()
+    axes[2, 0].grid()
+
+    # New Plot 6: Asset Turnover and Interest Coverage (bottom-right)
+    axes[2, 1].plot(
+        ratios_df["Year"],
+        ratios_df["Asset Turnover"],
+        marker="o",
+        label="Asset Turnover",
+    )
+    axes[2, 1].plot(
+        ratios_df["Year"],
+        ratios_df["Interest Coverage"],
+        marker="o",
+        label="Interest Coverage",
+    )
+    axes[2, 1].set_title(f"Efficiency Metrics for {company_name}")
+    axes[2, 1].set_xlabel("Year")
+    axes[2, 1].set_ylabel("Ratio")
+    axes[2, 1].legend()
+    axes[2, 1].grid()
+
     plt.tight_layout()
     plt.savefig(os.path.join(static_folder, f"{company_name}_all_ratios.png"))
     plt.close()
 
-    # Plot 5: Normalized Ratios
+    # Plot normalized ratios (including new ones)
     normalized_df = normalize_data(ratios_df)
     plt.figure(figsize=(14, 8))
     for column in normalized_df.columns[1:-1]:  # Skip Year and Company columns
@@ -323,7 +471,7 @@ def plot_ratios(ratios_df, company_name):
     plt.grid(which="both", linestyle="--", linewidth=0.5)
     plt.minorticks_on()
     plt.grid(which="minor", linestyle=":", linewidth="0.5", color="gray")
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
     plt.savefig(os.path.join(static_folder, f"{company_name}_normalized_ratios.png"))
     plt.close()
