@@ -1,313 +1,218 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Add this in the <head> section -->
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Financial Ratios Analysis</title>
-    <!-- Add Font Awesome for icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5"
-      crossorigin="anonymous"
-    />
-    <style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Ratios Analysis</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5" crossorigin="anonymous">
+  <style>
       /* Table styling */
       .data {
-        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
-        width: 90%;
-        margin: 20px auto;
-        border-collapse: collapse;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+          background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+          width: 90%;
+          margin: 20px auto;
+          border-collapse: collapse;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       }
-
       .data th {
-        background-color: #007bff;
-        color: white;
-        font-weight: bold;
-        padding: 12px;
-        text-align: center;
+          background-color: #007bff;
+          color: white;
+          font-weight: bold;
+          padding: 12px;
+          text-align: center;
       }
-
       .data td {
-        padding: 10px;
-        text-align: right;
-        border: 1px solid #ddd;
-        background-color: white; /* White background for cells */
+          padding: 10px;
+          text-align: right;
+          border: 1px solid #ddd;
+          background-color: white;
       }
-
-      /* Zebra striping for rows */
       .data tr:nth-child(even) td {
-        background-color: #f0f7ff; /* Lighter blue for alternate rows */
+          background-color: #f0f7ff;
       }
-      /* Hover effect */
       .data tr:hover td {
-        background-color: #f5f5f5 !important; /* Use !important to override other styles */
+          background-color: #f5f5f5 !important;
       }
-      /* Color coding for values */
       .positive {
-        color: #28a745;
+          color: #28a745;
       }
-
       .negative {
-        color: #dc3545;
+          color: #dc3545;
       }
       .warning {
-        /* color: #e74c3c;  Softer red */
-        color: #ff6b6b; /* Even softer coral red */
-        font-weight: 500; /* Slightly less bold */
-        text-align: center;
-        padding: 10px;
-        line-height: 1.5;
+          color: #ff6b6b;
+          font-weight: 500;
+          text-align: center;
+          padding: 10px;
+          line-height: 1.5;
       }
       .explanation {
-        color: #2c3e50; /* Dark blue color */
-        text-align: center;
+          color: #2c3e50;
+          text-align: center;
       }
       .plot {
-        text-align: center;
-        margin: 20px;
-      }
-      .search-box {
-        text-align: center;
-        margin: 20px;
-      }
-      .home-button {
-        text-align: center;
-        margin: 20px;
+          text-align: center;
+          margin: 20px;
       }
       .navbar-search {
-        position: relative;
-        display: flex;
-        justify-content: center; /* Center the search box */
-        align-items: center;
-        width: auto; /* Adjust width as needed */
-        /* Remove margin-right or any other positioning adjustments */
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: auto;
       }
       #another-ticker-input {
-        width: 250px;
-        height: 35px;
-        font-size: 14px;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        border-color: #007bff;
-        border-width: 3px;
-        background-color: #f0f8ff;
-        color: #333;
+          width: 250px;
+          height: 35px;
+          font-size: 14px;
+          padding: 5px 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          border-color: #007bff;
+          border-width: 3px;
+          background-color: #f0f8ff;
+          color: #333;
       }
       #suggestions-list {
-        position: absolute;
-        top: 100%;
-        left: 50%; /* Position from center */
-        transform: translateX(-50%); /* Shift back by half width */
-        width: 250px;
-        max-height: 300px;
-        overflow-y: auto;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 0 0 4px 4px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 250px;
+          max-height: 300px;
+          overflow-y: auto;
+          background: white;
+          border: 1px solid #ccc;
+          border-radius: 0 0 4px 4px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
       }
       #suggestions-list li {
-        padding: 8px 10px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
+          padding: 8px 10px;
+          cursor: pointer;
+          border-bottom: 1px solid #eee;
       }
       #suggestions-list li:last-child {
-        border-bottom: none;
+          border-bottom: none;
       }
       #suggestions-list li:hover {
-        background-color: #f5f5f5;
+          background-color: #f5f5f5;
       }
-      /* New styles for the search button */
       .search-box input[type="submit"] {
-        font-size: 1.5rem; /* Increase font size */
-        padding: 0.8rem 2rem; /* Increase padding */
-        background-color: #007bff; /* Button color */
-        color: white; /* Text color */
-        border: none; /* Remove border */
-        border-radius: 5px; /* Rounded corners */
-        cursor: pointer; /* Pointer cursor */
+          font-size: 1.5rem;
+          padding: 0.8rem 2rem;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
       }
-
       .search-box input[type="submit"]:hover {
-        background-color: #0056b3; /* Hover color */
+          background-color: #0056b3;
       }
-
-      /* New styles for the home button */
       .home-button {
-        position: absolute;
-        top: 20px;
-        right: 20px;
+          position: absolute;
+          top: 20px;
+          right: 20px;
       }
-
       .home-button button {
-        font-size: 1.5rem; /* Increase font size */
-        padding: 0.8rem 2rem; /* Increase padding */
-        background-color: #007bff; /* Button color */
-        color: white; /* Text color */
-        border: none; /* Remove border */
-        border-radius: 5px; /* Rounded corners */
-        cursor: pointer; /* Pointer cursor */
+          font-size: 1.5rem;
+          padding: 0.8rem 2rem;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
       }
-
       .home-button button:hover {
-        background-color: #0056b3; /* Hover color */
+          background-color: #0056b3;
       }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
-
-        <div class="navbar-nav ml-auto">
-          <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-          <a class="nav-link" href="#analysis">Analysis</a>
-          <a class="nav-link" href="#about">About</a>
-        </div>
-
-        <!-- Centered search box -->
-        <div class="navbar-search">
-          <form
-            action="{{ url_for('analyze') }}"
-            method="get"
-            class="form-inline"
-          >
-            <input
-              type="text"
-              id="another-ticker-input"
-              name="ticker"
-              placeholder="Search another stock"
-              autocomplete="off"
-              required
-            />
-            <ul id="suggestions-list"></ul>
-          </form>
-        </div>
+          <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+          <div class="navbar-nav ml-auto">
+              <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+              <a class="nav-link" href="#analysis">Analysis</a>
+              <a class="nav-link" href="#about">About</a>
+          </div>
+          <div class="navbar-search">
+              <form action="{{ url_for('analyze') }}" method="get" class="form-inline">
+                  <input type="text" id="another-ticker-input" name="ticker" placeholder="Search another stock" autocomplete="off" required>
+                  <ul id="suggestions-list"></ul>
+              </form>
+          </div>
       </div>
-    </nav>
-    <h1 style="text-align: center">
-      <!-- underline the title-->
-      <u>{{company_name}}</u>
-    </h1>
-    <br />
-    <div style="text-align: center">
+  </nav>
+  <h1 class="text-center"><u>{{ company_name }}</u></h1>
+  <div class="text-center">
       {% for table in tables %}
       <div class="table-responsive">{{ table|safe }}</div>
       {% endfor %}
-    </div>
-    <div class="warning">
+  </div>
+  <div class="warning">
       {% for warning in warnings %}
       <p>{{ warning }}</p>
       {% endfor %}
-    </div>
-    <div class="explanation">
+  </div>
+  <div class="explanation">
       {% for explanation in explanations %}
       <p>{{ explanation }}</p>
       {% endfor %}
-    </div>
-    <br />
-    <div class="plot">
-      <img
-        src="{{ url_for('static', filename=plot_filename[0]) }}"
-        alt="Normalized Ratios Plot"
-      />
-      <img
-        src="{{ url_for('static', filename=plot_filename[1]) }}"
-        alt="All Ratios Plot"
-      />
-    </div>
-    <br />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
+  </div>
+  <div class="plot">
+      {% for plot in plot_filename %}
+      <img src="{{ url_for('static', filename=plot) }}" alt="Financial Ratios Plot">
+      {% endfor %}
+  </div>
+  <!-- jQuery and Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
       $(document).ready(function () {
-        $("#another-ticker-input").on("input", function () {
-          let query = $(this).val();
-          if (query.length > 1) {
-            $.get("/suggest", { query: query }, function (data) {
-              $("#suggestions-list").empty();
-              $.each(data.suggestions, function (name, ticker) {
-                $("#suggestions-list").append(
-                  `<li data-ticker="${ticker}">${name} (${ticker})</li>`
-                );
-              });
-            });
-          } else {
-            $("#suggestions-list").empty();
-          }
-        });
-
-        // Handle suggestion click
-        $(document).on("click", "#suggestions-list li", function () {
-          $("#another-ticker-input").val($(this).data("ticker"));
-          $("#suggestions-list").empty();
-          // Automatically submit the form
-          $("form").submit();
-        });
-      });
-    </script>
-    <!-- Home Button -->
-    <!--
-    <div class="home-button">
-      <a href="{{ url_for('home') }}">
-        <button>
-          <i class="fas fa-home"></i> Home
-        </button>
-      </a>
-    </div>
-    -->
-    <script>
-      $(document).ready(function () {
-        $("form").on("submit", function () {
-          $(".loader").show();
-        });
-      });
-    </script>
-    <script>
-      $(document).ready(function () {
-        // Format numbers in table
-        $(".data td").each(function () {
-          let value = parseFloat($(this).text());
-          if (!isNaN(value)) {
-            // Special handling for Year column
-            if ($(this).index() === 0) {
-              // First column (Year)
-              $(this).text(Math.round(value)); // Round to whole number
-            } else {
-              // Add color classes based on value
-              if (value > 0) {
-                $(this).addClass("positive");
-              } else if (value < 0) {
-                $(this).addClass("negative");
+          $("#another-ticker-input").on("input", function () {
+              let query = $(this).val();
+              if (query.length > 1) {
+                  $.get("/suggest", { query: query }, function (data) {
+                      $("#suggestions-list").empty();
+                      $.each(data.suggestions, function (name, ticker) {
+                          $("#suggestions-list").append(
+                              `<li data-ticker="${ticker}">${name} (${ticker})</li>`
+                          );
+                      });
+                  });
+              } else {
+                  $("#suggestions-list").empty();
               }
-              // Format number to 2 decimal places
-              $(this).text(value.toFixed(2));
-            }
-          }
-        });
+          });
+
+          $(document).on("click", "#suggestions-list li", function () {
+              $("#another-ticker-input").val($(this).data("ticker"));
+              $("#suggestions-list").empty();
+              $("form").submit();
+          });
+
+          $(".data td").each(function () {
+              let value = parseFloat($(this).text());
+              if (!isNaN(value)) {
+                  if ($(this).index() === 0) {
+                      $(this).text(Math.round(value));
+                  } else {
+                      if (value > 0) {
+                          $(this).addClass("positive");
+                      } else if (value < 0) {
+                          $(this).addClass("negative");
+                      }
+                      $(this).text(value.toFixed(2));
+                  }
+              }
+          });
       });
-    </script>
-  </body>
+  </script>
+</body>
 </html>

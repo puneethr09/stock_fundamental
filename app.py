@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request
-import pandas as pd
-import os
+from utils import load_company_data
 from src.basic_analysis import get_financial_ratios, analyze_ratios
 
 app = Flask(__name__)
@@ -13,21 +12,16 @@ def home():
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
-    if request.method == "POST":
-        ticker = request.form["ticker"].upper() + ".NS"
-    else:
-        ticker = request.args.get("ticker", "").upper() + ".NS"
+    ticker = (
+        request.form.get("ticker") or request.args.get("ticker", "")
+    ).upper() + ".NS"
 
     try:
         ratios_df = get_financial_ratios(ticker)
         if ratios_df is not None and not ratios_df.empty:
             warnings, explanations, plot_filename = analyze_ratios(ratios_df)
             company_name = ratios_df["Company"].iloc[0]
-            # Format DataFrame
-            ratios_df = ratios_df.drop(columns=["Company"])
-            # Round numbers to 2 decimal places
-            ratios_df = ratios_df.round(2)
-            
+            ratios_df = ratios_df.drop(columns=["Company"]).round(2)
             return render_template(
                 "results.html",
                 tables=[ratios_df.to_html(classes="data table-hover", index=False)],
@@ -48,26 +42,11 @@ def analyze():
             "results.html", error=f"An error occurred: {e}", plot_filename=[]
         )
 
-# Load company data from CSV files in the input directory
-def load_company_data():
-    input_dir = "input"
-    company_data = pd.DataFrame()
-
-    for file in os.listdir(input_dir):
-        if file.endswith(".csv"):
-            df = pd.read_csv(os.path.join(input_dir, file))
-            company_data = pd.concat([company_data, df], ignore_index=True)
-
-    return company_data[["Company Name", "Ticker"]]
-
-
-# Load the company data at the start
-company_data = load_company_data()
-
 
 @app.route("/suggest", methods=["GET"])
 def suggest():
     query = request.args.get("query", "").strip()
+    company_data = load_company_data()
     suggestions = company_data[
         company_data["Company Name"].str.contains(query, case=False, na=False)
     ]
@@ -75,6 +54,7 @@ def suggest():
         row["Company Name"]: row["Ticker"] for index, row in suggestions.iterrows()
     }
     return {"suggestions": result}
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

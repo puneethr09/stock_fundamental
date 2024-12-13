@@ -1,211 +1,74 @@
 import yfinance as yf
 import pandas as pd
-
 import matplotlib
-
-matplotlib.use("Agg")  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from datetime import datetime
+from utils import calculate_ratio, calculate_margin, normalize_financial_data
+
+matplotlib.use("Agg")  # Use a non-interactive backend for plotting
 
 
 def get_financial_ratios(ticker):
     stock = yf.Ticker(ticker)
     company_name = stock.info.get("longName", "Unknown Company")
 
-    # Get historical data for the maximum available period
-    historical_data = stock.history(period="max")  # Use "max" to get all available data
+    historical_data = stock.history(period="max")
     if historical_data.empty:
         print(f"No historical data available for {ticker}.")
         return None
 
-    # Check if the index is timezone-naive and localize if necessary
     if historical_data.index.tz is not None:
         historical_data.index = historical_data.index.tz_localize(None)
 
-    # Check how many years of data are available
     available_years = historical_data.index.year.unique()
-    num_years = len(available_years)
-
-    if num_years < 1:
+    if len(available_years) < 1:
         print(f"No historical data available for {ticker}.")
-        return None  # Or handle as needed
+        return None
 
-    # Proceed with data retrieval and calculations
-    balance_sheet = stock.balance_sheet / 1000000  # Convert to millions
-    cash_flow = stock.cashflow / 1000000  # Convert to millions
-    income_stmt = stock.financials / 1000000  # Convert to millions
+    balance_sheet = stock.balance_sheet / 1e6
+    cash_flow = stock.cashflow / 1e6
+    income_statement = stock.financials / 1e6
 
-    # Convert to numeric, coercing errors to NaN
     balance_sheet = balance_sheet.apply(pd.to_numeric, errors="coerce")
     cash_flow = cash_flow.apply(pd.to_numeric, errors="coerce")
-    income_stmt = income_stmt.apply(pd.to_numeric, errors="coerce")
+    income_statement = income_statement.apply(pd.to_numeric, errors="coerce")
 
-    # Calculate financial ratios
-    try:
-        roe = (
-            income_stmt.loc["Net Income", income_stmt.columns]
-            / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
-        )
-    except:
-        # Handle the case where the calculation fails roe should be NaN for all  years
-        roe = pd.Series(np.nan, index=income_stmt.columns)
+    roe = calculate_ratio(
+        income_statement, balance_sheet, "Net Income", "Common Stock Equity"
+    )
+    roa = calculate_ratio(income_statement, balance_sheet, "Net Income", "Total Assets")
+    roic = calculate_ratio(
+        cash_flow, income_statement, "Operating Cash Flow", "Total Revenue"
+    )
+    quick_ratio = calculate_quick_ratio(balance_sheet)
+    current_ratio = calculate_ratio(
+        balance_sheet, balance_sheet, "Current Assets", "Current Liabilities"
+    )
+    debt_to_equity = calculate_ratio(
+        balance_sheet, balance_sheet, "Total Debt", "Common Stock Equity"
+    )
+    eps = calculate_eps(income_statement)
+    pe_ratios = calculate_pe_ratio(historical_data, eps)
+    ebit_margin = calculate_ebit_margin(income_statement)
+    roi = calculate_roi(income_statement, balance_sheet)
+    asset_turnover = calculate_ratio(
+        income_statement, balance_sheet, "Total Revenue", "Total Assets"
+    )
+    operating_margin = calculate_margin(
+        income_statement, "Operating Income", "Total Revenue"
+    )
+    net_profit_margin = calculate_margin(
+        income_statement, "Net Income", "Total Revenue"
+    )
+    working_capital_ratio = calculate_ratio(
+        balance_sheet, balance_sheet, "Current Assets", "Current Liabilities"
+    )
+    interest_coverage = calculate_ratio(
+        income_statement, income_statement, "Operating Income", "Interest Expense"
+    )
 
-    try:
-        roa = (
-            income_stmt.loc["Net Income", income_stmt.columns]
-            / balance_sheet.loc["Total Assets", balance_sheet.columns]
-        )
-    except:
-        # Handle the case where the calculation fails roa should be NaN for all  years
-        roa = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        roic = (
-            cash_flow.loc["Operating Cash Flow", cash_flow.columns]
-            / income_stmt.loc["Total Revenue", income_stmt.columns]
-        )
-    except:
-        # Handle the case where the calculation fails roic should be NaN for all  years
-        roic = pd.Series(np.nan, index=cash_flow.columns)
-
-    try:
-        quick_ratio = (
-            balance_sheet.loc["Current Assets", balance_sheet.columns]
-            - (
-                balance_sheet.loc["Inventory", balance_sheet.columns]
-                if "Inventory" in balance_sheet.index
-                else pd.Series(0, index=balance_sheet.columns)
-            )
-            - balance_sheet.loc["Prepaid Assets", balance_sheet.columns]
-        ) / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
-    except:
-        # Handle the case where the calculation fails quick_ratio should be NaN for all  years
-        quick_ratio = pd.Series(np.nan, index=balance_sheet.columns)
-
-    try:
-        current_ratio = (
-            balance_sheet.loc["Current Assets", balance_sheet.columns]
-            / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
-        )
-    except:
-        # Handle the case where the calculation fails current_ratio should be NaN for all  years
-        current_ratio = pd.Series(np.nan, index=balance_sheet.columns)
-
-    try:
-        debt_to_equity = (
-            balance_sheet.loc["Total Debt", balance_sheet.columns]
-            / balance_sheet.loc["Common Stock Equity", balance_sheet.columns]
-        )
-    except:
-        # Handle the case where the calculation fails debt_to_equity should be NaN for all  years
-        debt_to_equity = pd.Series(np.nan, index=balance_sheet.columns)
-
-    try:
-        eps = (
-            income_stmt.loc["Diluted EPS", income_stmt.columns] * 1000000
-        )  # Convert to millions
-        eps.index = eps.index.tz_localize(None)  # Make EPS index timezone-naive
-    except:
-        # Handle the case where the calculation fails eps should be NaN for all  years
-        eps = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        pe_ratios = (
-            historical_data["Close"].reindex(eps.index) / eps
-        )  # Calculate P/E for each year
-    except:
-        # Handle the case where the calculation fails pe_ratios should be NaN for all  years
-        pe_ratios = pd.Series(np.nan, index=eps.index)
-
-    # Earnings Before Interest and Taxes (EBIT)
-    try:
-        ebit = (
-            income_stmt.loc["Total Revenue", income_stmt.columns]
-            - income_stmt.loc["Operating Expense", income_stmt.columns]
-        )
-    except:
-        # Handle the case where the calculation fails ebit should be NaN for all  years
-        ebit = pd.Series(np.nan, index=income_stmt.columns)
-
-    # EBIT Margin
-    try:
-        ebit_margin = (
-            ebit / income_stmt.loc["Total Revenue", income_stmt.columns]
-        ) * 100
-    except:
-        # Handle the case where the calculation fails ebit_margin should be NaN for all  years
-        ebit_margin = pd.Series(np.nan, index=income_stmt.columns)
-
-    # Return on Investment (ROI)
-    try:
-        roi = (
-            income_stmt.loc["Net Income", income_stmt.columns]
-            / balance_sheet.loc["Total Assets", balance_sheet.columns]
-        ) * 100
-    except:
-        # Handle the case where the calculation fails roi should be NaN for all  years
-        roi = pd.Series(np.nan, index=income_stmt.columns)
-
-    # Calculate new ratios individually
-    try:
-        asset_turnover = (
-            income_stmt.loc["Total Revenue", income_stmt.columns]
-            / balance_sheet.loc["Total Assets", balance_sheet.columns]
-        )
-        # ratios_df["Asset Turnover"] = asset_turnover.reindex(available_years).values
-    except Exception as e:
-        print(f"Could not calculate Asset Turnover: {e}")
-        asset_turnover = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        operating_margin = (
-            income_stmt.loc["Operating Income", income_stmt.columns]
-            / income_stmt.loc["Total Revenue", income_stmt.columns]
-        ) * 100
-        # ratios_df["Operating Margin"] = operating_margin.reindex(available_years).values
-    except Exception as e:
-        print(f"Could not calculate Operating Margin: {e}")
-        operating_margin = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        net_profit_margin = (
-            income_stmt.loc["Net Income", income_stmt.columns]
-            / income_stmt.loc["Total Revenue", income_stmt.columns]
-        ) * 100
-        # ratios_df["Net Profit Margin"] = net_profit_margin.reindex(
-    #     available_years
-    #  ).values
-    except Exception as e:
-        print(f"Could not calculate Net Profit Margin: {e}")
-        net_profit_margin = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        working_capital_ratio = (
-            balance_sheet.loc["Current Assets", balance_sheet.columns]
-            / balance_sheet.loc["Current Liabilities", balance_sheet.columns]
-        )
-        # ratios_df["Working Capital Ratio"] = working_capital_ratio.reindex(
-        #     available_years
-        # ).values
-    except Exception as e:
-        print(f"Could not calculate Working Capital Ratio: {e}")
-        working_capital_ratio = pd.Series(np.nan, index=income_stmt.columns)
-
-    try:
-        interest_coverage = (
-            income_stmt.loc["Operating Income", income_stmt.columns]
-            / income_stmt.loc["Interest Expense", income_stmt.columns]
-        )
-        # ratios_df["Interest Coverage"] = interest_coverage.reindex(
-        #     available_years
-        # ).values
-    except Exception as e:
-        print(f"Could not calculate Interest Coverage: {e}")
-        interest_coverage = pd.Series(np.nan, index=income_stmt.columns)
-
-    # Set the index to be the years
     roe.index = pd.to_datetime(roe.index, format="%Y-%m-%d").year
     roa.index = pd.to_datetime(roa.index, format="%Y-%m-%d").year
     roic.index = pd.to_datetime(roic.index, format="%Y-%m-%d").year
@@ -229,15 +92,12 @@ def get_financial_ratios(ticker):
         interest_coverage.index, format="%Y-%m-%d"
     ).year
 
-    # Change to percentages
-    roe = roe * 100
-    roa = roa * 100
-    roic = roic * 100
-    # Convert to percentages where applicable
-    operating_margin = operating_margin * 100
-    net_profit_margin = net_profit_margin * 100
+    roe *= 100
+    roa *= 100
+    roic *= 100
+    operating_margin *= 100
+    net_profit_margin *= 100
 
-    # Create a DataFrame to store the financial ratios
     ratios_df = pd.DataFrame(
         {
             "Year": available_years,
@@ -260,20 +120,58 @@ def get_financial_ratios(ticker):
             "Company": [company_name] * len(available_years),
         }
     )
-    # Drop years with all NaN values
-    ratios_df = ratios_df.dropna(
-        how="all", subset=ratios_df.columns[1:-1]
-    )  # Exclude 'Year' and 'Company' columns
+
+    ratios_df = ratios_df.dropna(how="all", subset=ratios_df.columns[1:-1])
     return ratios_df
 
 
-def normalize_data(ratios_df):
-    normalized_df = ratios_df.copy()
-    for column in normalized_df.columns[1:-1]:  # Skip 'Year' and 'Company'
-        mean_val = normalized_df[column].mean()
-        std_dev = normalized_df[column].std()
-        normalized_df[column] = (normalized_df[column] - mean_val) / std_dev
-    return normalized_df
+def calculate_quick_ratio(balance_sheet):
+    try:
+        current_assets = balance_sheet.loc["Current Assets"]
+        inventory = balance_sheet.get(
+            "Inventory", pd.Series(0, index=balance_sheet.columns)
+        )
+        prepaid_assets = balance_sheet.loc["Prepaid Assets"]
+        current_liabilities = balance_sheet.loc["Current Liabilities"]
+        return (current_assets - inventory - prepaid_assets) / current_liabilities
+    except KeyError:
+        return pd.Series(np.nan, index=balance_sheet.columns)
+
+
+def calculate_eps(income_statement):
+    try:
+        eps = income_statement.loc["Diluted EPS"] * 1e6
+        eps.index = eps.index.tz_localize(None)
+        return eps
+    except KeyError:
+        return pd.Series(np.nan, index=income_statement.columns)
+
+
+def calculate_pe_ratio(historical_data, eps):
+    try:
+        return historical_data["Close"].reindex(eps.index) / eps
+    except KeyError:
+        return pd.Series(np.nan, index=eps.index)
+
+
+def calculate_ebit_margin(income_statement):
+    try:
+        ebit = (
+            income_statement.loc["Total Revenue"]
+            - income_statement.loc["Operating Expense"]
+        )
+        return (ebit / income_statement.loc["Total Revenue"]) * 100
+    except KeyError:
+        return pd.Series(np.nan, index=income_statement.columns)
+
+
+def calculate_roi(income_statement, balance_sheet):
+    try:
+        return (
+            income_statement.loc["Net Income"] / balance_sheet.loc["Total Assets"]
+        ) * 100
+    except KeyError:
+        return pd.Series(np.nan, index=income_statement.columns)
 
 
 def analyze_ratios(ratios_df):
@@ -285,16 +183,8 @@ def analyze_ratios(ratios_df):
     warnings = []
     explanations = []
 
-    # Print all financial ratios for the last three years
-    print(f"\nFinancial Ratios for '{company_name}' :")
-    print(ratios_df)
-
-    # Get the latest financial ratios
     latest_ratios = ratios_df.iloc[-1]
-    print(f"\nLatest Financial Ratios for '{company_name}' :")
-    print(latest_ratios)
 
-    # Simple Risk Assessment
     if latest_ratios["ROE"] < 10:
         warnings.append(
             "Warning: Low Return on Equity (ROE) indicates potential underperformance."
@@ -316,7 +206,6 @@ def analyze_ratios(ratios_df):
             "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
         )
 
-    # Add new ratio analysis
     if latest_ratios["Operating Margin"] < 15:
         warnings.append(
             "Warning: Low Operating Margin indicates potential operational inefficiency."
@@ -349,24 +238,20 @@ def analyze_ratios(ratios_df):
             "Explanation: An interest coverage ratio below 2 suggests the company might have difficulty meeting its interest payment obligations."
         )
 
-    # Create a static directory if it doesn't exist
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Create plots with new ratios included
-    plots = plot_ratios(ratios_df, company_name)
+    plots = plot_financial_ratios(ratios_df, company_name)
 
     return warnings, explanations, plots
 
 
-def plot_ratios(ratios_df, company_name):
+def plot_financial_ratios(ratios_df, company_name):
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
 
-    # Create a single figure with 3x2 subplots (increased from 2x2)
     fig, axes = plt.subplots(3, 2, figsize=(16, 12))
 
-    # Original Plot 1: ROE, ROA, ROIC, ROI (top-left)
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROE"], marker="o", label="ROE")
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROA"], marker="o", label="ROA")
     axes[0, 0].plot(ratios_df["Year"], ratios_df["ROIC"], marker="o", label="ROIC")
@@ -377,7 +262,6 @@ def plot_ratios(ratios_df, company_name):
     axes[0, 0].legend()
     axes[0, 0].grid()
 
-    # Original Plot 2: Quick Ratio and Current Ratio (top-right)
     axes[0, 1].plot(
         ratios_df["Year"], ratios_df["Quick Ratio"], marker="o", label="Quick Ratio"
     )
@@ -390,7 +274,6 @@ def plot_ratios(ratios_df, company_name):
     axes[0, 1].legend()
     axes[0, 1].grid()
 
-    # Original Plot 3: P/E Ratio, EBIT Margin (middle-left)
     axes[1, 0].plot(
         ratios_df["Year"], ratios_df["P/E Ratio"], marker="o", label="P/E Ratio"
     )
@@ -403,7 +286,6 @@ def plot_ratios(ratios_df, company_name):
     axes[1, 0].legend()
     axes[1, 0].grid()
 
-    # Original Plot 4: Debt to Equity (middle-right)
     axes[1, 1].plot(
         ratios_df["Year"],
         ratios_df["Debt to Equity"],
@@ -416,7 +298,6 @@ def plot_ratios(ratios_df, company_name):
     axes[1, 1].legend()
     axes[1, 1].grid()
 
-    # New Plot 5: Operating and Net Profit Margins (bottom-left)
     axes[2, 0].plot(
         ratios_df["Year"],
         ratios_df["Operating Margin"],
@@ -435,7 +316,6 @@ def plot_ratios(ratios_df, company_name):
     axes[2, 0].legend()
     axes[2, 0].grid()
 
-    # New Plot 6: Asset Turnover and Interest Coverage (bottom-right)
     axes[2, 1].plot(
         ratios_df["Year"],
         ratios_df["Asset Turnover"],
@@ -458,10 +338,9 @@ def plot_ratios(ratios_df, company_name):
     plt.savefig(os.path.join(static_folder, f"{company_name}_all_ratios.png"))
     plt.close()
 
-    # Plot normalized ratios (including new ones)
-    normalized_df = normalize_data(ratios_df)
+    normalized_df = normalize_financial_data(ratios_df)
     plt.figure(figsize=(14, 8))
-    for column in normalized_df.columns[1:-1]:  # Skip Year and Company columns
+    for column in normalized_df.columns[1:-1]:
         plt.plot(normalized_df["Year"], normalized_df[column], marker="o", label=column)
     plt.title(f"Normalized Financial Ratios for {company_name}")
     plt.xlabel("Year")
