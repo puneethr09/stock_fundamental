@@ -87,6 +87,7 @@
           left: 50%;
           transform: translateX(-50%);
           margin-top: 10px;
+          text-align: center;
       }
       .loader-spinner {
           width: 40px;
@@ -95,22 +96,35 @@
           border-radius: 50%;
           border-top: 4px solid #3498db;
           animation: spin 1s linear infinite;
+          margin: 0 auto;
       }
       @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+              transform: rotate(0deg);
+          }
+          100% {
+              transform: rotate(360deg);
+          }
       }
   </style>
 </head>
 <body>
   <h1>Stock Analysis</h1>
   <form action="/analyze" method="post">
-      <input type="text" id="ticker-input" name="ticker" placeholder="Enter company name or ticker" autocomplete="off" required>
-      <ul id="suggestions-list"></ul>
-      <div class="loader">
-          <div class="loader-spinner"></div>
-          <p>Analyzing stock data...</p>
-      </div>
+    <input
+        type="text"
+        id="ticker-input"
+        name="ticker"
+        placeholder="Enter company name or ticker"
+        autocomplete="off"
+        required
+    />
+    <ul id="suggestions-list"></ul>
+    <!-- Loader positioned below the input -->
+    <div class="loader">
+        <div class="loader-spinner"></div>
+        <p>Analyzing stock data...</p>
+    </div>
   </form>
   <!-- jQuery and Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
