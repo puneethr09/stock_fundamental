@@ -6,13 +6,20 @@ import numpy as np
 import os
 from datetime import datetime
 from utils import calculate_ratio, calculate_margin, normalize_financial_data
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 matplotlib.use("Agg")  # Use a non-interactive backend for plotting
 
 
 def get_financial_ratios(ticker):
     stock = yf.Ticker(ticker)
-    company_name = stock.info.get("longName", "Unknown Company")
+    try:
+        company_name = stock.info.get("longName", "Unknown Company")
+        print(f"Retrieved data for: {company_name}")
+    except:
+        print(f"Failed to retrieve data for ticker: {ticker}")
+        return None
 
     historical_data = stock.history(period="max")
     if historical_data.empty:
@@ -177,7 +184,7 @@ def calculate_roi(income_statement, balance_sheet):
 def analyze_ratios(ratios_df):
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
-        return [], []
+        return [], [], None
 
     company_name = ratios_df["Company"].unique()[0]
     warnings = []
@@ -238,12 +245,9 @@ def analyze_ratios(ratios_df):
             "Explanation: An interest coverage ratio below 2 suggests the company might have difficulty meeting its interest payment obligations."
         )
 
-    static_folder = os.path.join(os.getcwd(), "static")
-    os.makedirs(static_folder, exist_ok=True)
+    plot_html = create_plotly_visualization(ratios_df, company_name)
 
-    plots = plot_financial_ratios(ratios_df, company_name)
-
-    return warnings, explanations, plots
+    return warnings, explanations, plot_html
 
 
 def plot_financial_ratios(ratios_df, company_name):
@@ -372,3 +376,113 @@ if __name__ == "__main__":
     main()
 
 pd.set_option("future.no_silent_downcasting", True)
+
+
+def create_plotly_visualization(ratios_df, company_name):
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        subplot_titles=(
+            "Return Ratios",
+            "Liquidity Ratios",
+            "Market & Profitability",
+            "Leverage Ratio",
+            "Margin Analysis",
+            "Efficiency Metrics",
+        ),
+        vertical_spacing=0.12,
+        horizontal_spacing=0.08,
+    )
+
+    # Return Ratios (1,1)
+    for metric in ["ROE", "ROA", "ROIC", "ROI"]:
+        fig.add_trace(
+            go.Scatter(
+                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Liquidity Ratios (1,2)
+    for metric in ["Quick Ratio", "Current Ratio"]:
+        fig.add_trace(
+            go.Scatter(
+                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+            ),
+            row=1,
+            col=2,
+        )
+
+    # Market & Profitability (2,1)
+    for metric in ["P/E Ratio", "EBIT Margin"]:
+        fig.add_trace(
+            go.Scatter(
+                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+            ),
+            row=2,
+            col=1,
+        )
+
+    # Leverage Ratio (2,2)
+    fig.add_trace(
+        go.Scatter(
+            x=ratios_df["Year"],
+            y=ratios_df["Debt to Equity"],
+            name="Debt to Equity",
+            showlegend=True,
+        ),
+        row=2,
+        col=2,
+    )
+
+    # Margin Analysis (3,1)
+    for metric in ["Operating Margin", "Net Profit Margin"]:
+        fig.add_trace(
+            go.Scatter(
+                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+            ),
+            row=3,
+            col=1,
+        )
+
+    # Efficiency Metrics (3,2)
+    for metric in ["Asset Turnover", "Interest Coverage"]:
+        fig.add_trace(
+            go.Scatter(
+                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+            ),
+            row=3,
+            col=2,
+        )
+
+    fig.update_layout(
+        height=1200,
+        width=1600,  # Increased width to accommodate legend
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        showlegend=True,
+        legend=dict(
+            yanchor="middle",
+            y=0.5,
+            xanchor="right",
+            x=1.15,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
+        ),
+        margin=dict(l=50, r=150, t=80, b=50),  # Increased right margin for legend
+    )
+
+    # Make plots fill available space
+    fig.update_xaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor="lightgrey",
+        automargin=True,
+        tickformat="d",  # Display as integers
+        dtick=1,  # Force step size of 1
+    )
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="lightgrey", automargin=True)
+
+    return fig.to_html(full_html=False, include_plotlyjs=True)

@@ -12,34 +12,33 @@ def home():
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
-    ticker = (
-        request.form.get("ticker") or request.args.get("ticker", "")
-    ).upper() + ".NS"
+    if request.method == "POST":
+        ticker = request.form["ticker"].upper() + ".NS"
+    else:
+        ticker = request.args.get("ticker", "").upper() + ".NS"
 
-    try:
-        ratios_df = get_financial_ratios(ticker)
-        if ratios_df is not None and not ratios_df.empty:
-            warnings, explanations, plot_filename = analyze_ratios(ratios_df)
-            company_name = ratios_df["Company"].iloc[0]
-            ratios_df = ratios_df.drop(columns=["Company"]).round(2)
-            return render_template(
-                "results.html",
-                tables=[ratios_df.to_html(classes="data table-hover", index=False)],
-                titles=ratios_df.columns.values,
-                plot_filename=plot_filename,
-                warnings=warnings,
-                explanations=explanations,
-                company_name=company_name,
-            )
-        else:
-            return render_template(
-                "results.html",
-                error="No data available for the provided ticker.",
-                plot_filename=[],
-            )
-    except Exception as e:
+    ratios_df = get_financial_ratios(ticker)
+    if ratios_df is not None and not ratios_df.empty:
+        warnings, explanations, plot_html = analyze_ratios(ratios_df)
+        company_name = ratios_df["Company"].iloc[0]
+        
+        # Remove Company column before displaying
+        display_df = ratios_df.drop(columns=['Company'])
+        
         return render_template(
-            "results.html", error=f"An error occurred: {e}", plot_filename=[]
+            "results.html",
+            tables=[display_df.to_html(classes="data table-hover", index=False)],
+            titles=display_df.columns.values,
+            plot_html=plot_html,
+            warnings=warnings,
+            explanations=explanations,
+            company_name=company_name
+        )    
+    else:
+        return render_template(
+            "results.html",
+            error="No data available for the provided ticker.",
+            plot_html=None,
         )
 
 

@@ -165,11 +165,9 @@
       <p>{{ explanation }}</p>
       {% endfor %}
   </div>
-  <div class="plot">
-      {% for plot in plot_filename %}
-      <img src="{{ url_for('static', filename=plot) }}" alt="Financial Ratios Plot">
-      {% endfor %}
-  </div>
+    <div class="plot">
+      {{ plot_html | safe }}
+</div>
   <!-- jQuery and Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
