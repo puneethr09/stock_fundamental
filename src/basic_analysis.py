@@ -75,6 +75,7 @@ def get_financial_ratios(ticker):
     interest_coverage = calculate_ratio(
         income_statement, income_statement, "Operating Income", "Interest Expense"
     )
+    pb_ratio = calculate_pb_ratio(historical_data, balance_sheet, stock)
 
     roe.index = pd.to_datetime(roe.index, format="%Y-%m-%d").year
     roa.index = pd.to_datetime(roa.index, format="%Y-%m-%d").year
@@ -82,7 +83,6 @@ def get_financial_ratios(ticker):
     quick_ratio.index = pd.to_datetime(quick_ratio.index, format="%Y-%m-%d").year
     current_ratio.index = pd.to_datetime(current_ratio.index, format="%Y-%m-%d").year
     debt_to_equity.index = pd.to_datetime(debt_to_equity.index, format="%Y-%m-%d").year
-    pe_ratios.index = pd.to_datetime(pe_ratios.index, format="%Y-%m-%d").year
     ebit_margin.index = pd.to_datetime(ebit_margin.index, format="%Y-%m-%d").year
     roi.index = pd.to_datetime(roi.index, format="%Y-%m-%d").year
     asset_turnover.index = pd.to_datetime(asset_turnover.index, format="%Y-%m-%d").year
@@ -104,7 +104,6 @@ def get_financial_ratios(ticker):
     roic *= 100
     operating_margin *= 100
     net_profit_margin *= 100
-
     ratios_df = pd.DataFrame(
         {
             "Year": available_years,
@@ -124,10 +123,10 @@ def get_financial_ratios(ticker):
                 available_years
             ).values,
             "Interest Coverage": interest_coverage.reindex(available_years).values,
+            "P/B Ratio": pb_ratio.reindex(available_years).values,
             "Company": [company_name] * len(available_years),
         }
     )
-
     ratios_df = ratios_df.dropna(how="all", subset=ratios_df.columns[1:-1])
     return ratios_df
 
@@ -145,19 +144,32 @@ def calculate_quick_ratio(balance_sheet):
         return pd.Series(np.nan, index=balance_sheet.columns)
 
 
-def calculate_eps(income_statement):
+def calculate_eps(income_stmt):
     try:
-        eps = income_statement.loc["Diluted EPS"] * 1e6
-        eps.index = eps.index.tz_localize(None)
+        if isinstance(income_stmt, pd.Series):
+            eps = income_stmt["Diluted EPS"] * 1000000
+        else:
+            eps = income_stmt.loc["Diluted EPS"] * 1000000
         return eps
-    except KeyError:
-        return pd.Series(np.nan, index=income_statement.columns)
+    except:
+        print("EPS calculation failed")
+        return pd.Series(np.nan, index=income_stmt.index)
 
 
 def calculate_pe_ratio(historical_data, eps):
     try:
-        return historical_data["Close"].reindex(eps.index) / eps
-    except KeyError:
+        # Get year-end closing prices
+        year_end_prices = historical_data.groupby(historical_data.index.year)[
+            "Close"
+        ].last()
+        # Convert EPS index to years
+        eps.index = eps.index.year
+        matching_years = eps.index
+        aligned_prices = year_end_prices[matching_years]
+        pe_ratios = aligned_prices / eps
+        return pe_ratios
+    except Exception as e:
+        print(f"\nPE Ratio calculation error: {e}")
         return pd.Series(np.nan, index=eps.index)
 
 
@@ -170,6 +182,28 @@ def calculate_ebit_margin(income_statement):
         return (ebit / income_statement.loc["Total Revenue"]) * 100
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
+
+
+def calculate_pb_ratio(historical_data, balance_sheet, stock):
+    try:
+        # Get shares outstanding from stock info
+        shares_outstanding = stock.info.get("sharesOutstanding")
+        # Get year-end closing prices
+        year_end_prices = historical_data.groupby(historical_data.index.year)[
+            "Close"
+        ].last()
+        # Get total equity and calculate book value per share
+        total_equity = balance_sheet.loc["Common Stock Equity"] * 1e6
+        book_value_per_share = total_equity / shares_outstanding
+        # Extract years from the datetime index
+        years = [int(str(idx)[:4]) for idx in total_equity.index]
+        book_value_per_share.index = years
+        # Calculate P/B ratio
+        pb_ratios = year_end_prices[years] / book_value_per_share
+        return pb_ratios
+    except Exception as e:
+        print(f"\nP/B Ratio calculation error: {e}")
+        return pd.Series(np.nan, index=balance_sheet.columns)
 
 
 def calculate_roi(income_statement, balance_sheet):
@@ -415,7 +449,7 @@ def create_plotly_visualization(ratios_df, company_name):
         )
 
     # Market & Profitability (2,1)
-    for metric in ["P/E Ratio", "EBIT Margin"]:
+    for metric in ["P/E Ratio", "P/B Ratio", "EBIT Margin"]:
         fig.add_trace(
             go.Scatter(
                 x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
