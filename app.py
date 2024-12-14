@@ -68,8 +68,8 @@ def suggest():
 def trigger_ota():
     logging.info("OTA update triggered")
     
-    # Expand the path to the script
-    script_path = os.path.expanduser('~/repo/stock_fundamental/docker_compose_restart.py')
+    # Use the full path directly
+    script_path = "/home/pi/repo/stock_fundamental/docker_compose_restart.py"
     
     # Check if the script exists
     if not os.path.isfile(script_path):
@@ -91,7 +91,6 @@ def trigger_ota():
             yield f"data: {line}\n\n"
             
     return Response(generate(), mimetype='text/event-stream')
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
