@@ -115,22 +115,38 @@
         right: 20px;
         z-index: 1000;
       }
-
-      .ota-button {
-        background-color: #ffc107;
-        color: #000;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      .console-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 800px;
+        background: #1e1e1e;
+        border-radius: 8px;
+        z-index: 1001;
+        padding: 20px;
       }
-
-      .ota-button:hover {
-        background-color: #ffb300;
+      .console-output {
+        height: 300px;
+        overflow-y: auto;
+        background: #000;
+        color: #00ff00;
+        font-family: monospace;
+        padding: 10px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+      }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
       }
     </style>
   </head>
@@ -181,23 +197,41 @@
         });
       });
     </script>
+    <div class="ota-button-container">
+        <button id="ota-button" class="btn btn-warning btn-lg">
+            <i class="fas fa-sync"></i> Update System
+        </button>
+    </div>
+
+    <div id="console-modal" class="console-modal">
+        <h3 style="color: white">System Update Progress</h3>
+        <div id="console-output" class="console-output"></div>
+        <button onclick="closeConsole()" class="btn btn-secondary">Close</button>
+    </div>
+    <div id="modal-overlay" class="modal-overlay"></div>
+
     <script>
-      document
-        .getElementById("ota-button")
-        .addEventListener("click", function () {
-          fetch("/trigger-ota", {
-            method: "POST",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              alert(data.message);
-            });
+        document.getElementById('ota-button').addEventListener('click', function() {
+            document.getElementById('console-modal').style.display = 'block';
+            document.getElementById('modal-overlay').style.display = 'block';
+            const consoleOutput = document.getElementById('console-output');
+            
+            const eventSource = new EventSource('/trigger-ota');
+            
+            eventSource.onmessage = function(event) {
+                consoleOutput.innerHTML += event.data + '\n';
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            };
+            
+            eventSource.onerror = function() {
+                eventSource.close();
+            };
         });
+
+        function closeConsole() {
+            document.getElementById('console-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
     </script>
   </body>
-  <div class="ota-button-container">
-    <button id="ota-button" class="ota-button">
-      <i class="fas fa-sync"></i> Update System
-    </button>
-  </div>
 </html>

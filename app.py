@@ -1,12 +1,20 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, jsonify, Response, request
+import subprocess
+import logging
 from utils import load_company_data
 from src.basic_analysis import get_financial_ratios, analyze_ratios
 
 app = Flask(__name__)
 
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 @app.route("/")
 def home():
+    logging.debug("Rendering home page")
     return render_template("index.html")
 
 
@@ -21,10 +29,10 @@ def analyze():
     if ratios_df is not None and not ratios_df.empty:
         warnings, explanations, plot_html = analyze_ratios(ratios_df)
         company_name = ratios_df["Company"].iloc[0]
-        
+
         # Remove Company column before displaying
-        display_df = ratios_df.drop(columns=['Company'])
-        
+        display_df = ratios_df.drop(columns=["Company"])
+
         return render_template(
             "results.html",
             tables=[display_df.to_html(classes="data table-hover", index=False)],
@@ -32,8 +40,8 @@ def analyze():
             plot_html=plot_html,
             warnings=warnings,
             explanations=explanations,
-            company_name=company_name
-        )    
+            company_name=company_name,
+        )
     else:
         return render_template(
             "results.html",
@@ -53,6 +61,25 @@ def suggest():
         row["Company Name"]: row["Ticker"] for index, row in suggestions.iterrows()
     }
     return {"suggestions": result}
+
+
+@app.route("/trigger-ota")
+def trigger_ota():
+    logging.info("OTA update triggered")
+
+    def generate():
+        process = subprocess.Popen(
+            ["python3", "~/repo/stock_fundamental/docker_compose_restart.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+
+        for line in process.stdout:
+            logging.debug(f"OTA output: {line.strip()}")
+            yield f"data: {line}\n\n"
+
+    return Response(generate(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
