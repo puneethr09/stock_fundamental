@@ -224,6 +224,7 @@
             };
             
             eventSource.onerror = function() {
+                consoleOutput.innerHTML += "Error occurred while connecting to the server.\n";
                 eventSource.close();
             };
         });

@@ -68,8 +68,9 @@ def suggest():
 def trigger_ota():
     logging.info("OTA update triggered")
     
-    # Use the full path directly
-    script_path = "/home/pi/repo/stock_fundamental/docker_compose_restart.py"
+    # Set the working directory and script path
+    working_directory = "/home/pi/repo/stock_fundamental"
+    script_path = os.path.join(working_directory, "docker_compose_restart.py")
     
     # Check if the script exists
     if not os.path.isfile(script_path):
@@ -79,8 +80,10 @@ def trigger_ota():
     logging.debug(f"Resolved script path: {script_path}")
 
     def generate():
+        # Change the working directory and run the script
         process = subprocess.Popen(
             ['python3', script_path],
+            cwd=working_directory,  # Set the working directory here
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True
@@ -88,9 +91,13 @@ def trigger_ota():
         
         for line in process.stdout:
             logging.debug(f"OTA output: {line.strip()}")
-            yield f"data: {line}\n\n"
+            yield f"data: {line.strip()}\n\n"
             
     return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+import os
+
+logging.debug(f"Current working directory: {os.getcwd()}")
