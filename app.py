@@ -64,13 +64,23 @@ def suggest():
     return {"suggestions": result}
 
 
-@app.route("/trigger-ota")
+@app.route('/trigger-ota')
 def trigger_ota():
     logging.info("OTA update triggered")
     
-    # Set the working directory inside the container
-    working_directory = "/app"  # Adjusted for the mounted volume
-    script_path = os.path.join(working_directory, "docker_compose_restart.py")
+    # Set the working directory to /app
+    working_directory = "/app"  # This is where the host directory is mounted inside the container
+    
+    # Change to the specified directory
+    try:
+        os.chdir(working_directory)  # Change to /app directory
+        logging.debug(f"Changed working directory to: {os.getcwd()}")
+    except FileNotFoundError as e:
+        logging.error(f"Failed to change directory: {e}")
+        return Response("Directory not found", status=404)
+
+    # Full path to the script
+    script_path = "docker_compose_restart.py"  # Now we can use just the script name
     
     # Check if the script exists
     if not os.path.isfile(script_path):
@@ -83,7 +93,6 @@ def trigger_ota():
         # Run the script in the specified directory
         process = subprocess.Popen(
             ['python3', script_path],
-            cwd=working_directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True
