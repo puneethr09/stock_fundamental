@@ -64,14 +64,16 @@ def suggest():
     return {"suggestions": result}
 
 
-@app.route('/trigger-ota')
+@app.route("/trigger-ota")
 def trigger_ota():
     logging.info("OTA update triggered")
-    
-    # Set the working directory and script path
+
+    # Set the working directory
     working_directory = "/home/pi/repo/stock_fundamental"
+
+    # Use the full path directly
     script_path = os.path.join(working_directory, "docker_compose_restart.py")
-    
+
     # Check if the script exists
     if not os.path.isfile(script_path):
         logging.error(f"Script not found: {script_path}")
@@ -82,18 +84,19 @@ def trigger_ota():
     def generate():
         # Change the working directory and run the script
         process = subprocess.Popen(
-            ['python3', script_path],
+            ["python3", script_path],
             cwd=working_directory,  # Set the working directory here
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True
+            universal_newlines=True,
         )
-        
+
         for line in process.stdout:
             logging.debug(f"OTA output: {line.strip()}")
             yield f"data: {line.strip()}\n\n"
-            
-    return Response(generate(), mimetype='text/event-stream')
+
+    return Response(generate(), mimetype="text/event-stream")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
