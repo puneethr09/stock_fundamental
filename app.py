@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, Response, request
 import subprocess
 import logging
+import os
 from utils import load_company_data
 from src.basic_analysis import get_financial_ratios, analyze_ratios
 
@@ -67,9 +68,14 @@ def suggest():
 def trigger_ota():
     logging.info("OTA update triggered")
 
+    # Expand the path to the script
+    script_path = os.path.expanduser(
+        "~/repo/stock_fundamental/docker_compose_restart.py"
+    )
+
     def generate():
         process = subprocess.Popen(
-            ["python3", "~/repo/stock_fundamental/docker_compose_restart.py"],
+            ["python3", script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
