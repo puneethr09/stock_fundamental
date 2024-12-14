@@ -64,28 +64,33 @@ def suggest():
     return {"suggestions": result}
 
 
-@app.route("/trigger-ota")
+@app.route('/trigger-ota')
 def trigger_ota():
     logging.info("OTA update triggered")
-
+    
     # Expand the path to the script
-    script_path = os.path.expanduser(
-        "~/repo/stock_fundamental/docker_compose_restart.py"
-    )
+    script_path = os.path.expanduser('~/repo/stock_fundamental/docker_compose_restart.py')
+    
+    # Check if the script exists
+    if not os.path.isfile(script_path):
+        logging.error(f"Script not found: {script_path}")
+        return Response("Script not found", status=404)
+
+    logging.debug(f"Resolved script path: {script_path}")
 
     def generate():
         process = subprocess.Popen(
-            ["python3", script_path],
+            ['python3', script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True,
+            universal_newlines=True
         )
-
+        
         for line in process.stdout:
             logging.debug(f"OTA output: {line.strip()}")
             yield f"data: {line}\n\n"
-
-    return Response(generate(), mimetype="text/event-stream")
+            
+    return Response(generate(), mimetype='text/event-stream')
 
 
 if __name__ == "__main__":
