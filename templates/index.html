@@ -1,159 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Analysis</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Analysis</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
       body {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          margin: 0;
-          font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
       }
       h1 {
-          font-size: 3rem;
-          margin-bottom: 2rem;
-          color: black;
-          background-color: #007bff;
-          padding: 15px 30px;
-          border-radius: 5px;
-          display: inline-block;
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        color: black;
+        background-color: #007bff;
+        padding: 15px 30px;
+        border-radius: 5px;
+        display: inline-block;
       }
       form {
-          position: relative;
-          text-align: center;
+        position: relative;
+        text-align: center;
       }
       #ticker-input {
-          width: 600px;
-          height: 60px;
-          font-size: 1.5rem;
-          padding: 0.5rem;
-          margin-bottom: 1rem;
-          border: 2px solid #ccc;
-          border-radius: 5px;
-          border-width: 4px;
-          border-color: #007bff;
+        width: 600px;
+        height: 60px;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        border: 2px solid #ccc;
+        border-radius: 5px;
+        border-width: 4px;
+        border-color: #007bff;
       }
       #suggestions-list {
-          position: absolute;
-          top: calc(100% - 1rem);
-          left: 50%;
-          transform: translateX(-50%);
-          width: 600px;
-          max-height: 300px;
-          overflow-y: auto;
-          background: white;
-          border: 1px solid #ccc;
-          border-radius: 0 0 4px 4px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
-          margin-top: 5px;
-          list-style: none;
-          padding: 0;
+        position: absolute;
+        top: calc(100% - 1rem);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-top: 5px;
+        list-style: none;
+        padding: 0;
       }
       #suggestions-list li {
-          padding: 8px 10px;
-          cursor: pointer;
-          border-bottom: 1px solid #eee;
+        padding: 8px 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
       }
       #suggestions-list li:last-child {
-          border-bottom: none;
+        border-bottom: none;
       }
       #suggestions-list li:hover {
-          background-color: #f5f5f5;
+        background-color: #f5f5f5;
       }
       button {
-          font-size: 1.5rem;
-          padding: 0.8rem 2rem;
-          background-color: #007bff;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.8rem 2rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
       }
       button:hover {
-          background-color: #0056b3;
+        background-color: #0056b3;
       }
       .loader {
-          display: none;
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-top: 10px;
-          text-align: center;
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 10px;
+        text-align: center;
       }
       .loader-spinner {
-          width: 40px;
-          height: 40px;
-          border: 4px solid #f3f3f3;
-          border-radius: 50%;
-          border-top: 4px solid #3498db;
-          animation: spin 1s linear infinite;
-          margin: 0 auto;
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
       }
       @keyframes spin {
-          0% {
-              transform: rotate(0deg);
-          }
-          100% {
-              transform: rotate(360deg);
-          }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
-  </style>
-</head>
-<body>
-  <h1>Stock Analysis</h1>
-  <form action="/analyze" method="post">
-    <input
+      .ota-button-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .ota-button {
+        background-color: #ffc107;
+        color: #000;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ota-button:hover {
+        background-color: #ffb300;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stock Analysis</h1>
+    <form action="/analyze" method="post">
+      <input
         type="text"
         id="ticker-input"
         name="ticker"
         placeholder="Enter company name or ticker"
         autocomplete="off"
         required
-    />
-    <ul id="suggestions-list"></ul>
-    <!-- Loader positioned below the input -->
-    <div class="loader">
+      />
+      <ul id="suggestions-list"></ul>
+      <!-- Loader positioned below the input -->
+      <div class="loader">
         <div class="loader-spinner"></div>
         <p>Analyzing stock data...</p>
-    </div>
-  </form>
-  <!-- jQuery and Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script>
+      </div>
+    </form>
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
       $(document).ready(function () {
-          $("#ticker-input").on("input", function () {
-              let query = $(this).val();
-              if (query.length > 1) {
-                  $.get("/suggest", { query: query }, function (data) {
-                      $("#suggestions-list").empty();
-                      $.each(data.suggestions, function (name, ticker) {
-                          $("#suggestions-list").append(
-                              `<li data-ticker="${ticker}">${name} (${ticker})</li>`
-                          );
-                      });
-                  });
-              } else {
-                  $("#suggestions-list").empty();
-              }
-          });
-
-          $(document).on("click", "#suggestions-list li", function () {
-              $("#ticker-input").val($(this).data("ticker"));
+        $("#ticker-input").on("input", function () {
+          let query = $(this).val();
+          if (query.length > 1) {
+            $.get("/suggest", { query: query }, function (data) {
               $("#suggestions-list").empty();
-              $(".loader").show();
-              $("form").submit();
-          });
+              $.each(data.suggestions, function (name, ticker) {
+                $("#suggestions-list").append(
+                  `<li data-ticker="${ticker}">${name} (${ticker})</li>`
+                );
+              });
+            });
+          } else {
+            $("#suggestions-list").empty();
+          }
+        });
+
+        $(document).on("click", "#suggestions-list li", function () {
+          $("#ticker-input").val($(this).data("ticker"));
+          $("#suggestions-list").empty();
+          $(".loader").show();
+          $("form").submit();
+        });
       });
-  </script>
-</body>
+    </script>
+    <script>
+      document
+        .getElementById("ota-button")
+        .addEventListener("click", function () {
+          fetch("/trigger-ota", {
+            method: "POST",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              alert(data.message);
+            });
+        });
+    </script>
+  </body>
+  <div class="ota-button-container">
+    <button id="ota-button" class="ota-button">
+      <i class="fas fa-sync"></i> Update System
+    </button>
+  </div>
 </html>
