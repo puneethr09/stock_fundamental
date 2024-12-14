@@ -71,8 +71,13 @@ def trigger_ota():
     # Set the working directory
     working_directory = "/home/pi/repo/stock_fundamental"
 
-    # Use the full path directly
-    script_path = os.path.join(working_directory, "docker_compose_restart.py")
+    # Change to the specified directory
+    os.chdir(
+        working_directory
+    )  # This is equivalent to 'cd /home/pi/repo/stock_fundamental'
+
+    # Full path to the script
+    script_path = "docker_compose_restart.py"  # Now we can use just the script name
 
     # Check if the script exists
     if not os.path.isfile(script_path):
@@ -82,10 +87,9 @@ def trigger_ota():
     logging.debug(f"Resolved script path: {script_path}")
 
     def generate():
-        # Change the working directory and run the script
+        # Run the script in the specified directory
         process = subprocess.Popen(
             ["python3", script_path],
-            cwd=working_directory,  # Set the working directory here
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
