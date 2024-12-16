@@ -5,5 +5,5 @@ services:
       - "5000:5000" # Replace with your app's port if different
     volumes:
       - ./data:/app/data # Mount a local folder for persistent storage
-      - /home/pi/repo/stock_fundamental:/app # Mount the host directory to /app in the container
+      - /home/puneeth/repo/stock_fundamental:/app # Mount the host directory to /app in the container
     restart: always
