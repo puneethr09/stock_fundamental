@@ -1,21 +1,14 @@
 from flask import Flask, render_template, jsonify, Response, request
 import subprocess
-import logging
 import os
 from utils import load_company_data
 from src.basic_analysis import get_financial_ratios, analyze_ratios
 
 app = Flask(__name__)
 
-# Configure logging
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
 
 @app.route("/")
 def home():
-    logging.debug("Rendering home page")
     return render_template("index.html")
 
 
@@ -64,50 +57,43 @@ def suggest():
     return {"suggestions": result}
 
 
-@app.route('/trigger-ota')
+@app.route("/trigger-ota")
 def trigger_ota():
-    logging.info("OTA update triggered")
-    
+
     # Set the working directory to /app
-    working_directory = "/app"  # This is where the host directory is mounted inside the container
-    
+    working_directory = (
+        "/app"  # This is where the host directory is mounted inside the container
+    )
+
     # Change to the specified directory
     try:
         os.chdir(working_directory)  # Change to /app directory
-        logging.debug(f"Changed working directory to: {os.getcwd()}")
     except FileNotFoundError as e:
-        logging.error(f"Failed to change directory: {e}")
         return Response("Directory not found", status=404)
 
     # Full path to the script
     script_path = "docker_compose_restart.py"  # Now we can use just the script name
-    
+
     # Check if the script exists
     if not os.path.isfile(script_path):
-        logging.error(f"Script not found: {script_path}")
         return Response("Script not found", status=404)
-
-    logging.debug(f"Resolved script path: {script_path}")
 
     def generate():
         # Run the script in the specified directory
         process = subprocess.Popen(
-            ['python3', script_path],
+            ["python3", script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            universal_newlines=True
+            universal_newlines=True,
         )
-        
+
         for line in process.stdout:
-            logging.debug(f"OTA output: {line.strip()}")
             yield f"data: {line.strip()}\n\n"
-            
-    return Response(generate(), mimetype='text/event-stream')
+
+    return Response(generate(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
 
 import os
-
-logging.debug(f"Current working directory: {os.getcwd()}")
