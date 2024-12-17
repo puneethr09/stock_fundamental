@@ -109,13 +109,14 @@ def get_financial_ratios(ticker):
             "Year": available_years,
             "ROE": roe.reindex(available_years).values,
             "ROA": roa.reindex(available_years).values,
+            "ROI": roi.reindex(available_years).values,
             "ROIC": roic.reindex(available_years).values,
             "Quick Ratio": quick_ratio.reindex(available_years).values,
             "Current Ratio": current_ratio.reindex(available_years).values,
             "Debt to Equity": debt_to_equity.reindex(available_years).values,
             "P/E Ratio": pe_ratios.reindex(available_years).values,
+            "P/B Ratio": pb_ratio.reindex(available_years).values,
             "EBIT Margin": ebit_margin.reindex(available_years).values,
-            "ROI": roi.reindex(available_years).values,
             "Asset Turnover": asset_turnover.reindex(available_years).values,
             "Operating Margin": operating_margin.reindex(available_years).values,
             "Net Profit Margin": net_profit_margin.reindex(available_years).values,
@@ -123,10 +124,10 @@ def get_financial_ratios(ticker):
                 available_years
             ).values,
             "Interest Coverage": interest_coverage.reindex(available_years).values,
-            "P/B Ratio": pb_ratio.reindex(available_years).values,
             "Company": [company_name] * len(available_years),
         }
     )
+    print(ratios_df)
     ratios_df = ratios_df.dropna(how="all", subset=ratios_df.columns[1:-1])
     return ratios_df
 
