@@ -1,216 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Financial Ratios Analysis</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5" crossorigin="anonymous">
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial Ratios Analysis</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5"
+      crossorigin="anonymous"
+    />
+    <style>
       /* Table styling */
       .data {
-          background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
-          width: 90%;
-          margin: 20px auto;
-          border-collapse: collapse;
-          box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+        width: 90%;
+        margin: 20px auto;
+        border-collapse: collapse;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       }
       .data th {
-          background-color: #007bff;
-          color: white;
-          font-weight: bold;
-          padding: 12px;
-          text-align: center;
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        padding: 12px;
+        text-align: center;
       }
       .data td {
-          padding: 10px;
-          text-align: right;
-          border: 1px solid #ddd;
-          background-color: white;
+        padding: 10px;
+        text-align: right;
+        border: 1px solid #ddd;
+        background-color: white;
       }
       .data tr:nth-child(even) td {
-          background-color: #f0f7ff;
+        background-color: #f0f7ff;
       }
       .data tr:hover td {
-          background-color: #f5f5f5 !important;
+        background-color: #f5f5f5 !important;
       }
       .positive {
-          color: #28a745;
+        color: #28a745;
       }
       .negative {
-          color: #dc3545;
+        color: #dc3545;
       }
       .warning {
-          color: #ff6b6b;
-          font-weight: 500;
-          text-align: center;
-          padding: 10px;
-          line-height: 1.5;
+        color: #ff6b6b;
+        font-weight: 500;
+        text-align: center;
+        padding: 10px;
+        line-height: 1.5;
       }
       .explanation {
-          color: #2c3e50;
-          text-align: center;
+        color: #2c3e50;
+        text-align: center;
       }
       .plot {
-          text-align: center;
-          margin: 20px;
+        text-align: center;
+        margin: 20px;
       }
       .navbar-search {
-          position: relative;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: auto;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: auto;
       }
       #another-ticker-input {
-          width: 250px;
-          height: 35px;
-          font-size: 14px;
-          padding: 5px 10px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          border-color: #007bff;
-          border-width: 3px;
-          background-color: #f0f8ff;
-          color: #333;
+        width: 250px;
+        height: 35px;
+        font-size: 14px;
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        border-color: #007bff;
+        border-width: 3px;
+        background-color: #f0f8ff;
+        color: #333;
       }
       #suggestions-list {
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 250px;
-          max-height: 300px;
-          overflow-y: auto;
-          background: white;
-          border: 1px solid #ccc;
-          border-radius: 0 0 4px 4px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 250px;
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
       }
       #suggestions-list li {
-          padding: 8px 10px;
-          cursor: pointer;
-          border-bottom: 1px solid #eee;
+        padding: 8px 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
       }
       #suggestions-list li:last-child {
-          border-bottom: none;
+        border-bottom: none;
       }
       #suggestions-list li:hover {
-          background-color: #f5f5f5;
+        background-color: #f5f5f5;
       }
       .search-box input[type="submit"] {
-          font-size: 1.5rem;
-          padding: 0.8rem 2rem;
-          background-color: #007bff;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.8rem 2rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
       }
       .search-box input[type="submit"]:hover {
-          background-color: #0056b3;
+        background-color: #0056b3;
       }
       .home-button {
-          position: absolute;
-          top: 20px;
-          right: 20px;
+        position: absolute;
+        top: 20px;
+        right: 20px;
       }
       .home-button button {
-          font-size: 1.5rem;
-          padding: 0.8rem 2rem;
-          background-color: #007bff;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0.8rem 2rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
       }
       .home-button button:hover {
-          background-color: #0056b3;
+        background-color: #0056b3;
       }
-  </style>
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      .info-button {
+        cursor: pointer;
+        margin-left: 2px;
+        color: #007bff;
+        font-size: 0.6em;
+        position: relative;
+        vertical-align: middle;
+        padding: 0;
+        line-height: 1;
+        display: inline-block;
+      }
+
+      .info-button:hover::after,
+      .info-button:focus::after {
+        content: attr(data-explanation);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 5px;
+        white-space: normal !important;
+        width: 450px !important;
+        max-width: 450px !important;
+        min-width: 450px !important;
+        text-align: left;
+        z-index: 1000;
+        font-size: 1.5em;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-          <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
-          <div class="navbar-nav ml-auto">
-              <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-              <a class="nav-link" href="#analysis">Analysis</a>
-              <a class="nav-link" href="#about">About</a>
-          </div>
-          <div class="navbar-search">
-              <form action="{{ url_for('analyze') }}" method="get" class="form-inline">
-                  <input type="text" id="another-ticker-input" name="ticker" placeholder="Search another stock" autocomplete="off" required>
-                  <ul id="suggestions-list"></ul>
-              </form>
-          </div>
+        <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+        <div class="navbar-nav ml-auto">
+          <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+          <a class="nav-link" href="#analysis">Analysis</a>
+          <a class="nav-link" href="#about">About</a>
+        </div>
+        <div class="navbar-search">
+          <form
+            action="{{ url_for('analyze') }}"
+            method="get"
+            class="form-inline"
+          >
+            <input
+              type="text"
+              id="another-ticker-input"
+              name="ticker"
+              placeholder="Search another stock"
+              autocomplete="off"
+              required
+            />
+            <ul id="suggestions-list"></ul>
+          </form>
+        </div>
       </div>
-  </nav>
-  <h1 class="text-center"><u>{{ company_name }}</u></h1>
-  <div class="text-center">
+    </nav>
+    <h1 class="text-center"><u>{{ company_name }}</u></h1>
+    <div class="text-center">
       {% for table in tables %}
       <div class="table-responsive">{{ table|safe }}</div>
       {% endfor %}
-  </div>
-  <div class="warning">
-      {% for warning in warnings %}
-      <p>{{ warning }}</p>
+    </div>
+    <div class="warning">
+      {% for warning, explanation in zip(warnings, explanations) %}
+      <p>
+        {{ warning }}
+        <span class="info-button" data-explanation="{{ explanation }}">ℹ️</span>
+      </p>
       {% endfor %}
-  </div>
-  <div class="explanation">
-      {% for explanation in explanations %}
-      <p>{{ explanation }}</p>
-      {% endfor %}
-  </div>
-    <div class="plot">
-      {{ plot_html | safe }}
-</div>
-  <!-- jQuery and Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script>
+    </div>
+    <div class="plot">{{ plot_html | safe }}</div>
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
       $(document).ready(function () {
-          $("#another-ticker-input").on("input", function () {
-              let query = $(this).val();
-              if (query.length > 1) {
-                  $.get("/suggest", { query: query }, function (data) {
-                      $("#suggestions-list").empty();
-                      $.each(data.suggestions, function (name, ticker) {
-                          $("#suggestions-list").append(
-                              `<li data-ticker="${ticker}">${name} (${ticker})</li>`
-                          );
-                      });
-                  });
-              } else {
-                  $("#suggestions-list").empty();
-              }
-          });
-
-          $(document).on("click", "#suggestions-list li", function () {
-              $("#another-ticker-input").val($(this).data("ticker"));
+        $("#another-ticker-input").on("input", function () {
+          let query = $(this).val();
+          if (query.length > 1) {
+            $.get("/suggest", { query: query }, function (data) {
               $("#suggestions-list").empty();
-              $("form").submit();
-          });
+              $.each(data.suggestions, function (name, ticker) {
+                $("#suggestions-list").append(
+                  `<li data-ticker="${ticker}">${name} (${ticker})</li>`
+                );
+              });
+            });
+          } else {
+            $("#suggestions-list").empty();
+          }
+        });
 
-          $(".data td").each(function () {
-              let value = parseFloat($(this).text());
-              if (!isNaN(value)) {
-                  if ($(this).index() === 0) {
-                      $(this).text(Math.round(value));
-                  } else {
-                      if (value > 0) {
-                          $(this).addClass("positive");
-                      } else if (value < 0) {
-                          $(this).addClass("negative");
-                      }
-                      $(this).text(value.toFixed(2));
-                  }
+        $(document).on("click", "#suggestions-list li", function () {
+          $("#another-ticker-input").val($(this).data("ticker"));
+          $("#suggestions-list").empty();
+          $("form").submit();
+        });
+
+        $(".data td").each(function () {
+          let value = parseFloat($(this).text());
+          if (!isNaN(value)) {
+            if ($(this).index() === 0) {
+              $(this).text(Math.round(value));
+            } else {
+              if (value > 0) {
+                $(this).addClass("positive");
+              } else if (value < 0) {
+                $(this).addClass("negative");
               }
-          });
+              $(this).text(value.toFixed(2));
+            }
+          }
+        });
       });
-  </script>
-</body>
+      document.addEventListener("DOMContentLoaded", function () {
+        const infoButtons = document.querySelectorAll(".info-button");
+
+        infoButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            const explanation = this.getAttribute("data-explanation");
+            alert(explanation); // Show explanation in an alert box
+          });
+        });
+      });
+    </script>
+  </body>
 </html>

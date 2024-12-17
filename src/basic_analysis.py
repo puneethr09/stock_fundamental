@@ -209,7 +209,7 @@ def calculate_pb_ratio(historical_data, balance_sheet, stock):
 def calculate_roi(income_statement, balance_sheet):
     try:
         return (
-            income_statement.loc["Net Income"] / balance_sheet.loc["Total Assets"]
+            income_statement.loc["Operating Income"] / balance_sheet.loc["Total Assets"]
         ) * 100
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
@@ -228,55 +228,47 @@ def analyze_ratios(ratios_df):
 
     if latest_ratios["ROE"] < 10:
         warnings.append(
-            "Warning: Low Return on Equity (ROE) indicates potential underperformance."
+            "Low Return on Equity (ROE) indicates potential underperformance."
         )
 
     if latest_ratios["Current Ratio"] < 1:
-        warnings.append(
-            "Warning: Current Ratio below 1 indicates potential liquidity issues."
-        )
+        warnings.append("Current Ratio below 1 indicates potential liquidity issues.")
         explanations.append(
-            "Explanation: A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems."
+            "A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems."
         )
 
     if latest_ratios["Debt to Equity"] > 1:
-        warnings.append(
-            "Warning: High Debt to Equity ratio indicates higher financial risk."
-        )
+        warnings.append("High Debt to Equity ratio indicates higher financial risk.")
         explanations.append(
-            "Explanation: A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
+            "A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
         )
 
     if latest_ratios["Operating Margin"] < 15:
         warnings.append(
-            "Warning: Low Operating Margin indicates potential operational inefficiency."
+            "Low Operating Margin indicates potential operational inefficiency."
         )
         explanations.append(
-            "Explanation: An operating margin below 15% suggests the company may need to improve its operational efficiency or pricing strategy."
+            "An operating margin below 15% suggests the company may need to improve its operational efficiency or pricing strategy."
         )
 
     if latest_ratios["Net Profit Margin"] < 10:
-        warnings.append(
-            "Warning: Low Net Profit Margin indicates reduced profitability."
-        )
+        warnings.append("Low Net Profit Margin indicates reduced profitability.")
         explanations.append(
-            "Explanation: A net profit margin below 10% indicates the company might need to control costs or improve revenue generation."
+            "A net profit margin below 10% indicates the company might need to control costs or improve revenue generation."
         )
 
     if latest_ratios["Asset Turnover"] < 0.5:
-        warnings.append(
-            "Warning: Low Asset Turnover indicates inefficient use of assets."
-        )
+        warnings.append("Low Asset Turnover indicates inefficient use of assets.")
         explanations.append(
-            "Explanation: An asset turnover ratio below 0.5 suggests the company might not be using its assets efficiently to generate revenue."
+            "An asset turnover ratio below 0.5 suggests the company might not be using its assets efficiently to generate revenue."
         )
 
     if latest_ratios["Interest Coverage"] < 2:
         warnings.append(
-            "Warning: Low Interest Coverage Ratio indicates potential debt servicing issues."
+            "Low Interest Coverage Ratio indicates potential debt servicing issues."
         )
         explanations.append(
-            "Explanation: An interest coverage ratio below 2 suggests the company might have difficulty meeting its interest payment obligations."
+            "An interest coverage ratio below 2 suggests the company might have difficulty meeting its interest payment obligations."
         )
 
     plot_html = create_plotly_visualization(ratios_df, company_name)
@@ -411,18 +403,50 @@ if __name__ == "__main__":
 
 pd.set_option("future.no_silent_downcasting", True)
 
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 
 def create_plotly_visualization(ratios_df, company_name):
+    # Define a set of dark colors
+    dark_colors = ["blue", "red", "green", "darkorange"]
+
+    # Assign dark colors to each metric, repeating if necessary
+    color_mapping = {
+        "ROE": dark_colors[0],
+        "ROA": dark_colors[1],
+        "ROIC": dark_colors[2],
+        "ROI": dark_colors[3],
+        "Quick Ratio": dark_colors[1],
+        "Current Ratio": dark_colors[0],
+        "P/E Ratio": dark_colors[1],
+        "P/B Ratio": dark_colors[2],
+        "EBIT Margin": dark_colors[0],
+        "Debt to Equity": dark_colors[0],
+        "Operating Margin": dark_colors[0],
+        "Net Profit Margin": dark_colors[1],
+        "Asset Turnover": dark_colors[1],
+        "Interest Coverage": dark_colors[0],  # Repeat colors if needed
+    }
+
     fig = make_subplots(
         rows=3,
         cols=2,
         subplot_titles=(
-            "Return Ratios",
-            "Liquidity Ratios",
-            "Market & Profitability",
-            "Leverage Ratio",
-            "Margin Analysis",
-            "Efficiency Metrics",
+            f"Return Ratios {{<span style='color:{color_mapping['ROE']}'>ROE</span>, "
+            f"<span style='color:{color_mapping['ROA']}'>ROA</span>, "
+            f"<span style='color:{color_mapping['ROIC']}'>ROIC</span>, "
+            f"<span style='color:{color_mapping['ROI']}'>ROI</span>}}",
+            f"Liquidity Ratios {{<span style='color:{color_mapping['Current Ratio']}'>Current Ratio</span>, "
+            f"<span style='color:{color_mapping['Quick Ratio']}'>Quick Ratio</span>}}",
+            f"Market & Profitability {{<span style='color:{color_mapping['EBIT Margin']}'>EBIT Margin</span>, "
+            f"<span style='color:{color_mapping['P/E Ratio']}'>P/E Ratio</span>, "
+            f"<span style='color:{color_mapping['P/B Ratio']}'>P/B Ratio</span>}}",
+            f"Leverage Ratio {{<span style='color:{color_mapping['Debt to Equity']}'>Debt to Equity</span>}}",
+            f"Margin Analysis {{<span style='color:{color_mapping['Operating Margin']}'>Operating Margin</span>, "
+            f"<span style='color:{color_mapping['Net Profit Margin']}'>Net Profit Margin</span>}}",
+            f"Efficiency Metrics {{<span style='color:{color_mapping['Interest Coverage']}'>Interest Coverage</span>, "
+            f"<span style='color:{color_mapping['Asset Turnover']}'>Asset Turnover</span>}}",
         ),
         vertical_spacing=0.12,
         horizontal_spacing=0.08,
@@ -430,19 +454,31 @@ def create_plotly_visualization(ratios_df, company_name):
 
     # Return Ratios (1,1)
     for metric in ["ROE", "ROA", "ROIC", "ROI"]:
-        fig.add_trace(
-            go.Scatter(
-                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
-            ),
-            row=1,
-            col=1,
-        )
+        if metric in ratios_df.columns:
+            color = color_mapping.get(metric, "black")  # Default to black if not found
+            fig.add_trace(
+                go.Scatter(
+                    x=ratios_df["Year"],
+                    y=ratios_df[metric],
+                    mode="lines+markers",
+                    name=metric,
+                    hovertemplate=f"{metric}: %{{y}}<extra></extra>",
+                    line=dict(color=color, width=2),
+                ),
+                row=1,
+                col=1,
+            )
 
     # Liquidity Ratios (1,2)
     for metric in ["Quick Ratio", "Current Ratio"]:
+        color = color_mapping.get(metric, "black")
         fig.add_trace(
             go.Scatter(
-                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+                x=ratios_df["Year"],
+                y=ratios_df[metric],
+                name=metric,
+                hovertemplate=f"{metric}: %{{y}}<extra></extra>",
+                line=dict(color=color, width=2),
             ),
             row=1,
             col=2,
@@ -450,21 +486,28 @@ def create_plotly_visualization(ratios_df, company_name):
 
     # Market & Profitability (2,1)
     for metric in ["P/E Ratio", "P/B Ratio", "EBIT Margin"]:
+        color = color_mapping.get(metric, "black")
         fig.add_trace(
             go.Scatter(
-                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+                x=ratios_df["Year"],
+                y=ratios_df[metric],
+                name=metric,
+                hovertemplate=f"{metric}: %{{y}}<extra></extra>",
+                line=dict(color=color, width=2),
             ),
             row=2,
             col=1,
         )
 
     # Leverage Ratio (2,2)
+    color = color_mapping.get("Debt to Equity", "black")
     fig.add_trace(
         go.Scatter(
             x=ratios_df["Year"],
             y=ratios_df["Debt to Equity"],
             name="Debt to Equity",
-            showlegend=True,
+            hovertemplate="Debt to Equity: %{y}<extra></extra>",
+            line=dict(color=color, width=2),
         ),
         row=2,
         col=2,
@@ -472,9 +515,14 @@ def create_plotly_visualization(ratios_df, company_name):
 
     # Margin Analysis (3,1)
     for metric in ["Operating Margin", "Net Profit Margin"]:
+        color = color_mapping.get(metric, "black")
         fig.add_trace(
             go.Scatter(
-                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+                x=ratios_df["Year"],
+                y=ratios_df[metric],
+                name=metric,
+                hovertemplate=f"{metric}: %{{y}}<extra></extra>",
+                line=dict(color=color, width=2),
             ),
             row=3,
             col=1,
@@ -482,9 +530,14 @@ def create_plotly_visualization(ratios_df, company_name):
 
     # Efficiency Metrics (3,2)
     for metric in ["Asset Turnover", "Interest Coverage"]:
+        color = color_mapping.get(metric, "black")
         fig.add_trace(
             go.Scatter(
-                x=ratios_df["Year"], y=ratios_df[metric], name=metric, showlegend=True
+                x=ratios_df["Year"],
+                y=ratios_df[metric],
+                name=metric,
+                hovertemplate=f"{metric}: %{{y}}<extra></extra>",
+                line=dict(color=color, width=2),
             ),
             row=3,
             col=2,
@@ -492,7 +545,7 @@ def create_plotly_visualization(ratios_df, company_name):
 
     fig.update_layout(
         height=1200,
-        width=1600,  # Increased width to accommodate legend
+        width=1600,
         plot_bgcolor="white",
         paper_bgcolor="white",
         showlegend=True,
@@ -505,17 +558,16 @@ def create_plotly_visualization(ratios_df, company_name):
             bordercolor="rgba(0,0,0,0.1)",
             borderwidth=1,
         ),
-        margin=dict(l=50, r=150, t=80, b=50),  # Increased right margin for legend
+        margin=dict(l=50, r=150, t=80, b=50),
     )
 
-    # Make plots fill available space
     fig.update_xaxes(
         showgrid=True,
         gridwidth=1,
         gridcolor="lightgrey",
         automargin=True,
-        tickformat="d",  # Display as integers
-        dtick=1,  # Force step size of 1
+        tickformat="d",
+        dtick=1,
     )
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="lightgrey", automargin=True)
 

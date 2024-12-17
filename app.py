@@ -35,12 +35,14 @@ def analyze():
             warnings=warnings,
             explanations=explanations,
             company_name=company_name,
+            zip=zip,
         )
     else:
         return render_template(
             "results.html",
             error="No data available for the provided ticker.",
             plot_html=None,
+            zip=zip,
         )
 
 
