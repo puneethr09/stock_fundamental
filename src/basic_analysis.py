@@ -573,3 +573,72 @@ def create_plotly_visualization(ratios_df, company_name):
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="lightgrey", automargin=True)
 
     return fig.to_html(full_html=False, include_plotlyjs=True)
+
+
+import requests
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
+import pytz
+
+
+def get_market_news():
+    """
+    Fetches latest Indian financial news from Economic Times RSS feeds
+    """
+    rss_feeds = [
+        "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",  # Markets
+        "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",  # Stocks
+        "https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms",  # Industry
+        "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",  # Economy
+    ]
+
+    all_news = []
+    ist = pytz.timezone("Asia/Kolkata")
+    current_time = datetime.now(ist)
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/rss+xml",
+        "Referer": "https://economictimes.indiatimes.com",
+    }
+
+    for feed_url in rss_feeds:
+        try:
+            response = requests.get(feed_url, headers=headers, timeout=15)
+            response.raise_for_status()
+
+            root = ET.fromstring(response.content)
+
+            for item in root.findall(".//item"):
+                pub_date = datetime.strptime(
+                    item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"
+                ).astimezone(ist)
+
+                description = (
+                    item.find("description").text
+                    if item.find("description") is not None
+                    else ""
+                )
+
+                news_item = {
+                    "title": item.find("title").text,
+                    "link": item.find("link").text,
+                    "publisher": "Economic Times",
+                    "published_at": pub_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "description": (
+                        description[:200] + "..."
+                        if len(description) > 200
+                        else description
+                    ),
+                }
+                all_news.append(news_item)
+
+        except Exception as e:
+            print(f"Error fetching feed {feed_url}: {e}")
+            continue
+
+    # Sort by publication date (newest first)
+    all_news.sort(key=lambda x: x["published_at"], reverse=True)
+
+    # Return most recent 30 news items
+    return all_news[:30]

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market News</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+          <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+          <div class="navbar-nav ml-auto">
+              <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+              <a class="nav-link active" href="{{ url_for('news') }}">Market News</a>
+          </div>
+      </div>
+  </nav>
+    <div class="container mt-4">
+      <h2>Latest Market News</h2>
+      <div class="row">
+        {% for item in news %}
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href="{{ item.link }}" target="_blank">{{ item.title }}</a>
+              </h5>
+              <p class="card-text">
+                <small class="text-muted">
+                  {{ item.publisher }} - {{ item.published_at }}
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>

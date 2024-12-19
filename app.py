@@ -1,19 +1,20 @@
 from flask import Flask, render_template, jsonify, Response, request
-import subprocess
-import os
+from src.basic_analysis import get_financial_ratios, analyze_ratios, get_market_news
 from utils import load_company_data
-from src.basic_analysis import get_financial_ratios, analyze_ratios
 
 app = Flask(__name__)
 
 
 @app.route("/")
+@app.route("/home")  # Adding both routes for flexibility
 def home():
-    return render_template("index.html")
+    news_items = get_market_news()
+    return render_template("index.html", news=news_items)
 
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
+    news_items = get_market_news()
     if request.method == "POST":
         ticker = request.form["ticker"].upper() + ".NS"
     else:
@@ -23,10 +24,7 @@ def analyze():
     if ratios_df is not None and not ratios_df.empty:
         warnings, explanations, plot_html = analyze_ratios(ratios_df)
         company_name = ratios_df["Company"].iloc[0]
-
-        # Remove Company column before displaying
         display_df = ratios_df.drop(columns=["Company"])
-
         return render_template(
             "results.html",
             tables=[display_df.to_html(classes="data table-hover", index=False)],
@@ -35,6 +33,7 @@ def analyze():
             warnings=warnings,
             explanations=explanations,
             company_name=company_name,
+            news=news_items,
             zip=zip,
         )
     else:
@@ -95,7 +94,11 @@ def trigger_ota():
     return Response(generate(), mimetype="text/event-stream")
 
 
+@app.route("/news")
+def news():
+    news_items = get_market_news()
+    return render_template("news.html", news=news_items)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
-import os
