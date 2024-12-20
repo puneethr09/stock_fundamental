@@ -4,3 +4,6 @@ numpy
 yfinance
 matplotlib
 plotly
+pytz
+requests
+newsapi-python
