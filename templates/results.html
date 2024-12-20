@@ -25,18 +25,17 @@
         background-attachment: fixed;
       }
       h1.text-center {
-        color: rgb(246, 246, 249); /* Change this to your desired color */
+        color: rgb(255, 255, 255); /* Change this to your desired color */
       }
-      /* Table styling */
       .data {
-        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+        background: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
         width: 90%;
         margin: 20px auto;
         border-collapse: collapse;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       }
       .data th {
-        background-color: #007bff;
+        background-color: rgba(0, 123, 255, 0.5); /* Blue with 80% opacity */
         color: white;
         font-weight: bold;
         padding: 12px;
@@ -45,17 +44,35 @@
       .data td {
         padding: 10px;
         text-align: right;
-        border: 1px solid #ddd;
-        background-color: white;
+        border: 1px solid rgba(221, 221, 221, 0.5); /* Light grey with 80% opacity */
+        background-color: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
       }
       .data tr:nth-child(even) td {
-        background-color: #f0f7ff;
+        background-color: rgba(
+          240,
+          247,
+          255,
+          0.5
+        ); /* Light blue with 80% opacity */
       }
       .data tr:hover td {
-        background-color: #f5f5f5 !important;
+        background-color: rgba(
+          245,
+          245,
+          245,
+          0.5
+        ) !important; /* Light grey with 80% opacity */
+      }
+      .plot {
+        text-align: center;
+        margin: 20px;
+        background-color: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
       .positive {
-        color: #28a745;
+        color: #067320;
       }
       .negative {
         color: #dc3545;
@@ -71,10 +88,10 @@
         color: #2c3e50;
         text-align: center;
       }
-      .plot {
+      /* .plot {
         text-align: center;
         margin: 20px;
-      }
+      } */
       .navbar-search {
         position: relative;
         display: flex;
