@@ -8,6 +8,10 @@ from datetime import datetime
 from utils import calculate_ratio, calculate_margin, normalize_financial_data
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import requests
+import xml.etree.ElementTree as ET
+import pytz
+
 
 matplotlib.use("Agg")  # Use a non-interactive backend for plotting
 
@@ -575,26 +579,47 @@ def create_plotly_visualization(ratios_df, company_name):
     return fig.to_html(full_html=False, include_plotlyjs=True)
 
 
-import requests
-import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
-import pytz
-
-
 def get_market_news():
     """
-    Fetches latest Indian financial news from Economic Times RSS feeds
+    Fetches comprehensive Indian financial news from multiple trusted sources
+    and prioritizes important news based on keywords.
     """
     rss_feeds = [
-        "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",  # Markets
-        "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",  # Stocks
-        "https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms",  # Industry
-        "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",  # Economy
+        # Economic Times Feeds
+        "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+        "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",
+        "https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms",
+        "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",
+        # Business Standard Feeds
+        "https://www.business-standard.com/rss/markets-106.rss",
+        "https://www.business-standard.com/rss/finance-103.rss",
+        "https://www.business-standard.com/rss/companies-101.rss",
+        # Financial Express Feeds
+        "https://www.financialexpress.com/market/feed/",
+        "https://www.financialexpress.com/industry/feed/",
+        # LiveMint Feeds
+        "https://www.livemint.com/rss/markets",
+        "https://www.livemint.com/rss/companies",
+        "https://www.livemint.com/rss/money",
+    ]
+
+    important_keywords = [
+        "RBI",
+        "SEBI",
+        "budget",
+        "inflation",
+        "interest rate",
+        "GDP",
+        "policy",
+        "merger",
+        "acquisition",
+        "IPO",
+        "earnings",
     ]
 
     all_news = []
+    important_news = []
     ist = pytz.timezone("Asia/Kolkata")
-    current_time = datetime.now(ist)
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -610,20 +635,35 @@ def get_market_news():
             root = ET.fromstring(response.content)
 
             for item in root.findall(".//item"):
-                pub_date = datetime.strptime(
-                    item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"
-                ).astimezone(ist)
+                try:
+                    pub_date = datetime.strptime(
+                        item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"
+                    ).astimezone(ist)
+                except ValueError:
+                    try:
+                        pub_date = (
+                            datetime.strptime(
+                                item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S GMT"
+                            )
+                            .replace(tzinfo=pytz.UTC)
+                            .astimezone(ist)
+                        )
+                    except:
+                        continue
 
                 description = (
                     item.find("description").text
                     if item.find("description") is not None
                     else ""
                 )
+                publisher = (
+                    feed_url.split("/")[2].replace("www.", "").split(".")[0].title()
+                )
 
                 news_item = {
                     "title": item.find("title").text,
                     "link": item.find("link").text,
-                    "publisher": "Economic Times",
+                    "publisher": publisher,
                     "published_at": pub_date.strftime("%Y-%m-%d %H:%M:%S"),
                     "description": (
                         description[:200] + "..."
@@ -631,14 +671,23 @@ def get_market_news():
                         else description
                     ),
                 }
-                all_news.append(news_item)
+
+                # Check if the news item contains any important keywords
+                if any(
+                    keyword.lower() in news_item["title"].lower()
+                    or keyword.lower() in description.lower()
+                    for keyword in important_keywords
+                ):
+                    important_news.append(news_item)
+                else:
+                    all_news.append(news_item)
 
         except Exception as e:
             print(f"Error fetching feed {feed_url}: {e}")
             continue
 
-    # Sort by publication date (newest first)
-    all_news.sort(key=lambda x: x["published_at"], reverse=True)
+    # Combine important news with other news, prioritizing important ones
+    combined_news = important_news + all_news
 
-    # Return most recent 30 news items
-    return all_news[:30]
+    # Return most recent 50 news items
+    return combined_news[:50]
