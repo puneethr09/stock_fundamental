@@ -689,5 +689,5 @@ def get_market_news():
     # Combine important news with other news, prioritizing important ones
     combined_news = important_news + all_news
 
-    # Return most recent 50 news items
-    return combined_news[:50]
+    # Return most recent 100 news items
+    return combined_news[:100]

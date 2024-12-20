@@ -8,22 +8,46 @@
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <style>
+      body {
+        background-image: url("/static/images/market_news.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+      .card {
+        background-color: rgba(255, 255, 255, 0.6); /* White with 80% opacity */
+        border: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .card-title a {
+        color: #061185;
+        text-decoration: none;
+      }
+      .card-title a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-          <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
-          <div class="navbar-nav ml-auto">
-              <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-              <a class="nav-link active" href="{{ url_for('news') }}">Market News</a>
-          </div>
+        <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
+        <div class="navbar-nav ml-auto">
+          <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+          <a class="nav-link active" href="{{ url_for('news') }}"
+            >Market News</a
+          >
+        </div>
       </div>
-  </nav>
+    </nav>
+
     <div class="container mt-4">
       <h2>Latest Market News</h2>
       <div class="row">
         {% for item in news %}
-        <div class="col-md-6 mb-4">
+        <div class="col-md-4 mb-4">
           <div class="card h-100">
             <div class="card-body">
               <h5 class="card-title">
@@ -34,6 +58,7 @@
                   {{ item.publisher }} - {{ item.published_at }}
                 </small>
               </p>
+              <p class="card-text">{{ item.description }}</p>
             </div>
           </div>
         </div>
