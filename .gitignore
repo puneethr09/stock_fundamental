@@ -82,7 +82,3 @@ obj/
 *.log
 *.sql
 *.sqlite
-
-# temp directories
-Stock_Analysis/*
-static/*
