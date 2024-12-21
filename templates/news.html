@@ -56,6 +56,13 @@
           border-radius: 0 0 8px 8px;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
+      .navbar-datetime {
+          font-weight: 500;
+          margin-right: 15px;
+          padding: 8px 15px;
+          background-color: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+      }
   </style>
 </head>
 <body>
@@ -63,8 +70,9 @@
       <div class="container-fluid">
           <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
           <div class="navbar-nav ml-auto">
+              <span class="navbar-datetime" id="datetime"></span>
               <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-              <a class="nav-link active" href="{{ url_for('news') }}">Market News</a>
+              <a class="nav-link" href="{{ url_for('news') }}">Market News</a>
           </div>
       </div>
   </nav>
@@ -152,3 +160,22 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+<script>
+function updateDateTime() {
+    const now = new Date();
+    const options = { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+    };
+    document.getElementById('datetime').innerHTML = now.toLocaleString('en-US', options);
+}
+
+// Update immediately and then every second
+updateDateTime();
+setInterval(updateDateTime, 1000);
+</script>
