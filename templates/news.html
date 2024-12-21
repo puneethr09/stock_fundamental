@@ -63,6 +63,36 @@
           background-color: rgba(255, 255, 255, 0.1);
           border-radius: 4px;
       }
+      h2 {
+          color: #000000;
+          background-color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 20px;
+          background-position: center;
+          position: center;
+      }
+      .nav-link {
+          color: #083b72;
+      }
+      .nav-link.active {
+          background-color: #083b72;
+          color: white;
+      }
+      .nav-link:hover {
+          background-color: #0056b3;
+          color: white;
+      }
+      .tab-content {
+          background-color: rgba(255, 255, 255, 0.3);
+          padding: 20px;
+          border-radius: 0 0 8px 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .navbar-datetime {
+          font-weight: 500;
+          margin-right: 15px;
+          padding: 8px 15px;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
   </style>
 </head>
 <body>
@@ -76,8 +106,8 @@
           </div>
       </div>
   </nav>
-  <div class="container mt-4">
-    <h2>Latest Market News</h2>
+  <div class="container-fluid mt-4">
+    <h2 class="text-center mb-4">Latest Market News</h2>
     <!-- Publisher Tabs -->
     <ul class="nav nav-tabs" id="publisherTab" role="tablist">
         {% for publisher in publishers %}
@@ -127,7 +157,7 @@
                     {% if organized_news.get(publisher, {}).get(category, []) %}
                         <div class="row mt-3">
                             {% for item in organized_news[publisher][category] %}
-                            <div class="col-md-4 mb-4">
+                            <div class="col-2-4 mb-4">
                                 <div class="card h-100">
                                     <div class="card-body">
                                         <h5 class="card-title">
@@ -156,7 +186,38 @@
         </div>
         {% endfor %}
     </div>
-</div></div></div>  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</div>
+
+<style>
+    /* Other existing styles remain the same */
+    
+    /* Add custom column width for 5 equal columns */
+    .col-2-4 {
+        -webkit-box-flex: 0;
+        -ms-flex: 0 0 20%;
+        flex: 0 0 20%;
+        max-width: 20%;
+        position: relative;
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+    
+    /* Make cards more compact for better fit */
+    .card {
+        margin: 0 5px;
+    }
+    
+    /* Adjust card title font size */
+    .card-title {
+        font-size: 0.9rem;
+    }
+    
+    /* Adjust card text font size */
+    .card-text {
+        font-size: 0.8rem;
+    }
+</style></div></div></div>  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
