@@ -3,14 +3,12 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from datetime import datetime
-from utils import calculate_ratio, calculate_margin, normalize_financial_data
+import os, requests, pytz
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import requests
 import xml.etree.ElementTree as ET
-import pytz
+from datetime import datetime, timedelta
+from utils import calculate_ratio, calculate_margin, normalize_financial_data
+from plotly.subplots import make_subplots
 
 
 matplotlib.use("Agg")  # Use a non-interactive backend for plotting
@@ -579,10 +577,124 @@ def create_plotly_visualization(ratios_df, company_name):
     return fig.to_html(full_html=False, include_plotlyjs=True)
 
 
+def get_news_categories():
+    """
+    Returns a dictionary of news categories and their corresponding keywords.
+    """
+    NEWS_CATEGORIES = {
+        "IPO": ["ipo", "public offering", "listing", "subscription", "issue price"],
+        "Market": [
+            "stock",
+            "shares",
+            "equity",
+            "trading",
+            "price target",
+            "market",
+            "market cap",
+            "sebi",
+            "nse",
+            "bse",
+        ],
+        "Economy": ["gdp", "inflation", "rbi", "monetary policy", "fiscal", "economy"],
+        "Corporate": [
+            "earnings",
+            "results",
+            "profit",
+            "revenue",
+            "merger",
+            "acquisition",
+        ],
+        "Sector": [
+            "banking",
+            "finance",
+            "insurance",
+            "energy",
+            "technology",
+            "healthcare",
+        ],
+        "Politics": ["election", "government", "policy", "legislation", "politics"],
+        "Regulation": [
+            "regulation",
+            "compliance",
+            "regulatory",
+            "ban",
+        ],
+        "GlobalMarkets": [
+            "global",
+            "international",
+            "foreign",
+            "overseas",
+            "world markets",
+            "Japan",
+            "US",
+            "Europe",
+            "China",
+            "Dow Jones",
+            "Nikkei",
+            "Hang Seng",
+        ],
+        "Geopolitics": ["war", "crisis", "conflict", "geopolitics", "international"],
+        "Environment": [
+            "climate",
+            "environment",
+            "sustainability",
+            "environmental",
+            "climate change",
+        ],
+        "Social": ["social", "social media", "social impact", "social responsibility"],
+        "Technology": ["tech", "technology", "innovation", "digital", "software"],
+        "Media": ["media", "press", "journalism", "publication", "news"],
+        "Entertainment": ["entertainment", "movie", "music", "sports", "celebrity"],
+        "Health": ["health", "medicine", "medical", "pharmaceutical", "healthcare"],
+        "Education": ["education", "school", "university", "student", "teacher"],
+        "RealEstate": [
+            "real estate",
+            "property",
+            "housing",
+            "construction",
+            "real estate",
+        ],
+        "Transportation": [
+            "transportation",
+            "transport",
+            "logistics",
+            "shipping",
+            "railway",
+        ],
+        "Retail": ["retail", "shopping", "e-commerce", "consumer", "retailer"],
+        "Agriculture": ["agriculture", "farming", "farm", "crop", "livestock"],
+        "Tourism": ["tourism", "travel", "hospitality", "hotel", "tourism"],
+        "Commodities": ["gold", "crude", "oil", "commodity", "metal", "agricultural"],
+        "Others": [],  # Default category for uncategorized news
+    }
+    return NEWS_CATEGORIES
+
+
+def categorize_news(title, description):
+    """
+    Categorize news into multiple relevant categories based on keywords
+    Returns a list of applicable categories
+    """
+    combined_text = (title + " " + description).lower()
+    categories = []
+
+    for category, keywords in get_news_categories().items():
+        for keyword in keywords:
+            if keyword in combined_text:
+                categories.append(category)
+                break  # Break after first keyword match for each category
+
+    # If no categories matched, add to 'Others'
+    if not categories:
+        categories.append("Others")
+
+    return categories
+
+
 def get_market_news():
     """
-    Fetches comprehensive Indian financial news from multiple trusted sources
-    and prioritizes important news based on keywords.
+    Fetches comprehensive Indian financial news from multiple trusted sources,
+    rates them based on importance using keyword relevance and recency, and returns the top 500.
     """
     rss_feeds = [
         # Economic Times Feeds
@@ -594,16 +706,17 @@ def get_market_news():
         "https://www.business-standard.com/rss/markets-106.rss",
         "https://www.business-standard.com/rss/finance-103.rss",
         "https://www.business-standard.com/rss/companies-101.rss",
-        # Financial Express Feeds
-        "https://www.financialexpress.com/market/feed/",
-        "https://www.financialexpress.com/industry/feed/",
         # LiveMint Feeds
         "https://www.livemint.com/rss/markets",
         "https://www.livemint.com/rss/companies",
         "https://www.livemint.com/rss/money",
+        # the hindu
+        "https://www.thehindubusinessline.com/markets/feeder/default.rss",
     ]
 
     important_keywords = [
+        "crash",
+        "bankruptcy",
         "RBI",
         "SEBI",
         "budget",
@@ -615,11 +728,16 @@ def get_market_news():
         "acquisition",
         "IPO",
         "earnings",
+        "bear",
+        "bull",
+        "recession",
     ]
 
     all_news = []
-    important_news = []
+    seen_titles = set()  # Set to track unique news titles
     ist = pytz.timezone("Asia/Kolkata")
+    current_time = datetime.now(ist)
+    cutoff_date = current_time - timedelta(days=2)  # Two days ago
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -651,43 +769,59 @@ def get_market_news():
                     except:
                         continue
 
-                description = (
-                    item.find("description").text
-                    if item.find("description") is not None
-                    else ""
-                )
-                publisher = (
-                    feed_url.split("/")[2].replace("www.", "").split(".")[0].title()
-                )
+                # Check if the news item is within the last two days
+                if pub_date >= cutoff_date:
+                    title = item.find("title").text
+                    description = (
+                        item.find("description").text
+                        if item.find("description") is not None
+                        else ""
+                    )
+                    publisher = (
+                        feed_url.split("/")[2].replace("www.", "").split(".")[0].title()
+                    )
 
-                news_item = {
-                    "title": item.find("title").text,
-                    "link": item.find("link").text,
-                    "publisher": publisher,
-                    "published_at": pub_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    "description": (
-                        description[:200] + "..."
-                        if len(description) > 200
-                        else description
-                    ),
-                }
+                    # Check for duplicate titles
+                    if title not in seen_titles:
+                        seen_titles.add(title)
 
-                # Check if the news item contains any important keywords
-                if any(
-                    keyword.lower() in news_item["title"].lower()
-                    or keyword.lower() in description.lower()
-                    for keyword in important_keywords
-                ):
-                    important_news.append(news_item)
-                else:
-                    all_news.append(news_item)
+                        # Calculate score
+                        score = 0
+                        # Keyword relevance
+                        for keyword in important_keywords:
+                            if (
+                                keyword.lower() in title.lower()
+                                or keyword.lower() in description.lower()
+                            ):
+                                score += 10
+                        # Recency
+                        days_old = (current_time - pub_date).days
+                        score += max(
+                            0, 2 - days_old
+                        )  # More recent articles get higher scores
 
+                        # Inside your get_market_news function, modify the news_item creation:
+                        news_item = {
+                            "title": title,
+                            "link": item.find("link").text,
+                            "publisher": publisher,
+                            "published_at": pub_date.strftime("%Y-%m-%d %H:%M:%S"),
+                            "description": (
+                                description[:200] + "..."
+                                if len(description) > 200
+                                else description
+                            ),
+                            "score": score,
+                            "categories": categorize_news(
+                                title, description
+                            ),  # Now returns a list
+                        }
+
+                        all_news.append(news_item)
         except Exception as e:
             print(f"Error fetching feed {feed_url}: {e}")
             continue
 
-    # Combine important news with other news, prioritizing important ones
-    combined_news = important_news + all_news
-
-    # Return most recent 100 news items
-    return combined_news[:100]
+    # Sort news by score in descending order and return the top 500
+    all_news.sort(key=lambda x: x["score"], reverse=True)
+    return all_news[:5000]

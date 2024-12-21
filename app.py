@@ -1,6 +1,12 @@
 from flask import Flask, render_template, jsonify, Response, request
-from src.basic_analysis import get_financial_ratios, analyze_ratios, get_market_news
+from src.basic_analysis import (
+    get_financial_ratios,
+    analyze_ratios,
+    get_market_news,
+    get_news_categories,
+)
 from utils import load_company_data
+import subprocess, os
 
 app = Flask(__name__)
 
@@ -97,7 +103,33 @@ def trigger_ota():
 @app.route("/news")
 def news():
     news_items = get_market_news()
-    return render_template("news.html", news=news_items)
+    organized_news = {}
+
+    for item in news_items:
+        publisher = item["publisher"]
+
+        if publisher not in organized_news:
+            organized_news[publisher] = {}
+
+        # Add the news item to each of its categories
+        for category in item["categories"]:
+            if category not in organized_news[publisher]:
+                organized_news[publisher][category] = []
+            organized_news[publisher][category].append(item)
+
+    # Sort each category by score
+    for publisher in organized_news:
+        for category in organized_news[publisher]:
+            organized_news[publisher][category].sort(
+                key=lambda x: x["score"], reverse=True
+            )
+
+    return render_template(
+        "news.html",
+        organized_news=organized_news,
+        publishers=list(organized_news.keys()),
+        categories=list(get_news_categories().keys()),
+    )
 
 
 if __name__ == "__main__":
