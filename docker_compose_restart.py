@@ -7,11 +7,7 @@ def run_command(command):
     print(f"Running command: {command}")
     try:
         result = subprocess.run(
-            command,
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True
+            command, shell=True, check=True, capture_output=True, text=True
         )
         print(f"Command succeeded: {command}\nOutput:\n{result.stdout}")
         return True, result.stdout
@@ -38,9 +34,6 @@ def ensure_docker_permissions():
 
 
 def main():
-    if os.geteuid() != 0:
-        print("This script requires administrative privileges. Please run with sudo.")
-        sys.exit(1)
 
     ensure_docker_permissions()
 
