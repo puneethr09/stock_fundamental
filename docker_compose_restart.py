@@ -2,21 +2,19 @@ import os
 import subprocess
 import sys
 
+
 def run_command(command):
     print(f"Running command: {command}")
     try:
         result = subprocess.run(
-            command,
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True
+            command, shell=True, check=True, capture_output=True, text=True
         )
         print(f"Command succeeded: {command}\nOutput:\n{result.stdout}")
         return True, result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Command failed: {command}\nError:\n{e.stderr}")
         return False, e.stderr
+
 
 def ensure_docker_permissions():
     user = os.getenv("USER")
@@ -30,7 +28,10 @@ def ensure_docker_permissions():
     print("Setting Docker socket permissions...")
     run_command("sudo chown root:docker /var/run/docker.sock")
 
-    print("If you were added to the docker group, please log out and back in for changes to take effect.")
+    print(
+        "If you were added to the docker group, please log out and back in for changes to take effect."
+    )
+
 
 def main():
     if os.geteuid() != 0:
@@ -57,6 +58,7 @@ def main():
         print("All operations completed successfully.")
     else:
         print("Some operations failed. Please check the output above for details.")
+
 
 if __name__ == "__main__":
     main()
