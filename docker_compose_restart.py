@@ -1,25 +1,53 @@
 import os
+import subprocess
 
-# Function to run shell commands
-def run_shell_command(command):
-    print(f"Running command: {command}")
-    os.system(command)
+def run_command(command):
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return True, result.stdout
+    except subprocess.CalledProcessError as e:
+        return False, str(e)
 
-# Main function to execute all steps
+def ensure_docker_permissions():
+    # Add current user to docker group
+    user = os.getenv("USER")
+    run_command(f"sudo usermod -aG docker {user}")
+
+    # Start Docker service if not running
+    run_command("sudo systemctl start docker")
+
+    # Ensure correct permissions on Docker socket
+    run_command("sudo chown root:docker /var/run/docker.sock")
+
 def main():
-    # git cheeck for update and do it
-    run_shell_command('git pull')
+    ensure_docker_permissions()
 
-    # Stop any running containers
-    run_shell_command('docker compose down')
-    
-    # Build the Docker images
-    run_shell_command('docker compose build')
-    
-    # Start the containers in detached mode
-    run_shell_command('docker compose up -d')
+    commands = [
+        "git pull",
+        "docker compose down",
+        "docker compose build",
+        "docker compose up -d",
+    ]
 
-    print("All operations completed successfully.")
+    results = []
+    for cmd in commands:
+        success, output = run_command(cmd)
+        results.append({"command": cmd, "success": success, "output": output})
+
+    all_successful = all(result["success"] for result in results)
+
+    if all_successful:
+        print("All operations completed successfully.")
+    else:
+        for result in results:
+            if not result["success"]:
+                print(f"Error running command: {result['command']}\nOutput: {result['output']}")
 
 if __name__ == "__main__":
     main()
