@@ -7,7 +7,11 @@ def run_command(command):
     print(f"Running command: {command}")
     try:
         result = subprocess.run(
-            command, shell=True, check=True, capture_output=True, text=True
+            command,
+            shell=True,
+            check=True,
+            capture_output=True,
+            text=True
         )
         print(f"Command succeeded: {command}\nOutput:\n{result.stdout}")
         return True, result.stdout
@@ -39,6 +43,10 @@ def main():
         sys.exit(1)
 
     ensure_docker_permissions()
+
+    # Start SSH agent and add key
+    subprocess.run("eval $(ssh-agent -s)", shell=True)
+    subprocess.run("ssh-add ~/.ssh/id_rsa", shell=True)
 
     commands = [
         "git pull",
