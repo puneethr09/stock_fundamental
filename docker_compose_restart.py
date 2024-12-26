@@ -1,7 +1,9 @@
 import os
 import subprocess
+import sys
 
 def run_command(command):
+    print(f"Running command: {command}")
     try:
         result = subprocess.run(
             command,
@@ -10,22 +12,31 @@ def run_command(command):
             capture_output=True,
             text=True
         )
+        print(f"Command succeeded: {command}\nOutput:\n{result.stdout}")
         return True, result.stdout
     except subprocess.CalledProcessError as e:
-        return False, str(e)
+        print(f"Command failed: {command}\nError:\n{e.stderr}")
+        return False, e.stderr
 
 def ensure_docker_permissions():
-    # Add current user to docker group
     user = os.getenv("USER")
-    run_command(f"sudo usermod -aG docker {user}")
+    if user:
+        print(f"Adding {user} to docker group...")
+        run_command(f"sudo usermod -aG docker {user}")
 
-    # Start Docker service if not running
+    print("Starting Docker service...")
     run_command("sudo systemctl start docker")
 
-    # Ensure correct permissions on Docker socket
+    print("Setting Docker socket permissions...")
     run_command("sudo chown root:docker /var/run/docker.sock")
 
+    print("If you were added to the docker group, please log out and back in for changes to take effect.")
+
 def main():
+    if os.geteuid() != 0:
+        print("This script requires administrative privileges. Please run with sudo.")
+        sys.exit(1)
+
     ensure_docker_permissions()
 
     commands = [
@@ -45,9 +56,7 @@ def main():
     if all_successful:
         print("All operations completed successfully.")
     else:
-        for result in results:
-            if not result["success"]:
-                print(f"Error running command: {result['command']}\nOutput: {result['output']}")
+        print("Some operations failed. Please check the output above for details.")
 
 if __name__ == "__main__":
     main()
