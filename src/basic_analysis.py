@@ -582,7 +582,6 @@ def get_news_categories():
     Returns a dictionary of news categories and their corresponding keywords.
     """
     NEWS_CATEGORIES = {
-        "IPO": ["ipo", "public offering", "listing", "subscription", "issue price"],
         "Market": [
             "stock",
             "shares",
@@ -595,6 +594,7 @@ def get_news_categories():
             "nse",
             "bse",
         ],
+        "IPO": ["ipo", "public offering", "listing", "subscription", "issue price"],
         "Economy": ["gdp", "inflation", "rbi", "monetary policy", "fiscal", "economy"],
         "Corporate": [
             "earnings",
