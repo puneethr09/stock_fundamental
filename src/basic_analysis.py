@@ -551,7 +551,7 @@ def create_plotly_visualization(ratios_df, company_name):
         width=1600,
         plot_bgcolor="white",
         paper_bgcolor="white",
-        showlegend=True,
+        showlegend=False,
         legend=dict(
             yanchor="middle",
             y=0.5,
