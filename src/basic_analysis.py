@@ -18,7 +18,6 @@ def get_financial_ratios(ticker):
     stock = yf.Ticker(ticker)
     try:
         company_name = stock.info.get("longName", "Unknown Company")
-        print(f"Retrieved data for: {company_name}")
     except:
         print(f"Failed to retrieve data for ticker: {ticker}")
         return None
@@ -129,7 +128,6 @@ def get_financial_ratios(ticker):
             "Company": [company_name] * len(available_years),
         }
     )
-    print(ratios_df)
     ratios_df = ratios_df.dropna(how="all", subset=ratios_df.columns[1:-1])
     return ratios_df
 

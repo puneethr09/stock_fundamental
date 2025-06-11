@@ -11,11 +11,36 @@ import subprocess, os, time
 app = Flask(__name__)
 REPO_PATH = os.path.expanduser("~/repo/stock_fundamental/")
 
+_news_cache = {"data": None, "timestamp": 0}
+NEWS_CACHE_TTL = 3600  # seconds (1 hour)
+
+# Add this cache for financial ratios
+_ratios_cache = {}
+RATIOS_CACHE_TTL = 30 * 24 * 3600  # 1 month in seconds
+
+
+def get_market_news_cached():
+    now = time.time()
+    if _news_cache["data"] is None or now - _news_cache["timestamp"] > NEWS_CACHE_TTL:
+        _news_cache["data"] = get_market_news()
+        _news_cache["timestamp"] = now
+    return _news_cache["data"]
+
+
+def get_financial_ratios_cached(ticker):
+    now = time.time()
+    entry = _ratios_cache.get(ticker)
+    if entry and now - entry["timestamp"] < RATIOS_CACHE_TTL:
+        return entry["data"]
+    data = get_financial_ratios(ticker)
+    _ratios_cache[ticker] = {"data": data, "timestamp": now}
+    return data
+
 
 @app.route("/")
 @app.route("/home")  # Adding both routes for flexibility
 def home():
-    news_items = get_market_news()
+    news_items = get_market_news_cached()
     return render_template("index.html", news=news_items)
 
 
@@ -24,15 +49,23 @@ def analyze():
     start_time = time.time()
     print(f"[PROFILE] /analyze request received at {start_time:.3f}")
 
-    news_items = get_market_news()
+    t0 = time.time()
+    news_items = get_market_news_cached()
+    print(f"[PROFILE] get_market_news: {time.time() - t0:.2f}s")
+
     if request.method == "POST":
         ticker = request.form["ticker"].upper() + ".NS"
     else:
         ticker = request.args.get("ticker", "").upper() + ".NS"
 
-    ratios_df = get_financial_ratios(ticker)
+    t1 = time.time()
+    ratios_df = get_financial_ratios_cached(ticker)  # <-- Use the cached version
+    print(f"[PROFILE] get_financial_ratios: {time.time() - t1:.2f}s")
+
+    t2 = time.time()
     if ratios_df is not None and not ratios_df.empty:
         warnings, explanations, plot_html = analyze_ratios(ratios_df)
+        print(f"[PROFILE] analyze_ratios: {time.time() - t2:.2f}s")
         company_name = ratios_df["Company"].iloc[0]
         display_df = ratios_df.drop(columns=["Company"])
         response = render_template(
@@ -115,7 +148,7 @@ def trigger_ota():
 
 @app.route("/news")
 def news():
-    news_items = get_market_news()
+    news_items = get_market_news_cached()
     organized_news = {}
 
     for item in news_items:
