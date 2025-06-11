@@ -6,10 +6,10 @@ from src.basic_analysis import (
     get_news_categories,
 )
 from src.utils import load_company_data
-import subprocess, os
+import subprocess, os, time
 
 app = Flask(__name__)
-REPO_PATH = "/home/puneeth/repo/stock_fundamental/"
+REPO_PATH = os.path.expanduser("~/repo/stock_fundamental/")
 
 
 @app.route("/")
@@ -21,6 +21,9 @@ def home():
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
+    start_time = time.time()
+    print(f"[PROFILE] /analyze request received at {start_time:.3f}")
+
     news_items = get_market_news()
     if request.method == "POST":
         ticker = request.form["ticker"].upper() + ".NS"
@@ -32,7 +35,7 @@ def analyze():
         warnings, explanations, plot_html = analyze_ratios(ratios_df)
         company_name = ratios_df["Company"].iloc[0]
         display_df = ratios_df.drop(columns=["Company"])
-        return render_template(
+        response = render_template(
             "results.html",
             tables=[display_df.to_html(classes="data table-hover", index=False)],
             titles=display_df.columns.values,
@@ -44,12 +47,16 @@ def analyze():
             zip=zip,
         )
     else:
-        return render_template(
+        response = render_template(
             "results.html",
             error="No data available for the provided ticker.",
             plot_html=None,
             zip=zip,
         )
+
+    end_time = time.time()
+    print(f"[PROFILE] /analyze response sent at {end_time:.3f} (elapsed: {end_time - start_time:.3f} seconds)")
+    return response
 
 
 @app.route("/suggest", methods=["GET"])

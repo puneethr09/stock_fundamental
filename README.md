@@ -54,7 +54,6 @@ This web application provides a platform for analyzing the fundamental financial
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-   
 
 3. **Install dependencies:**
 
@@ -68,7 +67,7 @@ This web application provides a platform for analyzing the fundamental financial
    python app.py
    ```
 
-   The application will be available at `http://0.0.0.0:5000`.
+   The application will be available at `http://0.0.0.0:5001`.
 
 ## Code Structure
 
