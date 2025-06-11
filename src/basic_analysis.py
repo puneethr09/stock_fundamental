@@ -7,7 +7,7 @@ import os, requests, pytz
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from utils import calculate_ratio, calculate_margin, normalize_financial_data
+from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
 from plotly.subplots import make_subplots
 
 
@@ -137,86 +137,88 @@ def get_financial_ratios(ticker):
 def calculate_quick_ratio(balance_sheet):
     try:
         current_assets = balance_sheet.loc["Current Assets"]
-        inventory = balance_sheet.get(
-            "Inventory", pd.Series(0, index=balance_sheet.columns)
-        )
-        prepaid_assets = balance_sheet.loc["Prepaid Assets"]
+        inventory = balance_sheet.loc["Inventory"] if "Inventory" in balance_sheet.index else pd.Series(0, index=balance_sheet.columns)
+        prepaid_assets = balance_sheet.loc["Prepaid Assets"] if "Prepaid Assets" in balance_sheet.index else pd.Series(0, index=balance_sheet.columns)
         current_liabilities = balance_sheet.loc["Current Liabilities"]
         return (current_assets - inventory - prepaid_assets) / current_liabilities
     except KeyError:
         return pd.Series(np.nan, index=balance_sheet.columns)
 
-
 def calculate_eps(income_stmt):
     try:
-        if isinstance(income_stmt, pd.Series):
-            eps = income_stmt["Diluted EPS"] * 1000000
+        # If "Diluted EPS" is present, use it; else, try to compute from Net Income and Shares Outstanding
+        if "Diluted EPS" in income_stmt.index:
+            eps = income_stmt.loc["Diluted EPS"] * 1_000_000
+        elif "Net Income" in income_stmt.index and "Weighted Average Shares Outstanding" in income_stmt.index:
+            eps = income_stmt.loc["Net Income"] / income_stmt.loc["Weighted Average Shares Outstanding"]
         else:
-            eps = income_stmt.loc["Diluted EPS"] * 1000000
+            eps = pd.Series(np.nan, index=income_stmt.columns)
         return eps
-    except:
+    except Exception:
         print("EPS calculation failed")
-        return pd.Series(np.nan, index=income_stmt.index)
-
+        return pd.Series(np.nan, index=income_stmt.columns)
 
 def calculate_pe_ratio(historical_data, eps):
     try:
         # Get year-end closing prices
-        year_end_prices = historical_data.groupby(historical_data.index.year)[
-            "Close"
-        ].last()
-        # Convert EPS index to years
-        eps.index = eps.index.year
-        matching_years = eps.index
-        aligned_prices = year_end_prices[matching_years]
+        year_end_prices = historical_data.groupby(historical_data.index.year)["Close"].last()
+        # Align EPS index to years
+        eps.index = pd.to_datetime(eps.index).year
+        aligned_prices = year_end_prices.reindex(eps.index)
         pe_ratios = aligned_prices / eps
         return pe_ratios
     except Exception as e:
         print(f"\nPE Ratio calculation error: {e}")
         return pd.Series(np.nan, index=eps.index)
 
-
 def calculate_ebit_margin(income_statement):
     try:
-        ebit = (
-            income_statement.loc["Total Revenue"]
-            - income_statement.loc["Operating Expense"]
-        )
-        return (ebit / income_statement.loc["Total Revenue"]) * 100
+        if "Total Revenue" in income_statement.index and "Operating Expense" in income_statement.index:
+            ebit = income_statement.loc["Total Revenue"] - income_statement.loc["Operating Expense"]
+            return (ebit / income_statement.loc["Total Revenue"]) * 100
+        else:
+            return pd.Series(np.nan, index=income_statement.columns)
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
 
-
 def calculate_pb_ratio(historical_data, balance_sheet, stock):
     try:
-        # Get shares outstanding from stock info
         shares_outstanding = stock.info.get("sharesOutstanding")
-        # Get year-end closing prices
-        year_end_prices = historical_data.groupby(historical_data.index.year)[
-            "Close"
-        ].last()
-        # Get total equity and calculate book value per share
+        year_end_prices = historical_data.groupby(historical_data.index.year)["Close"].last()
         total_equity = balance_sheet.loc["Common Stock Equity"] * 1e6
         book_value_per_share = total_equity / shares_outstanding
-        # Extract years from the datetime index
-        years = [int(str(idx)[:4]) for idx in total_equity.index]
+        years = pd.to_datetime(total_equity.index).year
         book_value_per_share.index = years
-        # Calculate P/B ratio
-        pb_ratios = year_end_prices[years] / book_value_per_share
+        pb_ratios = year_end_prices.reindex(years) / book_value_per_share
         return pb_ratios
     except Exception as e:
         print(f"\nP/B Ratio calculation error: {e}")
         return pd.Series(np.nan, index=balance_sheet.columns)
 
-
 def calculate_roi(income_statement, balance_sheet):
     try:
-        return (
-            income_statement.loc["Operating Income"] / balance_sheet.loc["Total Assets"]
-        ) * 100
+        if "Operating Income" in income_statement.index and "Total Assets" in balance_sheet.index:
+            return (income_statement.loc["Operating Income"] / balance_sheet.loc["Total Assets"]) * 100
+        else:
+            return pd.Series(np.nan, index=income_statement.columns)
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
 
+def calculate_ratio(df1, df2, numerator, denominator):
+    try:
+        num = df1.loc[numerator] if numerator in df1.index else pd.Series(0, index=df1.columns)
+        denom = df2.loc[denominator] if denominator in df2.index else pd.Series(1, index=df2.columns)
+        return num / denom
+    except KeyError:
+        return pd.Series(np.nan, index=df1.columns)
+
+def calculate_margin(df, numerator, denominator):
+    try:
+        num = df.loc[numerator] if numerator in df.index else pd.Series(0, index=df.columns)
+        denom = df.loc[denominator] if denominator in df.index else pd.Series(1, index=df.columns)
+        return (num / denom) * 100
+    except KeyError:
+        return pd.Series(np.nan, index=df.columns)
 
 def analyze_ratios(ratios_df):
     if ratios_df is None or len(ratios_df) == 0:

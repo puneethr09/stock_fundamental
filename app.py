@@ -5,7 +5,7 @@ from src.basic_analysis import (
     get_market_news,
     get_news_categories,
 )
-from utils import load_company_data
+from src.utils import load_company_data
 import subprocess, os
 
 app = Flask(__name__)
