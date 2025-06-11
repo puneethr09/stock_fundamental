@@ -7,7 +7,7 @@ import os, requests, pytz
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from utils import calculate_ratio, calculate_margin, normalize_financial_data
+from .utils import calculate_ratio, calculate_margin, normalize_financial_data
 from plotly.subplots import make_subplots
 
 
