@@ -2,7 +2,7 @@ services:
   stock-analysis-app:
     build: .
     ports:
-      - "5001:5000" # Replace with your app's port if different
+      - "5001:5001" # Replace with your app's port if different
     volumes:
       - ./data:/app/data # Mount a local folder for persistent storage
       - ${HOME}/repo/stock_fundamental:/app # Mount the host directory to /app in the container

@@ -2,6 +2,8 @@ from flask import Flask, render_template, jsonify, Response, request
 from src.basic_analysis import (
     get_financial_ratios,
     analyze_ratios,
+)
+from src.news import (
     get_market_news,
     get_news_categories,
 )
