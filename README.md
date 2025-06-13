@@ -72,14 +72,15 @@ This web application provides a platform for analyzing the fundamental financial
 ## Code Structure
 
 - `app.py`: Main Flask application file.
-- `src/`: Contains the core logic for fetching and analyzing financial data.
-  - `basic_analysis.py`: Contains functions for fetching data, calculating ratios, analyzing ratios, and plotting.
+- `src/`: Contains the core logic for fetching, analyzing, and visualizing financial data.
+  - `basic_analysis.py`: High-level functions for fetching and analyzing financial data.
+  - `ratios.py`: Functions for calculating all financial ratios.
+  - `visualization.py`: Functions for generating static and interactive plots.
+  - `news.py`: Functions for fetching and categorizing market news.
+  - `utils.py`: Utility functions for calculations and data normalization.
 - `templates/`: Contains HTML templates for the web pages.
-  - `index.html`: Home page with stock search input.
-  - `results.html`: Page to display analysis results.
-  - `news.html`: Page to display market news.
 - `static/`: Contains static files like CSS, JavaScript, and images.
-- `utils.py`: Contains utility functions for calculations.
+- `tests/`: Contains unit tests for core modules.
 - `docker_compose_restart.py`: Script to restart docker compose.
 
 ## Usage
@@ -96,6 +97,14 @@ This web application provides a platform for analyzing the fundamental financial
 3. **OTA Updates**:
    - Click the "Update System" button to trigger an OTA update.
    - Monitor the update progress in the console modal.
+
+## Command-Line Usage
+
+You can also run analyses from the command line:
+
+```bash
+python cli.py
+```
 
 ## Contributing
 
