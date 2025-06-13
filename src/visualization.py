@@ -2,6 +2,7 @@ from plotly.subplots import make_subplots
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+from src.utils import normalize_financial_data
 
 def plot_financial_ratios(ratios_df, company_name):
     static_folder = os.path.join(os.getcwd(), "static")

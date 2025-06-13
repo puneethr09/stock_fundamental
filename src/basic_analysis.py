@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 import matplotlib
-from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
-from src.visualization import plot_financial_ratios, create_plotly_visualization
+from src.visualization import create_plotly_visualization
 from src.ratios import (
     calculate_quick_ratio,
     calculate_eps,
@@ -196,14 +195,5 @@ def analyze_ratios(ratios_df):
 
     return warnings, explanations, plot_html
 
-
-def main():
-    ticker = input("Enter the stock ticker symbol: ").upper() + ".NS"
-    ratios_df = get_financial_ratios(ticker)
-    analyze_ratios(ratios_df)
-
-
-if __name__ == "__main__":
-    main()
 
 pd.set_option("future.no_silent_downcasting", True)
