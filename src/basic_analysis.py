@@ -1,12 +1,7 @@
-import yfinance as yf
 import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
-import os, requests, pytz
-import plotly.graph_objects as go
-import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+import yfinance as yf
+import matplotlib
 from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
 from src.visualization import plot_financial_ratios, create_plotly_visualization
 from src.ratios import (
