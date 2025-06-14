@@ -25,8 +25,8 @@ def calculate_yoy_growth(series):
     Returns a Series of YoY growth percentages.
     """
     series = series.sort_index()
-    yoy_growth = series.pct_change() * 100
-    return yoy_growth
+    # Do NOT fill missing values
+    return series.pct_change(fill_method=None) * 100
 
 
 def summarize_growth(ratios_df):
