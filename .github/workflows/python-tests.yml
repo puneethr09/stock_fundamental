@@ -1,4 +1,6 @@
-name: Python Tests
+name: Python Tests with coverage
+description: Run Python tests with coverage reporting on push and pull request events
+# This workflow runs Python tests using pytest and reports coverage.
 
 on:
   push:
@@ -16,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'  # Change if you use a different Python version
+          python-version: "3.10" # Change if you use a different Python version
 
       - name: Install dependencies
         run: |
