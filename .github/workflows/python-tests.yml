@@ -25,7 +25,7 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: PYTHONPATH=src pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+        run: PYTHONPATH=. pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
