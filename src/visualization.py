@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from src.utils import normalize_financial_data
 
+
 def plot_financial_ratios(ratios_df, company_name):
     static_folder = os.path.join(os.getcwd(), "static")
     os.makedirs(static_folder, exist_ok=True)
@@ -149,19 +150,19 @@ def create_plotly_visualization(ratios_df, company_name):
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Return Ratios {{<span style='color:{color_mapping['ROE']}'>ROE</span>, "
+            f"<b>Return Ratios{{<span style='color:{color_mapping['ROE']}'>ROE</span>,<b>"
             f"<span style='color:{color_mapping['ROA']}'>ROA</span>, "
             f"<span style='color:{color_mapping['ROIC']}'>ROIC</span>, "
             f"<span style='color:{color_mapping['ROI']}'>ROI</span>}}",
-            f"Liquidity Ratios {{<span style='color:{color_mapping['Current Ratio']}'>Current Ratio</span>, "
+            f"<b>Liquidity Ratios {{<span style='color:{color_mapping['Current Ratio']}'>Current Ratio</span>, <b>"
             f"<span style='color:{color_mapping['Quick Ratio']}'>Quick Ratio</span>}}",
-            f"Market & Profitability {{<span style='color:{color_mapping['EBIT Margin']}'>EBIT Margin</span>, "
+            f"<b>Market & Profitability {{<span style='color:{color_mapping['EBIT Margin']}'>EBIT Margin</span>, <b>"
             f"<span style='color:{color_mapping['P/E Ratio']}'>P/E Ratio</span>, "
             f"<span style='color:{color_mapping['P/B Ratio']}'>P/B Ratio</span>}}",
-            f"Leverage Ratio {{<span style='color:{color_mapping['Debt to Equity']}'>Debt to Equity</span>}}",
-            f"Margin Analysis {{<span style='color:{color_mapping['Operating Margin']}'>Operating Margin</span>, "
+            f"<b>Leverage Ratio {{<span style='color:{color_mapping['Debt to Equity']}'>Debt to Equity</span>}}<b>",
+            f"<b>Margin Analysis {{<span style='color:{color_mapping['Operating Margin']}'>Operating Margin</span>, <b>"
             f"<span style='color:{color_mapping['Net Profit Margin']}'>Net Profit Margin</span>}}",
-            f"Efficiency Metrics {{<span style='color:{color_mapping['Interest Coverage']}'>Interest Coverage</span>, "
+            f"<b>Efficiency Metrics {{<span style='color:{color_mapping['Interest Coverage']}'>Interest Coverage</span>, <b>"
             f"<span style='color:{color_mapping['Asset Turnover']}'>Asset Turnover</span>}}",
         ),
         vertical_spacing=0.12,
@@ -261,20 +262,10 @@ def create_plotly_visualization(ratios_df, company_name):
 
     fig.update_layout(
         height=1200,
-        width=1600,
         plot_bgcolor="white",
         paper_bgcolor="white",
         showlegend=False,
-        legend=dict(
-            yanchor="middle",
-            y=0.5,
-            xanchor="right",
-            x=1.15,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="rgba(0,0,0,0.1)",
-            borderwidth=1,
-        ),
-        margin=dict(l=50, r=150, t=80, b=50),
+        margin=dict(l=80, r=80, t=80, b=80),  # Equal margins
     )
 
     fig.update_xaxes(
