@@ -34,7 +34,6 @@ def ensure_docker_permissions():
 
 
 def main():
-
     ensure_docker_permissions()
 
     # Start SSH agent and add key
@@ -43,9 +42,9 @@ def main():
 
     commands = [
         "git pull",
-        "docker compose down",
-        "docker compose build",
-        "docker compose up -d",
+        "sudo docker-compose down",
+        "sudo docker-compose build",
+        "sudo docker-compose up -d",
     ]
 
     results = []
