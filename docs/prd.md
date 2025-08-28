@@ -69,6 +69,7 @@ The current application provides basic fundamental analysis but lacks the depth 
 | Change | Date | Version | Description | Author |
 |--------|------|---------|-------------|---------|
 | Initial PRD Creation | 2025-08-28 | 1.0 | Comprehensive refactoring and enhancement planning | PM Agent |
+| Indian Market Focus & Enhanced Requirements | 2025-08-28 | 1.1 | Added Indian stock market specification, API flexibility, cross-device compatibility (PC/mobile/tablet/iPad), educational explanations, clean coding standards, and single epic rationale | PM Agent |
 
 ## 2. Requirements
 
@@ -87,8 +88,6 @@ The current application provides basic fundamental analysis but lacks the depth 
 **FR6**: The system shall maintain and enhance the existing Indian stock auto-complete functionality for ticker search, with flexibility to improve or completely revamp for better user experience.
 
 **FR7**: The system shall provide educational explanations alongside all analysis results, helping users understand financial concepts, ratios, and investment principles for continuous learning.
-
-**FR8**: The system shall provide comprehensive test coverage with automated testing at unit, integration, and end-to-end levels.
 
 **FR8**: The system shall provide comprehensive test coverage with automated testing at unit, integration, and end-to-end levels.
 
