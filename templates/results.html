@@ -148,6 +148,173 @@
       .search-box input[type="submit"]:hover {
         background-color: #0056b3;
       }
+
+      /* Community Insights Styles */
+      .community-section {
+        background: rgba(255, 255, 255, 0.9);
+        margin: 30px auto;
+        width: 90%;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .community-header {
+        text-align: center;
+        color: #007bff;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+      }
+
+      .insight-card {
+        background: rgba(248, 249, 250, 0.9);
+        border-left: 4px solid #007bff;
+        margin: 15px 0;
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .insight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .insight-category {
+        background: #007bff;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        text-transform: uppercase;
+      }
+
+      .insight-date {
+        color: #666;
+        font-size: 0.85em;
+      }
+
+      .insight-content {
+        margin: 10px 0;
+        line-height: 1.5;
+        color: #333;
+      }
+
+      .insight-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px solid #dee2e6;
+      }
+
+      .vote-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .vote-btn {
+        background: none;
+        border: 1px solid #ccc;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: all 0.2s;
+      }
+
+      .vote-btn:hover {
+        background: #f8f9fa;
+      }
+
+      .vote-btn.up:hover {
+        background: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+      }
+
+      .vote-btn.down:hover {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+      }
+
+      .flag-btn {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 0.8em;
+        text-decoration: underline;
+      }
+
+      .flag-btn:hover {
+        color: #a71d2a;
+      }
+
+      .contribute-form {
+        background: rgba(240, 248, 255, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 2px dashed #007bff;
+      }
+
+      .contribute-form h4 {
+        color: #007bff;
+        margin-bottom: 15px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: inherit;
+      }
+
+      .form-group textarea {
+        height: 100px;
+        resize: vertical;
+      }
+
+      .submit-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s;
+      }
+
+      .submit-btn:hover {
+        background: #0056b3;
+      }
+
+      .no-insights {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 20px;
+      }
       .home-button {
         position: absolute;
         top: 20px;
@@ -241,6 +408,94 @@
       {% endfor %}
     </div>
     <div class="plot">{{ plot_html | safe }}</div>
+
+    <!-- Community Insights Section -->
+    {% if not error %}
+    <div class="community-section">
+      <h2 class="community-header">
+        <i class="fas fa-users"></i> Community Insights for {{ company_name }}
+      </h2>
+
+      <!-- Contribution Form -->
+      <div class="contribute-form">
+        <h4><i class="fas fa-plus-circle"></i> Share Your Analysis</h4>
+        <form id="contribute-form">
+          <div class="form-group">
+            <label for="insight-category">Analysis Type:</label>
+            <select id="insight-category" required>
+              <option value="">Select category...</option>
+              <option value="moat_analysis">Moat Analysis</option>
+              <option value="management">Management Assessment</option>
+              <option value="competitive_analysis">Competitive Analysis</option>
+              <option value="industry_analysis">Industry Analysis</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="insight-content">Your Analysis:</label>
+            <textarea
+              id="insight-content"
+              placeholder="Share your insights about {{ company_name }}. What makes this company unique? How is the management? What competitive advantages do they have?"
+              required
+              minlength="10"
+              maxlength="2000"
+            >
+            </textarea>
+            <small
+              >10-2000 characters. Be specific and helpful to other
+              investors.</small
+            >
+          </div>
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-share"></i> Share Insight
+          </button>
+        </form>
+      </div>
+
+      <!-- Existing Insights -->
+      <div id="insights-container">
+        {% if community_insights %} {% for insight in community_insights %}
+        <div class="insight-card" data-insight-id="{{ insight.id }}">
+          <div class="insight-header">
+            <span class="insight-category"
+              >{{ insight.category.value.replace('_', ' ').title() }}</span
+            >
+            <span class="insight-date"
+              >{{ insight.created_at.strftime('%Y-%m-%d') }}</span
+            >
+          </div>
+          <div class="insight-content">{{ insight.content }}</div>
+          <div class="insight-actions">
+            <div class="vote-buttons">
+              <button
+                class="vote-btn up"
+                data-insight-id="{{ insight.id }}"
+                data-vote-type="up"
+              >
+                <i class="fas fa-thumbs-up"></i> {{ insight.votes_up }}
+              </button>
+              <button
+                class="vote-btn down"
+                data-insight-id="{{ insight.id }}"
+                data-vote-type="down"
+              >
+                <i class="fas fa-thumbs-down"></i> {{ insight.votes_down }}
+              </button>
+            </div>
+            <button class="flag-btn" data-insight-id="{{ insight.id }}">
+              <i class="fas fa-flag"></i> Flag
+            </button>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="no-insights">
+          <i class="fas fa-lightbulb"></i>
+          <p>No community insights yet for {{ company_name }}.</p>
+          <p>Be the first to share your analysis!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
     <!-- jQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -282,6 +537,105 @@
               $(this).text(value.toFixed(2));
             }
           }
+        });
+
+        // Community Features JavaScript
+
+        // Handle insight contribution
+        $("#contribute-form").on("submit", function (e) {
+          e.preventDefault();
+
+          const category = $("#insight-category").val();
+          const content = $("#insight-content").val().trim();
+          const ticker = "{{ ticker }}";
+
+          if (!category || !content) {
+            alert("Please fill in all fields");
+            return;
+          }
+
+          $.ajax({
+            url: "/community/contribute",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              ticker: ticker,
+              category: category,
+              content: content,
+            }),
+            success: function (response) {
+              if (response.success) {
+                alert("Thank you for your contribution!");
+                location.reload(); // Reload to show new insight
+              } else {
+                alert("Error: " + response.message);
+              }
+            },
+            error: function () {
+              alert("Error submitting insight. Please try again.");
+            },
+          });
+        });
+
+        // Handle voting
+        $(".vote-btn").on("click", function () {
+          const insightId = $(this).data("insight-id");
+          const voteType = $(this).data("vote-type");
+          const button = $(this);
+
+          $.ajax({
+            url: "/community/vote",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              insight_id: insightId,
+              vote_type: voteType,
+            }),
+            success: function (response) {
+              if (response.success) {
+                // Reload to show updated vote counts
+                location.reload();
+              } else {
+                alert("Error: " + response.message);
+              }
+            },
+            error: function () {
+              alert("Error recording vote. Please try again.");
+            },
+          });
+        });
+
+        // Handle flagging
+        $(".flag-btn").on("click", function () {
+          if (
+            !confirm(
+              "Are you sure you want to flag this insight as inappropriate?"
+            )
+          ) {
+            return;
+          }
+
+          const insightId = $(this).data("insight-id");
+
+          $.ajax({
+            url: "/community/flag",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              insight_id: insightId,
+            }),
+            success: function (response) {
+              if (response.success) {
+                alert("Insight flagged for review.");
+                location.reload();
+              } else {
+                alert("Error: " + response.message);
+              }
+            },
+            error: function () {
+              alert("Error flagging insight. Please try again.");
+            },
+          });
         });
       });
       document.addEventListener("DOMContentLoaded", function () {

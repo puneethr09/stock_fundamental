@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, Response, request
+from flask import Flask, render_template, jsonify, Response, request, session
 from src.basic_analysis import (
     get_financial_ratios,
     analyze_ratios,
@@ -6,10 +6,25 @@ from src.basic_analysis import (
     get_news_categories,
 )
 from src.utils import load_company_data
+from src.community_knowledge import CommunityKnowledgeBase, InsightCategory
 import subprocess, os
+import secrets
 
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)  # For session management
 REPO_PATH = "/home/puneeth/repo/stock_fundamental/"
+
+# Initialize community knowledge base
+community_kb = CommunityKnowledgeBase()
+
+
+def get_anonymous_user_id():
+    """Get or create anonymous user ID for session"""
+    if "anonymous_user_id" not in session:
+        session["anonymous_user_id"] = community_kb.generate_anonymous_user_id(
+            str(request.remote_addr) + str(request.user_agent)
+        )
+    return session["anonymous_user_id"]
 
 
 @app.route("/")
@@ -21,6 +36,9 @@ def home():
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
+    # Initialize session for anonymous user tracking
+    anonymous_user_id = get_anonymous_user_id()
+
     news_items = get_market_news()
     if request.method == "POST":
         ticker = request.form["ticker"].upper() + ".NS"
@@ -32,6 +50,11 @@ def analyze():
         warnings, explanations, plot_html = analyze_ratios(ratios_df)
         company_name = ratios_df["Company"].iloc[0]
         display_df = ratios_df.drop(columns=["Company"])
+
+        # Get community insights for this ticker (remove .NS suffix for community data)
+        ticker_for_community = ticker.replace(".NS", "")
+        community_insights = community_kb.get_insights_for_ticker(ticker_for_community)
+
         return render_template(
             "results.html",
             tables=[display_df.to_html(classes="data table-hover", index=False)],
@@ -41,6 +64,9 @@ def analyze():
             explanations=explanations,
             company_name=company_name,
             news=news_items,
+            community_insights=community_insights,
+            insight_categories=InsightCategory,
+            ticker=ticker_for_community,
             zip=zip,
         )
     else:
@@ -63,6 +89,107 @@ def suggest():
         row["Company Name"]: row["Ticker"] for index, row in suggestions.iterrows()
     }
     return {"suggestions": result}
+
+
+@app.route("/community/contribute", methods=["POST"])
+def contribute_insight():
+    """Endpoint for submitting community insights"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        data = request.json
+        ticker = data.get("ticker", "").upper()
+        category_str = data.get("category", "")
+        content = data.get("content", "")
+
+        # Validate input
+        if not ticker or not category_str or not content:
+            return jsonify({"success": False, "message": "Missing required fields"})
+
+        try:
+            category = InsightCategory(category_str)
+        except ValueError:
+            return jsonify({"success": False, "message": "Invalid category"})
+
+        # Submit insight
+        success, message = community_kb.contribute_insight(
+            ticker, category, content, anonymous_user_id
+        )
+
+        return jsonify({"success": success, "message": message})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"})
+
+
+@app.route("/community/vote", methods=["POST"])
+def vote_on_insight():
+    """Endpoint for voting on community insights"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        data = request.json
+        insight_id = data.get("insight_id")
+        vote_type = data.get("vote_type")
+
+        if not insight_id or not vote_type:
+            return jsonify({"success": False, "message": "Missing required fields"})
+
+        success, message = community_kb.vote_on_insight(
+            insight_id, anonymous_user_id, vote_type
+        )
+
+        return jsonify({"success": success, "message": message})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"})
+
+
+@app.route("/community/flag", methods=["POST"])
+def flag_insight():
+    """Endpoint for flagging inappropriate insights"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        data = request.json
+        insight_id = data.get("insight_id")
+
+        if not insight_id:
+            return jsonify({"success": False, "message": "Missing insight ID"})
+
+        success, message = community_kb.flag_insight(insight_id, anonymous_user_id)
+
+        return jsonify({"success": success, "message": message})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"})
+
+
+@app.route("/community/insights/<ticker>")
+def get_ticker_insights(ticker):
+    """Get insights for a specific ticker"""
+    try:
+        insights = community_kb.get_insights_for_ticker(ticker.upper())
+        insights_data = []
+
+        for insight in insights:
+            insights_data.append(
+                {
+                    "id": insight.id,
+                    "ticker": insight.ticker,
+                    "category": insight.category.value,
+                    "content": insight.content,
+                    "created_at": insight.created_at.isoformat(),
+                    "votes_up": insight.votes_up,
+                    "votes_down": insight.votes_down,
+                    "net_votes": insight.votes_up - insight.votes_down,
+                }
+            )
+
+        return jsonify({"insights": insights_data})
+
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"})
 
 
 def run_command(command):
