@@ -468,6 +468,10 @@ class EducationalGapFillingService:
         """
         guides = []
 
+        # Handle None input gracefully
+        if not gaps:
+            return guides
+
         for gap in gaps:
             template = self.research_templates.get(gap.category.value)
             if not template:
