@@ -70,6 +70,7 @@ The current application provides basic fundamental analysis but lacks the depth 
 |--------|------|---------|-------------|---------|
 | Initial PRD Creation | 2025-08-28 | 1.0 | Comprehensive refactoring and enhancement planning | PM Agent |
 | Indian Market Focus & Enhanced Requirements | 2025-08-28 | 1.1 | Added Indian stock market specification, API flexibility, cross-device compatibility (PC/mobile/tablet/iPad), educational explanations, clean coding standards, and single epic rationale | PM Agent |
+| Comprehensive Requirements & Architecture | 2025-08-28 | 1.2 | Added missing functional requirements (portfolio management, bulk analysis, comparison tools), additional NFRs, success metrics, data architecture, expanded risk assessment, and Story 1.8 for user experience features | PM Agent |
 
 ## 2. Requirements
 
@@ -99,6 +100,14 @@ The current application provides basic fundamental analysis but lacks the depth 
 
 **FR12**: The system shall follow clean coding standards with proper documentation, type hints, and maintainable code structure throughout the application.
 
+**FR13**: The system shall provide comprehensive data validation and error handling for invalid stock tickers, missing data, and API failures with user-friendly error messages.
+
+**FR14**: The system shall implement user session management to save analysis history, preferences, and custom watchlists locally.
+
+**FR15**: The system shall provide stock comparison functionality allowing side-by-side analysis of multiple Indian stocks with visual comparisons.
+
+**FR16**: The system shall support bulk stock analysis for portfolios and watchlists with batch processing capabilities.
+
 ### Non-Functional Requirements
 
 **NFR1**: The refactored system shall maintain performance characteristics equal to or better than the current implementation, with page load times under 3 seconds for stock analysis.
@@ -114,6 +123,12 @@ The current application provides basic fundamental analysis but lacks the depth 
 **NFR6**: The system shall follow security best practices for web applications, including input validation and secure data handling.
 
 **NFR7**: The system shall be scalable to accommodate additional analysis modules and data sources in future iterations.
+
+**NFR8**: The system shall implement proper data retention policies with configurable storage limits for resource management on Raspberry Pi.
+
+**NFR9**: The system shall provide offline functionality for previously analyzed stocks when internet connectivity is unavailable.
+
+**NFR10**: The system shall implement proper API rate limiting and retry mechanisms to handle yfinance API limitations gracefully.
 
 ### Compatibility Requirements
 
@@ -133,12 +148,15 @@ New UI components will be built using a modern CSS framework (Bootstrap 5 or Tai
 
 ### Modified/New Screens and Views
 
-- **Enhanced Home Dashboard**: Modernized layout with market sentiment overview widget
-- **Comprehensive Stock Analysis Page**: Expanded analysis including Five Rules methodology results
-- **Sentiment Analysis Dashboard**: New dedicated page for market and stock sentiment analysis
-- **Comparison Tools**: New interface for comparing multiple stocks side-by-side
-- **Export/Reports Interface**: New functionality for generating and downloading analysis reports
-- **Settings/Preferences Page**: New page for user customization and configuration
+- **Enhanced Home Dashboard**: Modernized layout with market sentiment overview widget, recent analysis history, and quick stock search
+- **Comprehensive Stock Analysis Page**: Expanded analysis including Five Rules methodology results, educational explanations, and comparison tools
+- **Sentiment Analysis Dashboard**: New dedicated page for market and stock sentiment analysis with trend visualizations
+- **Comparison Tools**: New interface for comparing multiple stocks side-by-side with normalized charts and scoring
+- **Portfolio/Watchlist Manager**: New interface for creating and managing custom stock watchlists with bulk analysis
+- **Analysis History**: User's previous analysis results with search and filtering capabilities
+- **Export/Reports Interface**: New functionality for generating and downloading analysis reports in multiple formats
+- **Settings/Preferences Page**: New page for user customization, data retention settings, and educational preferences
+- **Educational Learning Center**: Dedicated section explaining financial concepts, Five Rules methodology, and investment principles
 
 ### UI Consistency Requirements
 
@@ -152,7 +170,15 @@ All new UI elements must follow a consistent design system with standardized com
 **Frameworks**: Flask 2.x, Plotly for visualizations, yfinance for Indian market data (NSE/BSE)
 **Database**: Current implementation uses in-memory processing; enhancement will add SQLite/PostgreSQL for data persistence
 **Infrastructure**: Docker containerization (current), exploring alternatives for Raspberry Pi deployment
-**External Dependencies**: yfinance (Indian stocks), pandas, numpy, matplotlib, requests, pytz for Indian RSS feeds
+**External Dependencies**: yfinance (Indian stocks), pandas, numpy, matplotlib, requests, pytz for Indian RSS feeds, newsapi-python for additional news sources
+
+**Additional Technical Considerations**:
+
+- **Data Sources**: Multiple fallback data sources for Indian stock data reliability
+- **API Management**: Rate limiting, retry logic, and graceful degradation strategies
+- **Security**: Input sanitization, SQL injection prevention, XSS protection
+- **Backup Strategy**: Automated daily backups for Raspberry Pi deployment
+- **Monitoring**: Application health checks, performance metrics, and error tracking
 
 ### Integration Approach
 
@@ -184,6 +210,37 @@ All new UI elements must follow a consistent design system with standardized com
 
 **Configuration Management**: Use environment-based configuration with secure handling of API keys and sensitive data.
 
+### Data Architecture and Management
+
+**Data Storage Strategy**:
+
+- **Transactional Data**: SQLite for local development, PostgreSQL for production scale
+- **Cache Strategy**: Redis-compatible in-memory caching with configurable TTL
+- **File Storage**: Local filesystem for Raspberry Pi, cloud storage options for scaling
+- **Backup Strategy**: Automated daily incremental backups with weekly full backups
+
+**Data Models Required**:
+
+- **Stock Master**: Indian stock metadata, ticker mappings, sector classifications
+- **Financial Data**: Historical financial ratios, calculated metrics, Five Rules scores
+- **User Preferences**: Dashboard customization, analysis history, watchlists
+- **Sentiment Data**: News sentiment scores, market mood indicators, trend analysis
+- **Cache Management**: API response caching, data freshness tracking, invalidation rules
+
+**Data Flow Architecture**:
+
+- **Input Layer**: yfinance API, RSS feeds, user inputs with validation
+- **Processing Layer**: Financial calculations, sentiment analysis, Five Rules methodology
+- **Storage Layer**: Normalized database schema with proper indexing
+- **Presentation Layer**: API responses, web templates, export formats
+
+**Data Quality Assurance**:
+
+- Input validation for all external data sources
+- Data completeness checks with missing data handling
+- Consistency validation across different data sources
+- Automated data quality monitoring and alerting
+
 ### Risk Assessment and Mitigation
 
 **Technical Risks**: Data source reliability (yfinance API changes for Indian stocks), performance impact of sentiment analysis processing, memory constraints on Raspberry Pi deployment, cross-device compatibility challenges.
@@ -192,7 +249,47 @@ All new UI elements must follow a consistent design system with standardized com
 
 **Deployment Risks**: Raspberry Pi resource limitations, network connectivity requirements for Indian market data sources, backup and recovery procedures.
 
-**Mitigation Strategies**: Implement comprehensive testing at each phase, gradual migration approach with rollback capabilities, performance benchmarking throughout development, cross-device testing strategy, and clear deployment documentation.
+**Data Quality Risks**: Inconsistent financial data from yfinance, missing data for smaller Indian stocks, news feed reliability during market volatility.
+
+**User Experience Risks**: Learning curve for new features, educational content overwhelming casual users, performance degradation on mobile devices.
+
+**Security Risks**: Data exposure on local network, insufficient input validation, lack of user authentication for sensitive features.
+
+**Mitigation Strategies**: Implement comprehensive testing at each phase, gradual migration approach with rollback capabilities, performance benchmarking throughout development, cross-device testing strategy, clear deployment documentation, multiple data source fallbacks, progressive feature disclosure, and security best practices implementation.
+
+### Success Metrics and Acceptance Criteria
+
+**Performance Metrics**:
+
+- Page load times: < 3 seconds for stock analysis
+- API response times: < 2 seconds for cached data, < 10 seconds for fresh data
+- Mobile responsiveness: Perfect rendering on devices with screen sizes 320px - 2560px
+- Concurrent user support: 10+ users without degradation
+
+**Quality Metrics**:
+
+- Test coverage: >90% for all business logic components
+- Code maintainability: Cyclomatic complexity < 10 per function
+- Educational effectiveness: User comprehension surveys showing >80% understanding improvement
+
+**Feature Completeness Metrics**:
+
+- All 5 Rules implemented with educational explanations
+- Sentiment analysis accuracy: >75% correlation with market movements
+- Cross-device compatibility: 100% feature parity across PC, mobile, tablet, iPad
+- Indian stock coverage: Support for NSE/BSE listed companies with >95% data availability
+
+**User Experience Metrics**:
+
+- Mobile usability: Touch-friendly interactions with proper spacing and sizing
+- Educational engagement: Users accessing educational content in >60% of sessions
+- Feature adoption: >50% of users trying new Five Rules analysis within first week
+
+**Operational Metrics**:
+
+- System uptime: >99% availability on Raspberry Pi deployment
+- Data accuracy: <1% discrepancy with official NSE/BSE data
+- Backup reliability: 100% successful daily backup completion rate
 
 ## 5. Epic and Story Structure
 
@@ -357,3 +454,25 @@ so that **the application can run reliably on resource-constrained hardware with
 - **IV1**: All existing functionality works correctly on Raspberry Pi hardware across all supported device access methods
 - **IV2**: Local network access maintains security while providing full feature access from PC, mobile, tablet, and iPad
 - **IV3**: Deployment process preserves existing data and configurations during updates
+
+### Story 1.8: User Experience and Portfolio Management
+
+As a **regular user**,
+I want **portfolio management capabilities and personalized user experience features**,
+so that **I can track my investments, save analysis history, and customize the application to my needs**.
+
+#### Acceptance Criteria
+
+1. Implement user session management with local storage for preferences and history
+2. Create watchlist/portfolio management functionality for tracking multiple Indian stocks
+3. Develop analysis history with search, filtering, and comparison capabilities
+4. Implement bulk analysis features for analyzing entire portfolios at once
+5. Add customizable dashboard with user-preferred widgets and layout
+6. Create notification system for significant changes in tracked stocks
+7. Provide data export capabilities for integration with external portfolio tools
+
+#### Integration Verification
+
+- **IV1**: Portfolio features integrate seamlessly with existing stock analysis without performance impact
+- **IV2**: User data persistence works correctly across browser sessions and device switches
+- **IV3**: Bulk analysis operations complete within acceptable time limits on Raspberry Pi hardware
