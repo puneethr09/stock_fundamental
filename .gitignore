@@ -82,3 +82,8 @@ obj/
 *.log
 *.sql
 *.sqlite
+
+# bmad specific
+.bmad-core/
+.github/
+web-bundles/
