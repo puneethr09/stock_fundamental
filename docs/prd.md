@@ -7,13 +7,13 @@
 **Analysis Source**: IDE-based fresh analysis of the stock_fundamental repository
 
 **Current Project State**:
-The project is a Flask-based web application for stock market fundamental analysis that currently provides:
+The project is a Flask-based web application for Indian stock market fundamental analysis that currently provides:
 
-- Stock financial ratio analysis using yfinance data
-- Market news aggregation from multiple RSS sources
+- Indian stock financial ratio analysis using yfinance data (NSE/BSE listings)
+- Indian market news aggregation from multiple RSS sources (Economic Times, Business Standard, LiveMint, Hindu BusinessLine)
 - Interactive Plotly visualizations of financial metrics
 - Docker-based deployment architecture
-- Auto-complete functionality for stock ticker search
+- Auto-complete functionality for Indian stock ticker search
 
 The application follows a basic MVC pattern with Flask routes handling web requests, business logic in `src/` modules, and HTML templates for the UI. The current codebase shows signs of technical debt with mixed concerns, lengthy functions, and limited separation of data access from business logic.
 
@@ -82,17 +82,23 @@ The current application provides basic fundamental analysis but lacks the depth 
 
 **FR4**: The system shall deliver market-wide sentiment analysis combining multiple data sources to provide overall market mood assessment.
 
-**FR5**: The system shall offer a modern, responsive web interface with improved user experience, intuitive navigation, and mobile compatibility.
+**FR5**: The system shall offer a modern, responsive web interface with improved user experience, intuitive navigation, and full cross-device compatibility (PC, mobile, tablet, iPad) with touch-optimized interactions.
 
-**FR6**: The system shall maintain and enhance the existing auto-complete functionality for stock ticker search without disruption.
+**FR6**: The system shall maintain and enhance the existing Indian stock auto-complete functionality for ticker search, with flexibility to improve or completely revamp for better user experience.
 
-**FR7**: The system shall provide comprehensive test coverage with automated testing at unit, integration, and end-to-end levels.
+**FR7**: The system shall provide educational explanations alongside all analysis results, helping users understand financial concepts, ratios, and investment principles for continuous learning.
 
-**FR8**: The system shall support deployment on Raspberry Pi with local network access capabilities.
+**FR8**: The system shall provide comprehensive test coverage with automated testing at unit, integration, and end-to-end levels.
 
-**FR9**: The system shall implement caching mechanisms and performance optimizations to improve response times.
+**FR8**: The system shall provide comprehensive test coverage with automated testing at unit, integration, and end-to-end levels.
 
-**FR10**: The system shall provide export capabilities for analysis reports in multiple formats (PDF, CSV, Excel).
+**FR9**: The system shall support deployment on Raspberry Pi with local network access capabilities.
+
+**FR10**: The system shall implement caching mechanisms and performance optimizations to improve response times for Indian market data.
+
+**FR11**: The system shall provide export capabilities for analysis reports in multiple formats (PDF, CSV, Excel).
+
+**FR12**: The system shall follow clean coding standards with proper documentation, type hints, and maintainable code structure throughout the application.
 
 ### Non-Functional Requirements
 
@@ -100,9 +106,9 @@ The current application provides basic fundamental analysis but lacks the depth 
 
 **NFR2**: The system shall demonstrate improved maintainability with modular architecture, achieving >90% test coverage and clear separation of concerns.
 
-**NFR3**: The system shall support concurrent users on local network without performance degradation (minimum 10 concurrent users).
+**NFR3**: The system shall support concurrent users on local network without performance degradation (minimum 10 concurrent users) with full cross-device compatibility.
 
-**NFR4**: The system shall be compatible with Raspberry Pi 4+ hardware requirements while maintaining full functionality.
+**NFR4**: The system shall be compatible with Raspberry Pi 4+ hardware requirements while maintaining full functionality across all device types (PC, mobile, tablet, iPad).
 
 **NFR5**: The system shall implement proper error handling and logging mechanisms for debugging and monitoring.
 
@@ -112,13 +118,13 @@ The current application provides basic fundamental analysis but lacks the depth 
 
 ### Compatibility Requirements
 
-**CR1**: API Compatibility - Existing Flask route structures must remain functional to avoid breaking any external integrations or bookmarks.
+**CR1**: API Flexibility - Existing Flask route structures may be maintained for backward compatibility OR completely revamped for improved functionality, with the decision based on what provides the best user experience and maintainability.
 
-**CR2**: Data Compatibility - Current data processing and storage formats must remain compatible to preserve historical analysis data.
+**CR2**: Data Compatibility - Current data processing and storage formats must remain compatible to preserve historical analysis data for Indian stocks.
 
-**CR3**: UI/UX Consistency - New interface elements must integrate seamlessly with enhanced design while maintaining familiar user workflows.
+**CR3**: UI/UX Cross-Device Compatibility - New interface elements must work seamlessly across all device types (PC, mobile, tablet, iPad) with responsive design and touch-optimized interactions.
 
-**CR4**: Integration Compatibility - Existing yfinance integration and RSS news feeds must continue functioning without interruption during migration phases.
+**CR4**: Integration Flexibility - Existing yfinance integration and Indian market RSS news feeds may be maintained OR enhanced/replaced for better reliability and performance, prioritizing system improvement over strict compatibility.
 
 ## 3. User Interface Enhancement Goals
 
@@ -137,25 +143,25 @@ New UI components will be built using a modern CSS framework (Bootstrap 5 or Tai
 
 ### UI Consistency Requirements
 
-All new UI elements must follow a consistent design system with standardized components, color palette, typography, and interaction patterns. The interface must be fully responsive across desktop, tablet, and mobile devices while maintaining the professional appearance expected in financial applications.
+All new UI elements must follow a consistent design system with standardized components, color palette, typography, and interaction patterns. The interface must be fully responsive across desktop, tablet, mobile, and iPad devices while maintaining the professional appearance expected in financial applications. Touch-optimized interactions and adaptive layouts must ensure optimal user experience on all device types.
 
 ## 4. Technical Constraints and Integration Requirements
 
 ### Existing Technology Stack
 
 **Languages**: Python 3.10+, JavaScript, HTML5, CSS3
-**Frameworks**: Flask 2.x, Plotly for visualizations, yfinance for market data
+**Frameworks**: Flask 2.x, Plotly for visualizations, yfinance for Indian market data (NSE/BSE)
 **Database**: Current implementation uses in-memory processing; enhancement will add SQLite/PostgreSQL for data persistence
 **Infrastructure**: Docker containerization (current), exploring alternatives for Raspberry Pi deployment
-**External Dependencies**: yfinance, pandas, numpy, matplotlib, requests, pytz for RSS feeds
+**External Dependencies**: yfinance (Indian stocks), pandas, numpy, matplotlib, requests, pytz for Indian RSS feeds
 
 ### Integration Approach
 
 **Database Integration Strategy**: Implement SQLite for development/local deployment and PostgreSQL option for production. Add data models for caching analysis results, user preferences, and historical sentiment data.
 
-**API Integration Strategy**: Maintain existing Flask routes while adding new RESTful endpoints for sentiment analysis and Five Rules methodology. Implement API versioning to support future enhancements.
+**API Integration Strategy**: Maintain existing Flask routes for backward compatibility OR completely redesign for improved RESTful architecture, adding new endpoints for sentiment analysis and Five Rules methodology. Implement API versioning to support future enhancements.
 
-**Frontend Integration Strategy**: Enhance existing Jinja2 templates with modern CSS framework. Add JavaScript modules for interactive features while maintaining server-side rendering approach.
+**Frontend Integration Strategy**: Enhance existing Jinja2 templates with modern CSS framework ensuring full cross-device compatibility (PC, mobile, tablet, iPad). Add JavaScript modules for interactive features while maintaining server-side rendering approach.
 
 **Testing Integration Strategy**: Implement pytest framework with fixtures for database testing, mock external API calls, and automated browser testing using Selenium.
 
@@ -165,9 +171,9 @@ All new UI elements must follow a consistent design system with standardized com
 
 **Naming Conventions**: Follow PEP 8 conventions with descriptive naming. Use domain-specific terminology for financial concepts and consistent patterns across modules.
 
-**Coding Standards**: Implement type hints, docstrings, and comprehensive error handling. Use dependency injection for testability and configuration management.
+**Coding Standards**: Implement type hints, comprehensive docstrings, and proper error handling. Use dependency injection for testability and configuration management. Follow clean coding principles with meaningful variable names, single responsibility functions, and proper code organization.
 
-**Documentation Standards**: Maintain comprehensive README, API documentation with examples, and architectural decision records (ADRs) for major design choices.
+**Documentation Standards**: Maintain comprehensive README, API documentation with examples, architectural decision records (ADRs) for major design choices, and educational explanations for financial concepts within the application.
 
 ### Deployment and Operations
 
@@ -181,23 +187,25 @@ All new UI elements must follow a consistent design system with standardized com
 
 ### Risk Assessment and Mitigation
 
-**Technical Risks**: Data source reliability (yfinance API changes), performance impact of sentiment analysis processing, memory constraints on Raspberry Pi deployment.
+**Technical Risks**: Data source reliability (yfinance API changes for Indian stocks), performance impact of sentiment analysis processing, memory constraints on Raspberry Pi deployment, cross-device compatibility challenges.
 
-**Integration Risks**: Breaking existing functionality during refactoring, compatibility issues with current data processing, potential downtime during migration.
+**Integration Risks**: Breaking existing functionality during refactoring, compatibility issues with current Indian stock data processing, potential downtime during migration.
 
-**Deployment Risks**: Raspberry Pi resource limitations, network connectivity requirements for data sources, backup and recovery procedures.
+**Deployment Risks**: Raspberry Pi resource limitations, network connectivity requirements for Indian market data sources, backup and recovery procedures.
 
-**Mitigation Strategies**: Implement comprehensive testing at each phase, gradual migration approach with rollback capabilities, performance benchmarking throughout development, and clear deployment documentation.
+**Mitigation Strategies**: Implement comprehensive testing at each phase, gradual migration approach with rollback capabilities, performance benchmarking throughout development, cross-device testing strategy, and clear deployment documentation.
 
 ## 5. Epic and Story Structure
 
 ### Epic Approach
 
-**Epic Structure Decision**: Single comprehensive epic for brownfield enhancement with rationale: This enhancement involves interconnected components (architecture, Five Rules analysis, sentiment analysis, UI) that share common infrastructure changes and benefit from coordinated development to avoid integration conflicts.
+**Epic Structure Decision**: Single comprehensive epic is optimal for brownfield enhancement with rationale: This enhancement involves tightly interconnected components (architecture, Five Rules analysis, sentiment analysis, UI, educational features) that share common infrastructure changes and benefit from coordinated development to avoid integration conflicts. A single epic ensures consistent cross-device compatibility, educational integration, and clean coding standards throughout all components.
+
+**Alternative Considered**: Multiple smaller epics could be used if the scope becomes unmanageable, but the interconnected nature of improvements (UI changes affecting all features, educational explanations touching all analysis components) makes a single epic more efficient.
 
 ## 6. Epic 1: Stock Analysis Platform Comprehensive Enhancement
 
-**Epic Goal**: Transform the existing stock analysis application into a comprehensive, maintainable, and feature-rich platform that provides sophisticated fundamental analysis using proven methodologies while maintaining system reliability and user experience.
+**Epic Goal**: Transform the existing Indian stock analysis application into a comprehensive, maintainable, and feature-rich platform that provides sophisticated fundamental analysis using proven methodologies while maintaining system reliability, educational value, and seamless cross-device user experience.
 
 **Integration Requirements**: All components must integrate seamlessly with the existing Flask architecture while supporting modular expansion for future enhancements.
 
@@ -212,14 +220,15 @@ so that **the system becomes maintainable, testable, and extensible for future e
 1. Implement clean architecture with separate data access, business logic, and presentation layers
 2. Extract all financial calculation logic into dedicated service classes with proper dependency injection
 3. Create comprehensive test suite with >90% code coverage for all refactored components
-4. Implement proper error handling and logging throughout the application
-5. All existing functionality (stock analysis, news aggregation, auto-complete) continues to work without degradation
+4. Implement proper error handling and logging throughout the application following clean coding standards
+5. All existing functionality (Indian stock analysis, news aggregation, auto-complete) continues to work without degradation
+6. Add educational explanations and tooltips for financial concepts and architectural decisions
 
 #### Integration Verification
 
-- **IV1**: All existing Flask routes return identical responses to current implementation
-- **IV2**: Performance benchmarks show no degradation in analysis calculation times
-- **IV3**: Auto-complete functionality maintains current response speed and accuracy
+- **IV1**: All existing Flask routes return identical or improved responses with educational context
+- **IV2**: Performance benchmarks show no degradation in Indian stock analysis calculation times
+- **IV3**: Auto-complete functionality maintains or improves current response speed and accuracy for Indian stocks
 
 ### Story 1.2: Database Layer and Caching Implementation
 
@@ -231,15 +240,16 @@ so that **the application performs better and can store historical analysis data
 
 1. Implement SQLite database with models for stock data caching, analysis history, and user preferences
 2. Create database migration system for schema updates
-3. Implement intelligent caching that reduces API calls to yfinance by storing recent stock data
+3. Implement intelligent caching that reduces API calls to yfinance by storing recent Indian stock data
 4. Add data retention policies for managing storage on resource-constrained devices
 5. Provide database backup and restore functionality
+6. Include educational documentation about database design decisions and caching strategies
 
 #### Integration Verification
 
-- **IV1**: Existing analysis functions work with both cached and fresh data sources
+- **IV1**: Existing Indian stock analysis functions work with both cached and fresh data sources
 - **IV2**: System gracefully handles database unavailability by falling back to direct API calls
-- **IV3**: Performance improvement of at least 50% for repeat stock analyses within cache period
+- **IV3**: Performance improvement of at least 50% for repeat Indian stock analyses within cache period
 
 ### Story 1.3: Five Rules Methodology Implementation
 
@@ -253,14 +263,15 @@ so that **I can make more informed investment decisions using proven analytical 
 2. Implement Rule 2: Economic moat analysis including competitive advantage identification
 3. Implement Rule 3: Management quality evaluation using financial metrics and governance indicators
 4. Implement Rule 4: Price vs intrinsic value analysis with multiple valuation models
-5. Implement Rule 5: Margin of safety calculations with risk-adjusted recommendations
+5. Implement Rule 5: Margin of safety calculations with risk-adjusted recommendations for Indian market conditions
 6. Create comprehensive scoring system that combines all five rules into actionable investment guidance
+7. Provide educational explanations for each rule, helping users understand the methodology and its application to Indian stocks
 
 #### Integration Verification
 
-- **IV1**: Five Rules analysis integrates seamlessly with existing financial ratio displays
+- **IV1**: Five Rules analysis integrates seamlessly with existing Indian stock financial ratio displays
 - **IV2**: New analysis components maintain consistent performance with current analysis speed
-- **IV3**: Five Rules results are properly formatted for export functionality
+- **IV3**: Five Rules results are properly formatted for export functionality with educational context
 
 ### Story 1.4: Sentiment Analysis Engine
 
@@ -270,16 +281,17 @@ so that **I can understand market psychology and incorporate emotional factors i
 
 #### Acceptance Criteria
 
-1. Implement news sentiment analysis using natural language processing for individual stocks
-2. Create market-wide sentiment aggregation from multiple news sources and social media indicators
-3. Develop sentiment scoring algorithms that provide clear, actionable insights
-4. Implement sentiment trend analysis showing historical sentiment patterns
+1. Implement news sentiment analysis using natural language processing for individual Indian stocks
+2. Create market-wide sentiment aggregation from multiple Indian news sources and social media indicators
+3. Develop sentiment scoring algorithms that provide clear, actionable insights with educational explanations
+4. Implement sentiment trend analysis showing historical sentiment patterns for Indian market
 5. Create sentiment alerts for significant changes in stock or market sentiment
-6. Integrate sentiment data with existing news categorization system
+6. Integrate sentiment data with existing Indian news categorization system
+7. Provide educational content explaining sentiment analysis and its role in investment decisions
 
 #### Integration Verification
 
-- **IV1**: Sentiment analysis data integrates with existing news display without affecting load times
+- **IV1**: Sentiment analysis data integrates with existing Indian news display without affecting load times
 - **IV2**: Sentiment calculations don't interfere with existing financial ratio computations
 - **IV3**: New sentiment features maintain compatibility with current export functionality
 
@@ -291,18 +303,19 @@ so that **I can easily access all analysis features on any device and have an im
 
 #### Acceptance Criteria
 
-1. Implement responsive design using modern CSS framework (Bootstrap 5 or Tailwind CSS)
-2. Create modular component library for consistent UI elements across the application
-3. Enhance existing pages with improved layouts, typography, and visual hierarchy
-4. Implement dark/light theme toggle for user preference
+1. Implement responsive design using modern CSS framework (Bootstrap 5 or Tailwind CSS) with full cross-device compatibility (PC, mobile, tablet, iPad)
+2. Create modular component library for consistent UI elements across all device types
+3. Enhance existing pages with improved layouts, typography, and visual hierarchy optimized for different screen sizes
+4. Implement dark/light theme toggle for user preference across all devices
 5. Add progressive web app (PWA) features for better mobile experience
-6. Maintain full functionality on mobile devices with touch-optimized interactions
+6. Maintain full functionality with touch-optimized interactions for mobile and tablet users
+7. Include educational tooltips and help sections throughout the interface
 
 #### Integration Verification
 
-- **IV1**: All existing functionality remains accessible through the new interface
-- **IV2**: Auto-complete search functionality maintains current speed and accuracy
-- **IV3**: Plotly visualizations render correctly within the new responsive design
+- **IV1**: All existing functionality remains accessible through the new interface across all device types
+- **IV2**: Auto-complete search functionality maintains current speed and accuracy on all devices
+- **IV3**: Plotly visualizations render correctly within the responsive design on PC, mobile, tablet, and iPad
 
 ### Story 1.6: Comprehensive Testing Framework
 
@@ -321,9 +334,9 @@ so that **we can confidently deploy changes without breaking existing functional
 
 #### Integration Verification
 
-- **IV1**: All tests pass consistently across different environments (development, staging, production)
+- **IV1**: All tests pass consistently across different environments and device types (development, staging, production)
 - **IV2**: Test execution doesn't interfere with normal application operation
-- **IV3**: Performance tests validate that new features don't degrade existing functionality speed
+- **IV3**: Performance tests validate that new features don't degrade existing functionality speed across all supported devices
 
 ### Story 1.7: Deployment and Infrastructure Enhancement
 
@@ -342,6 +355,6 @@ so that **the application can run reliably on resource-constrained hardware with
 
 #### Integration Verification
 
-- **IV1**: All existing functionality works correctly on Raspberry Pi hardware
-- **IV2**: Local network access maintains security while providing full feature access
+- **IV1**: All existing functionality works correctly on Raspberry Pi hardware across all supported device access methods
+- **IV2**: Local network access maintains security while providing full feature access from PC, mobile, tablet, and iPad
 - **IV3**: Deployment process preserves existing data and configurations during updates
