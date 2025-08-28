@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
+from src.gap_filling_service import EducationalGapFillingService
 from plotly.subplots import make_subplots
 
 
@@ -137,20 +138,35 @@ def get_financial_ratios(ticker):
 def calculate_quick_ratio(balance_sheet):
     try:
         current_assets = balance_sheet.loc["Current Assets"]
-        inventory = balance_sheet.loc["Inventory"] if "Inventory" in balance_sheet.index else pd.Series(0, index=balance_sheet.columns)
-        prepaid_assets = balance_sheet.loc["Prepaid Assets"] if "Prepaid Assets" in balance_sheet.index else pd.Series(0, index=balance_sheet.columns)
+        inventory = (
+            balance_sheet.loc["Inventory"]
+            if "Inventory" in balance_sheet.index
+            else pd.Series(0, index=balance_sheet.columns)
+        )
+        prepaid_assets = (
+            balance_sheet.loc["Prepaid Assets"]
+            if "Prepaid Assets" in balance_sheet.index
+            else pd.Series(0, index=balance_sheet.columns)
+        )
         current_liabilities = balance_sheet.loc["Current Liabilities"]
         return (current_assets - inventory - prepaid_assets) / current_liabilities
     except KeyError:
         return pd.Series(np.nan, index=balance_sheet.columns)
+
 
 def calculate_eps(income_stmt):
     try:
         # If "Diluted EPS" is present, use it; else, try to compute from Net Income and Shares Outstanding
         if "Diluted EPS" in income_stmt.index:
             eps = income_stmt.loc["Diluted EPS"] * 1_000_000
-        elif "Net Income" in income_stmt.index and "Weighted Average Shares Outstanding" in income_stmt.index:
-            eps = income_stmt.loc["Net Income"] / income_stmt.loc["Weighted Average Shares Outstanding"]
+        elif (
+            "Net Income" in income_stmt.index
+            and "Weighted Average Shares Outstanding" in income_stmt.index
+        ):
+            eps = (
+                income_stmt.loc["Net Income"]
+                / income_stmt.loc["Weighted Average Shares Outstanding"]
+            )
         else:
             eps = pd.Series(np.nan, index=income_stmt.columns)
         return eps
@@ -158,10 +174,13 @@ def calculate_eps(income_stmt):
         print("EPS calculation failed")
         return pd.Series(np.nan, index=income_stmt.columns)
 
+
 def calculate_pe_ratio(historical_data, eps):
     try:
         # Get year-end closing prices
-        year_end_prices = historical_data.groupby(historical_data.index.year)["Close"].last()
+        year_end_prices = historical_data.groupby(historical_data.index.year)[
+            "Close"
+        ].last()
         # Align EPS index to years
         eps.index = pd.to_datetime(eps.index).year
         aligned_prices = year_end_prices.reindex(eps.index)
@@ -171,20 +190,30 @@ def calculate_pe_ratio(historical_data, eps):
         print(f"\nPE Ratio calculation error: {e}")
         return pd.Series(np.nan, index=eps.index)
 
+
 def calculate_ebit_margin(income_statement):
     try:
-        if "Total Revenue" in income_statement.index and "Operating Expense" in income_statement.index:
-            ebit = income_statement.loc["Total Revenue"] - income_statement.loc["Operating Expense"]
+        if (
+            "Total Revenue" in income_statement.index
+            and "Operating Expense" in income_statement.index
+        ):
+            ebit = (
+                income_statement.loc["Total Revenue"]
+                - income_statement.loc["Operating Expense"]
+            )
             return (ebit / income_statement.loc["Total Revenue"]) * 100
         else:
             return pd.Series(np.nan, index=income_statement.columns)
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
 
+
 def calculate_pb_ratio(historical_data, balance_sheet, stock):
     try:
         shares_outstanding = stock.info.get("sharesOutstanding")
-        year_end_prices = historical_data.groupby(historical_data.index.year)["Close"].last()
+        year_end_prices = historical_data.groupby(historical_data.index.year)[
+            "Close"
+        ].last()
         total_equity = balance_sheet.loc["Common Stock Equity"] * 1e6
         book_value_per_share = total_equity / shares_outstanding
         years = pd.to_datetime(total_equity.index).year
@@ -195,35 +224,85 @@ def calculate_pb_ratio(historical_data, balance_sheet, stock):
         print(f"\nP/B Ratio calculation error: {e}")
         return pd.Series(np.nan, index=balance_sheet.columns)
 
+
 def calculate_roi(income_statement, balance_sheet):
     try:
-        if "Operating Income" in income_statement.index and "Total Assets" in balance_sheet.index:
-            return (income_statement.loc["Operating Income"] / balance_sheet.loc["Total Assets"]) * 100
+        if (
+            "Operating Income" in income_statement.index
+            and "Total Assets" in balance_sheet.index
+        ):
+            return (
+                income_statement.loc["Operating Income"]
+                / balance_sheet.loc["Total Assets"]
+            ) * 100
         else:
             return pd.Series(np.nan, index=income_statement.columns)
     except KeyError:
         return pd.Series(np.nan, index=income_statement.columns)
 
+
 def calculate_ratio(df1, df2, numerator, denominator):
     try:
-        num = df1.loc[numerator] if numerator in df1.index else pd.Series(0, index=df1.columns)
-        denom = df2.loc[denominator] if denominator in df2.index else pd.Series(1, index=df2.columns)
+        num = (
+            df1.loc[numerator]
+            if numerator in df1.index
+            else pd.Series(0, index=df1.columns)
+        )
+        denom = (
+            df2.loc[denominator]
+            if denominator in df2.index
+            else pd.Series(1, index=df2.columns)
+        )
         return num / denom
     except KeyError:
         return pd.Series(np.nan, index=df1.columns)
 
+
 def calculate_margin(df, numerator, denominator):
     try:
-        num = df.loc[numerator] if numerator in df.index else pd.Series(0, index=df.columns)
-        denom = df.loc[denominator] if denominator in df.index else pd.Series(1, index=df.columns)
+        num = (
+            df.loc[numerator]
+            if numerator in df.index
+            else pd.Series(0, index=df.columns)
+        )
+        denom = (
+            df.loc[denominator]
+            if denominator in df.index
+            else pd.Series(1, index=df.columns)
+        )
         return (num / denom) * 100
     except KeyError:
         return pd.Series(np.nan, index=df.columns)
 
-def analyze_ratios(ratios_df):
+
+def analyze_ratios(ratios_df, ticker=None):
+    """
+    Analyze financial ratios and detect educational gaps for learning opportunities
+
+    Args:
+        ratios_df: DataFrame with financial ratios
+        ticker: Stock ticker symbol (optional, for gap analysis)
+
+    Returns:
+        Tuple of (warnings, explanations, plot_html, gaps, research_guides, confidence_score)
+    """
+    # Initialize gap filling service
+    gap_service = EducationalGapFillingService()
+    gaps = []
+    research_guides = []
+    confidence_score = 1.0
+
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
-        return [], [], None
+
+        # Generate research guides for complete data gap
+        if ticker:
+            company_name = "Unknown Company"
+            gaps = gap_service.detect_analysis_gaps(None, [], company_name, ticker)
+            research_guides = gap_service.generate_research_guides(gaps)
+            confidence_score = gap_service.calculate_analysis_confidence_score(gaps)
+
+        return [], [], None, gaps, research_guides, confidence_score
 
     company_name = ratios_df["Company"].unique()[0]
     warnings = []
@@ -231,24 +310,37 @@ def analyze_ratios(ratios_df):
 
     latest_ratios = ratios_df.iloc[-1]
 
-    if latest_ratios["ROE"] < 10:
+    # Existing warning logic (with safe access to handle missing data)
+    if not pd.isna(latest_ratios.get("ROE", np.nan)) and latest_ratios["ROE"] < 10:
         warnings.append(
             "Low Return on Equity (ROE) indicates potential underperformance."
         )
+        explanations.append(
+            "ROE below 10% suggests the company may not be generating sufficient returns for shareholders. Research the company's competitive position and management strategy."
+        )
 
-    if latest_ratios["Current Ratio"] < 1:
+    if (
+        not pd.isna(latest_ratios.get("Current Ratio", np.nan))
+        and latest_ratios["Current Ratio"] < 1
+    ):
         warnings.append("Current Ratio below 1 indicates potential liquidity issues.")
         explanations.append(
             "A current ratio below 1 suggests that the company may not have enough short-term assets to cover its short-term liabilities, which could lead to liquidity problems."
         )
 
-    if latest_ratios["Debt to Equity"] > 1:
+    if (
+        not pd.isna(latest_ratios.get("Debt to Equity", np.nan))
+        and latest_ratios["Debt to Equity"] > 1
+    ):
         warnings.append("High Debt to Equity ratio indicates higher financial risk.")
         explanations.append(
             "A debt to equity ratio greater than 1 means that the company is financing more of its operations with debt than with equity, which can increase financial risk."
         )
 
-    if latest_ratios["Operating Margin"] < 15:
+    if (
+        not pd.isna(latest_ratios.get("Operating Margin", np.nan))
+        and latest_ratios["Operating Margin"] < 15
+    ):
         warnings.append(
             "Low Operating Margin indicates potential operational inefficiency."
         )
@@ -256,19 +348,28 @@ def analyze_ratios(ratios_df):
             "An operating margin below 15% suggests the company may need to improve its operational efficiency or pricing strategy."
         )
 
-    if latest_ratios["Net Profit Margin"] < 10:
+    if (
+        not pd.isna(latest_ratios.get("Net Profit Margin", np.nan))
+        and latest_ratios["Net Profit Margin"] < 10
+    ):
         warnings.append("Low Net Profit Margin indicates reduced profitability.")
         explanations.append(
             "A net profit margin below 10% indicates the company might need to control costs or improve revenue generation."
         )
 
-    if latest_ratios["Asset Turnover"] < 0.5:
+    if (
+        not pd.isna(latest_ratios.get("Asset Turnover", np.nan))
+        and latest_ratios["Asset Turnover"] < 0.5
+    ):
         warnings.append("Low Asset Turnover indicates inefficient use of assets.")
         explanations.append(
             "An asset turnover ratio below 0.5 suggests the company might not be using its assets efficiently to generate revenue."
         )
 
-    if latest_ratios["Interest Coverage"] < 2:
+    if (
+        not pd.isna(latest_ratios.get("Interest Coverage", np.nan))
+        and latest_ratios["Interest Coverage"] < 2
+    ):
         warnings.append(
             "Low Interest Coverage Ratio indicates potential debt servicing issues."
         )
@@ -278,7 +379,15 @@ def analyze_ratios(ratios_df):
 
     plot_html = create_plotly_visualization(ratios_df, company_name)
 
-    return warnings, explanations, plot_html
+    # Generate educational gaps and research guides
+    if ticker:
+        gaps = gap_service.detect_analysis_gaps(
+            ratios_df, warnings, company_name, ticker
+        )
+        research_guides = gap_service.generate_research_guides(gaps)
+        confidence_score = gap_service.calculate_analysis_confidence_score(gaps)
+
+    return warnings, explanations, plot_html, gaps, research_guides, confidence_score
 
 
 def plot_financial_ratios(ratios_df, company_name):

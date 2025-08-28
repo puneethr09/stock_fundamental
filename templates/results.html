@@ -149,6 +149,224 @@
         background-color: #0056b3;
       }
 
+      /* Educational Gaps Styles */
+      .educational-gaps-section {
+        background: rgba(255, 252, 240, 0.95);
+        margin: 30px auto;
+        width: 90%;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: 2px solid #ffc107;
+      }
+
+      .gaps-header {
+        text-align: center;
+        color: #dc6c00;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #ffc107;
+        padding-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .confidence-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: normal;
+      }
+
+      .gaps-summary {
+        margin-bottom: 25px;
+      }
+
+      .gap-item {
+        background: rgba(255, 255, 255, 0.8);
+        border-left: 4px solid #ffc107;
+        margin: 15px 0;
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .gap-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .gap-type {
+        background: #ffc107;
+        color: #333;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .gap-impact {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .gap-impact-low {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .gap-impact-medium {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .gap-impact-high {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .gap-description {
+        margin: 10px 0;
+        color: #555;
+        font-style: italic;
+      }
+
+      .gap-actions ul {
+        margin: 5px 0 0 20px;
+      }
+
+      .research-guides {
+        margin-top: 25px;
+      }
+
+      .research-guide {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ffc107;
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .guide-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .guide-header h5 {
+        color: #dc6c00;
+        margin: 0;
+      }
+
+      .guide-priority {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .guide-priority-low {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .guide-priority-medium {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .guide-priority-high {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .guide-description {
+        color: #555;
+        margin-bottom: 15px;
+        font-style: italic;
+      }
+
+      .research-questions, .information-sources, .expected-outcomes {
+        margin: 15px 0;
+      }
+
+      .research-questions h6, .information-sources h6, .expected-outcomes h6 {
+        color: #dc6c00;
+        margin-bottom: 8px;
+      }
+
+      .sources-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin: 10px 0;
+      }
+
+      .source-item {
+        background: rgba(248, 249, 250, 0.8);
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+      }
+
+      .source-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+
+      .source-type {
+        background: #6c757d;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.7em;
+        text-transform: uppercase;
+      }
+
+      .source-description {
+        margin: 8px 0;
+        font-size: 0.9em;
+        color: #666;
+      }
+
+      .source-link {
+        display: inline-block;
+        background: #007bff;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.85em;
+        margin: 5px 0;
+      }
+
+      .source-link:hover {
+        background: #0056b3;
+        text-decoration: none;
+        color: white;
+      }
+
+      .search-tips {
+        margin-top: 8px;
+        padding: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 3px;
+      }
+
       /* Community Insights Styles */
       .community-section {
         background: rgba(255, 255, 255, 0.9);
@@ -408,6 +626,115 @@
       {% endfor %}
     </div>
     <div class="plot">{{ plot_html | safe }}</div>
+
+    <!-- Educational Gap-Filling Section -->
+    {% if gaps or research_guides %}
+    <div class="educational-gaps-section">
+      <h2 class="gaps-header">
+        <i class="fas fa-graduation-cap"></i> 📚 Learning Opportunities
+        {% if confidence_score %}
+        <span class="confidence-badge" title="Analysis Confidence: {{ "%.0f"|format(confidence_score * 100) }}%">
+          Confidence: {{ "%.0f"|format(confidence_score * 100) }}%
+        </span>
+        {% endif %}
+      </h2>
+
+      {% if gaps %}
+      <div class="gaps-summary">
+        <h4><i class="fas fa-search"></i> Analysis Gaps Detected ({{ gaps|length }})</h4>
+        <div class="gaps-list">
+          {% for gap in gaps %}
+          <div class="gap-item">
+            <div class="gap-header">
+              <span class="gap-type">{{ gap.gap_type.value.title() }}</span>
+              <span class="gap-impact gap-impact-{{ gap.impact_level.value }}">
+                {{ gap.impact_level.value.title() }} Impact
+              </span>
+            </div>
+            <p class="gap-description">{{ gap.description }}</p>
+            {% if gap.suggested_actions %}
+            <div class="gap-actions">
+              <strong>Suggested Actions:</strong>
+              <ul>
+                {% for action in gap.suggested_actions %}
+                <li>{{ action }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if research_guides %}
+      <div class="research-guides">
+        <h4><i class="fas fa-book"></i> Research Guides for {{ company_name }}</h4>
+        {% for guide in research_guides %}
+        <div class="research-guide">
+          <div class="guide-header">
+            <h5>{{ guide.title }}</h5>
+            <span class="guide-priority guide-priority-{{ guide.priority.value }}">
+              {{ guide.priority.value.title() }} Priority
+            </span>
+          </div>
+          <p class="guide-description">{{ guide.description }}</p>
+          
+          {% if guide.research_questions %}
+          <div class="research-questions">
+            <h6><i class="fas fa-question-circle"></i> Key Research Questions:</h6>
+            <ul>
+              {% for question in guide.research_questions %}
+              <li>{{ question }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          
+          {% if guide.information_sources %}
+          <div class="information-sources">
+            <h6><i class="fas fa-link"></i> Recommended Sources:</h6>
+            <div class="sources-grid">
+              {% for source in guide.information_sources %}
+              <div class="source-item">
+                <div class="source-header">
+                  <strong>{{ source.source_name }}</strong>
+                  <span class="source-type">{{ source.source_type.value.title() }}</span>
+                </div>
+                <p class="source-description">{{ source.description }}</p>
+                {% if source.url %}
+                <a href="{{ source.url }}" target="_blank" class="source-link">
+                  <i class="fas fa-external-link-alt"></i> Visit Source
+                </a>
+                {% endif %}
+                {% if source.search_tips %}
+                <div class="search-tips">
+                  <small><strong>Search Tips:</strong> {{ source.search_tips }}</small>
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if guide.expected_outcomes %}
+          <div class="expected-outcomes">
+            <h6><i class="fas fa-bullseye"></i> Expected Learning Outcomes:</h6>
+            <ul>
+              {% for outcome in guide.expected_outcomes %}
+              <li>{{ outcome }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <!-- Community Insights Section -->
     {% if not error %}

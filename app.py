@@ -47,13 +47,16 @@ def analyze():
 
     ratios_df = get_financial_ratios(ticker)
     if ratios_df is not None and not ratios_df.empty:
-        warnings, explanations, plot_html = analyze_ratios(ratios_df)
+        # Pass ticker for gap analysis (remove .NS suffix)
+        ticker_for_analysis = ticker.replace(".NS", "")
+        warnings, explanations, plot_html, gaps, research_guides, confidence_score = (
+            analyze_ratios(ratios_df, ticker_for_analysis)
+        )
         company_name = ratios_df["Company"].iloc[0]
         display_df = ratios_df.drop(columns=["Company"])
 
-        # Get community insights for this ticker (remove .NS suffix for community data)
-        ticker_for_community = ticker.replace(".NS", "")
-        community_insights = community_kb.get_insights_for_ticker(ticker_for_community)
+        # Get community insights for this ticker
+        community_insights = community_kb.get_insights_for_ticker(ticker_for_analysis)
 
         return render_template(
             "results.html",
@@ -66,7 +69,10 @@ def analyze():
             news=news_items,
             community_insights=community_insights,
             insight_categories=InsightCategory,
-            ticker=ticker_for_community,
+            ticker=ticker_for_analysis,
+            gaps=gaps,
+            research_guides=research_guides,
+            confidence_score=confidence_score,
             zip=zip,
         )
     else:
