@@ -14,6 +14,8 @@ from src.behavioral_analytics import (
     track_page_interaction,
     InteractionType,
 )
+from src.pattern_recognition_trainer import PatternRecognitionTrainer, PatternType
+from src.educational_framework import LearningStage
 import subprocess, os
 import secrets
 
@@ -23,6 +25,9 @@ REPO_PATH = "/home/puneeth/repo/stock_fundamental/"
 
 # Initialize community knowledge base
 community_kb = CommunityKnowledgeBase()
+
+# Initialize pattern recognition trainer
+pattern_trainer = PatternRecognitionTrainer()
 
 
 def get_anonymous_user_id():
@@ -428,5 +433,263 @@ def news():
     )
 
 
+@app.route("/pattern-training")
+def pattern_training_home():
+    """Pattern recognition training home page"""
+    anonymous_user_id = get_anonymous_user_id()
+
+    # Get current learning stage for appropriate exercise selection
+    learning_context = get_learning_stage_context()
+    current_stage = learning_context.get("current_stage", "guided_discovery")
+
+    # Map stage string to enum
+    stage_mapping = {
+        "guided_discovery": LearningStage.GUIDED_DISCOVERY,
+        "assisted_analysis": LearningStage.ASSISTED_ANALYSIS,
+        "independent_thinking": LearningStage.INDEPENDENT_THINKING,
+        "analytical_mastery": LearningStage.ANALYTICAL_MASTERY,
+    }
+
+    user_stage = stage_mapping.get(current_stage, LearningStage.GUIDED_DISCOVERY)
+
+    # Get available pattern types
+    available_patterns = [
+        {
+            "type": "DEBT_ANALYSIS",
+            "name": "Debt Analysis Patterns",
+            "description": "Learn to identify debt spirals, leverage trends, and interest coverage concerns",
+        },
+        {
+            "type": "GROWTH_INDICATORS",
+            "name": "Growth Indicator Patterns",
+            "description": "Recognize sustainable growth patterns, ROE trends, and revenue quality",
+        },
+        {
+            "type": "VALUE_TRAPS",
+            "name": "Value Trap Detection",
+            "description": "Identify potential value traps and distinguish from genuine opportunities",
+        },
+    ]
+
+    return render_template(
+        "pattern_training.html",
+        available_patterns=available_patterns,
+        user_stage=current_stage,
+        **learning_context,
+    )
+
+
+@app.route("/pattern-training/stocks")
+def get_available_stocks():
+    """Get list of available stocks for selection from all CSV files"""
+    import csv
+    import os
+    import glob
+
+    stocks = []
+    input_dir = os.path.join(os.path.dirname(__file__), "input")
+
+    # Get all CSV files in the input directory
+    csv_files = glob.glob(os.path.join(input_dir, "*.csv"))
+
+    try:
+        for csv_file in csv_files:
+            # Extract index name from filename (e.g., "nifty_50" from "Indian_stocks_nifty_50.csv")
+            filename = os.path.basename(csv_file)
+            if filename.startswith("Indian_stocks_"):
+                index_name = (
+                    filename.replace("Indian_stocks_", "")
+                    .replace(".csv", "")
+                    .replace("_", " ")
+                    .title()
+                )
+            else:
+                index_name = filename.replace(".csv", "").replace("_", " ").title()
+
+            with open(csv_file, "r", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    # Add stock with index information
+                    stock_info = {
+                        "name": row["Company Name"],
+                        "ticker": row["Ticker"],
+                        "industry": row["Industry"],
+                        "index": index_name,
+                    }
+                    # Avoid duplicates (some stocks might be in multiple indices)
+                    if not any(s["ticker"] == stock_info["ticker"] for s in stocks):
+                        stocks.append(stock_info)
+
+    except Exception as e:
+        print(f"Error reading CSV files: {e}")
+        # Fallback to some default stocks
+        stocks = [
+            {
+                "name": "Reliance Industries Ltd.",
+                "ticker": "RELIANCE",
+                "industry": "Oil Gas & Consumable Fuels",
+                "index": "Nifty 50",
+            },
+            {
+                "name": "Tata Consultancy Services Ltd.",
+                "ticker": "TCS",
+                "industry": "Information Technology",
+                "index": "Nifty 50",
+            },
+            {
+                "name": "HDFC Bank Ltd.",
+                "ticker": "HDFCBANK",
+                "industry": "Financial Services",
+                "index": "Nifty 50",
+            },
+        ]
+
+    # Sort stocks by name for better UX
+    stocks.sort(key=lambda x: x["name"])
+
+    return jsonify({"success": True, "stocks": stocks})
+
+
+@app.route("/pattern-training/exercise")
+def get_pattern_exercise():
+    """Generate a new pattern recognition exercise"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        # Get parameters
+        pattern_type_str = request.args.get("pattern_type", "DEBT_ANALYSIS")
+        current_stage = request.args.get("stage", "guided_discovery")
+        selected_stock = request.args.get(
+            "stock", None
+        )  # New: Optional stock selection
+
+        # Map stage string to enum
+        stage_mapping = {
+            "guided_discovery": LearningStage.GUIDED_DISCOVERY,
+            "assisted_analysis": LearningStage.ASSISTED_ANALYSIS,
+            "independent_thinking": LearningStage.INDEPENDENT_THINKING,
+            "analytical_mastery": LearningStage.ANALYTICAL_MASTERY,
+        }
+
+        # Map pattern type string to enum
+        pattern_mapping = {
+            "DEBT_ANALYSIS": PatternType.DEBT_ANALYSIS,
+            "GROWTH_INDICATORS": PatternType.GROWTH_INDICATORS,
+            "VALUE_TRAPS": PatternType.VALUE_TRAPS,
+        }
+
+        user_stage = stage_mapping.get(current_stage, LearningStage.GUIDED_DISCOVERY)
+        pattern_type = pattern_mapping.get(pattern_type_str, PatternType.DEBT_ANALYSIS)
+
+        # Generate exercise (with optional stock selection)
+        if selected_stock:
+            # Parse the stock info (format: "Company Name|Ticker|Industry")
+            stock_parts = selected_stock.split("|")
+            company_info = {
+                "name": stock_parts[0] if len(stock_parts) > 0 else selected_stock,
+                "ticker": stock_parts[1] if len(stock_parts) > 1 else selected_stock,
+                "industry": stock_parts[2] if len(stock_parts) > 2 else "Unknown",
+                "company": (
+                    stock_parts[0] if len(stock_parts) > 0 else selected_stock
+                ),  # Required by pattern trainer
+                "sector": (
+                    stock_parts[2] if len(stock_parts) > 2 else "Unknown"
+                ),  # Add sector field
+                "description": f"Pattern analysis for {stock_parts[0] if len(stock_parts) > 0 else selected_stock}",
+                "pattern_description": f"Analyzing {stock_parts[0] if len(stock_parts) > 0 else selected_stock} financial patterns",
+            }
+            exercise = pattern_trainer.generate_stage_appropriate_exercise(
+                user_stage, pattern_type, anonymous_user_id, company_info
+            )
+        else:
+            exercise = pattern_trainer.generate_stage_appropriate_exercise(
+                user_stage, pattern_type, anonymous_user_id
+            )
+
+        # Generate interactive chart HTML from the exercise
+        chart_config = pattern_trainer.create_interactive_chart_overlay(exercise)
+
+        return jsonify(
+            {
+                "success": True,
+                "exercise": {
+                    "id": exercise.exercise_id,
+                    "title": exercise.title,
+                    "description": exercise.description,
+                    "company_name": exercise.company_name,
+                    "chart_html": chart_config[
+                        "chart_json"
+                    ],  # Use generated chart JSON
+                    "time_limit": exercise.time_limit_seconds,  # Fixed: using time_limit_seconds
+                    "pattern_zones": exercise.pattern_zones,  # Fixed: using pattern_zones instead of interactive_zones
+                    "difficulty": exercise.difficulty.value,
+                    "pattern_type": pattern_type.value,
+                },
+            }
+        )
+
+    except Exception as e:
+        return jsonify(
+            {"success": False, "error": f"Failed to generate exercise: {str(e)}"}
+        )
+
+
+@app.route("/pattern-training/submit", methods=["POST"])
+def submit_pattern_attempt():
+    """Submit user's pattern recognition attempt for evaluation"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        data = request.json
+        exercise_id = data.get("exercise_id")
+        user_patterns = data.get("identified_patterns", [])
+        time_taken = data.get("time_taken_seconds", 0)
+
+        if not exercise_id:
+            return jsonify({"success": False, "error": "Missing exercise ID"})
+
+        # Evaluate the attempt
+        result = pattern_trainer.evaluate_attempt(
+            exercise_id, user_patterns, anonymous_user_id, time_taken
+        )
+
+        # Track pattern recognition progress for learning stage assessment
+        behavioral_tracker.track_interaction_start(
+            anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "result": {
+                    "score": result.score,
+                    "accuracy": result.accuracy,
+                    "feedback": result.feedback,
+                    "missed_patterns": result.missed_patterns,
+                    "recommendations": result.improvement_recommendations,
+                },
+            }
+        )
+
+    except Exception as e:
+        return jsonify(
+            {"success": False, "error": f"Failed to evaluate attempt: {str(e)}"}
+        )
+
+
+@app.route("/pattern-training/progress")
+def get_pattern_progress():
+    """Get user's pattern recognition progress summary"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        progress = pattern_trainer.get_exercise_progress_summary(anonymous_user_id)
+
+        return jsonify({"success": True, "progress": progress})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to get progress: {str(e)}"})
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
