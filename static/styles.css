@@ -20,8 +20,25 @@ body {
     rgba(15, 23, 36, 1) 0%,
     rgba(4, 8, 15, 1) 100%
   );
-  color: #e6eef8;
+  color: #eaf3ff; /* slightly brighter for readability */
   -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+}
+
+/* Make page a column so footer can be pushed to bottom for short pages */
+html, body {
+  height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Ensure the main content grows; keep selectors broad but safe */
+main, .hero, .showcase, .container, .container-fluid, .page-content {
+  /* allow content area to grow but not force stretch of components */
+  flex: 1 0 auto;
 }
 .container {
   max-width: 1100px;
@@ -52,6 +69,10 @@ body {
   margin-left: 18px;
   text-decoration: none;
   font-weight: 500;
+}
+.nav-links a,
+.brand {
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
 }
 .nav-links a:hover {
   color: #fff;
@@ -163,6 +184,22 @@ body {
   color: var(--muted);
   font-size: 0.95rem;
 }
+
+/* Improve base readability for small/low-contrast text */
+.muted {
+  color: var(--muted) !important;
+  opacity: 0.95;
+}
+
+/* Suggestions list: higher contrast for text */
+.suggestions li {
+  color: #dbeeff;
+}
+
+/* Mode box: stronger contrast for labels */
+.mode-box strong {
+  color: #fff;
+}
 .showcase {
   padding: 40px 0;
 }
@@ -200,10 +237,121 @@ body {
   color: var(--muted);
   font-size: 0.95rem;
 }
+
+/* Readability helpers for light surfaces (pages that use white card backgrounds) */
+.card.bg-light,
+.exercise-container,
+.feedback-section,
+.data,
+.plot,
+.container .card,
+.container .card-body,
+.alert,
+.table,
+.form-control,
+select.form-control,
+textarea.form-control {
+  /* ensure dark readable text on light backgrounds */
+  color: #0b1220 !important;
+}
+
+.card.bg-light a,
+.data a,
+.plot a,
+.container a {
+  color: #0b4a6f !important;
+  text-decoration: underline;
+}
+
+/* Buttons and badges should keep good contrast */
+.btn,
+.badge {
+  color: inherit;
+}
+
+/* Force consistent readable font across app where templates omitted it */
+body, .container, .card, .form-control, .btn {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial;
+}
+
+/* Pages that intentionally use light backgrounds should opt-in to this class
+   to ensure high contrast dark text and consistent spacing. */
+.light-page {
+  background: #f8f9fa; /* match template light background */
+  color: #0b1220; /* dark readable text */
+}
+
+.light-page .brand,
+.light-page .nav-links a {
+  color: #0b1220;
+}
+
+.light-page .card,
+.light-page .exercise-container,
+.light-page .feedback-section,
+.light-page .card-body,
+.light-page .container {
+  background: #ffffff;
+  color: #0b1220;
+}
+
+.light-page .hero-title,
+.light-page h1,
+.light-page h2,
+.light-page h3,
+.light-page h4,
+.light-page h5,
+.light-page p,
+.light-page .lead,
+.light-page .small {
+  color: #0b1220;
+}
+
+/* Ensure muted text is still readable on light pages */
+.light-page .text-muted,
+.light-page .muted {
+  color: #41525a !important;
+}
+
+/* Make outline buttons readable on light backgrounds */
+.light-page .btn-outline-primary {
+  color: #0b1220;
+  border-color: rgba(11,18,32,0.12);
+}
+.light-page .btn-outline-secondary {
+  color: #0b1220;
+  border-color: rgba(11,18,32,0.12);
+}
+
+.light-page .nav-links a {
+  color: #0b1220;
+}
+
+/* Market news specific adjustments */
+.news-page .card {
+  background: linear-gradient(180deg, rgba(10,12,18,0.55), rgba(12,14,20,0.5));
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #e8f2ff;
+}
+
+.news-page .card-title a {
+  color: #cfe6ff;
+}
+
+.news-page .card-text {
+  color: #c7d9ea;
+}
+
+/* Make badges and small text more legible */
+.card small, .card .badge {
+  color: #b8c8d8;
+}
 .site-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.03);
   padding: 20px 0;
-  margin-top: 40px;
+  /* push footer to bottom when content is short */
+  margin-top: auto;
 }
 .site-footer .footer-links a {
   color: var(--muted);

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
+    {% include '_header.html' %}
     <div class="container">
       <h1>Your Achievements</h1>
       <div id="badges" class="badge-grid"></div>
@@ -88,5 +89,7 @@
 
       loadData();
     </script>
+    </div>
+    {% include '_footer.html' %}
   </body>
 </html>

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Market News</title>
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
-  <style>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market News</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
       body {
           background-image: url('/static/images/market_news.jpg');
           background-size: cover;
@@ -96,17 +98,9 @@
   </style>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container-fluid">
-          <a class="navbar-brand" href="{{ url_for('home') }}">Stock Analysis</a>
-          <div class="navbar-nav ml-auto">
-              <span class="navbar-datetime" id="datetime"></span>
-              <a class="nav-link" href="{{ url_for('home') }}">Home</a>
-              <a class="nav-link" href="{{ url_for('news') }}">Market News</a>
-          </div>
-      </div>
-  </nav>
-  <div class="container-fluid mt-4">
+        {% include '_header.html' %}
+
+            <main class="container-fluid mt-4 news-page">
     <h2 class="text-center mb-4">Latest Market News</h2>
     <!-- Publisher Tabs -->
     <ul class="nav nav-tabs" id="publisherTab" role="tablist">
@@ -219,6 +213,7 @@
     }
 </style></div></div></div>  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+{% include '_footer.html' %}
 </body>
 </html>
 

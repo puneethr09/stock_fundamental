@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
+    {% include '_header.html' %}
     <div class="container">
       <h1>{{ assignment.title }}</h1>
       {% if assignment.company %}
@@ -87,5 +88,6 @@
           );
         });
     </script>
+    {% include '_footer.html' %}
   </body>
 </html>

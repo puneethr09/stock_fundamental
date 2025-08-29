@@ -11,16 +11,7 @@
     />
   </head>
   <body>
-    <header class="site-header">
-      <div class="nav">
-        <a class="brand" href="{{ url_for('home') }}">Stock Analysis</a>
-        <nav class="nav-links">
-          <a href="{{ url_for('pattern_training_home') }}">Pattern Training</a>
-          <a href="{{ url_for('news') }}">Market News</a>
-          <a href="/achievements">Achievements</a>
-        </nav>
-      </div>
-    </header>
+    {% include '_header.html' %}
 
     <main class="hero">
       <div class="hero-inner">
@@ -111,15 +102,7 @@
       </div>
     </section>
 
-    <footer class="site-footer">
-      <div class="container">
-        <span>© 2025 StockFund — Learn to research like a pro</span>
-        <nav class="footer-links">
-          <a href="/about">About</a>
-          <a href="/privacy">Privacy</a>
-        </nav>
-      </div>
-    </footer>
+    {% include '_footer.html' %}
 
     <script>
       // Suggestion fetch (handles server returning either an array of objects or a mapping)

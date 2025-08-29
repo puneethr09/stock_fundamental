@@ -1,0 +1,17 @@
+<!-- Shared site footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="brand">Stock Analysis</div>
+      <div class="foot-links">
+        <a href="{{ url_for('home') }}">Home</a> ·
+        <a href="{{ url_for('news') }}">Market News</a> ·
+        <a href="{{ url_for('pattern_training_home') }}">Pattern Training</a>
+      </div>
+      <div class="copyright">
+        &copy; {{ current_year if current_year is defined else 2025 }} Stock
+        Analysis
+      </div>
+    </div>
+  </div>
+</footer>

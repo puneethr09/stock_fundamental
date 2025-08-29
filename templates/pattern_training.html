@@ -22,7 +22,7 @@
         font-family: Arial, sans-serif;
         background-color: #f8f9fa;
         margin: 0;
-        padding: 20px;
+        padding: 0;
       }
 
       .header-section {
@@ -136,38 +136,10 @@
       }
     </style>
   </head>
-  <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div class="container">
-        <a class="navbar-brand" href="/">📈 Stock Analysis</a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-toggle="collapse"
-          data-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="/">🏠 Home</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/news">📰 News</a>
-            </li>
-            <li class="nav-item active">
-              <a class="nav-link" href="/pattern-training"
-                >🎯 Pattern Training</a
-              >
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+  <body class="light-page">
+    {% include '_header.html' %}
 
-    <div class="container">
+    <div class="container" style="padding-top: 20px">
       <!-- Header Section -->
       <div class="header-section text-center">
         <h1 class="mb-3">🎯 Pattern Recognition Training</h1>
@@ -725,5 +697,6 @@
         selectedPatternType = null;
       }
     </script>
+    {% include '_footer.html' %}
   </body>
 </html>
