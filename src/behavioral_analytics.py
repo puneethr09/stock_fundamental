@@ -531,9 +531,20 @@ class BehavioralAnalyticsTracker:
 
     def _store_achievement_notification(self, session_id: str, badge) -> None:
         """Store achievement notification for UI display"""
-        # This would store the notification for display in the UI
-        # Implementation would use localStorage or session storage
-        pass
+        # Persist notification so UI can retrieve it server-side
+        try:
+            from .persistence import save_notification
+
+            payload = {
+                "badge_type": badge.badge_type.value,
+                "display_name": badge.display_name,
+                "description": badge.description,
+                "earned_timestamp": badge.earned_timestamp,
+            }
+            save_notification(session_id, "badge_awarded", payload)
+        except Exception:
+            # Best-effort: don't break tracking flow
+            return
 
 
 # Global tracker instance

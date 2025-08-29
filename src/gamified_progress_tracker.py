@@ -633,30 +633,119 @@ class GamifiedProgressTracker:
 
     def _get_earned_badges(self, user_id: str) -> List[Badge]:
         """Get list of badges earned by user from localStorage"""
-        # This would interface with localStorage in the browser
-        # For now, return empty list as placeholder
-        return []
+        # Load from persistence layer (server-side storage)
+        try:
+            from .persistence import get_badges_for_user
+
+            rows = get_badges_for_user(user_id)
+            badges: List[Badge] = []
+            for row in rows:
+                payload = row.get("payload", {})
+                # payload may already be a dict representation
+                badge_type_val = payload.get("badge_type") or row.get("badge_type")
+                try:
+                    btype = BadgeType(badge_type_val)
+                except Exception:
+                    continue
+                badges.append(
+                    Badge(
+                        badge_type=btype,
+                        earned_timestamp=float(payload.get("earned_timestamp", 0)),
+                        context=payload.get("context", {}),
+                        display_name=payload.get("display_name", ""),
+                        description=payload.get("description", ""),
+                        achievement_value=int(payload.get("achievement_value", 0)),
+                    )
+                )
+            return badges
+        except Exception:
+            return []
 
     def _store_badge(self, user_id: str, badge: Badge) -> None:
         """Store earned badge in localStorage-compatible format"""
-        # Implementation would store badge data in localStorage
-        pass
+        try:
+            from .persistence import save_badge
+
+            payload = {
+                "badge_type": badge.badge_type.value,
+                "earned_timestamp": badge.earned_timestamp,
+                "context": badge.context,
+                "display_name": badge.display_name,
+                "description": badge.description,
+                "achievement_value": badge.achievement_value,
+            }
+            save_badge(user_id, payload)
+        except Exception:
+            # Best-effort: swallow persistence errors in dev
+            return
 
     def _get_progress_metrics(self, user_id: str) -> ProgressMetrics:
-        """Get user progress metrics from localStorage"""
-        # Placeholder - would load from localStorage
-        return ProgressMetrics(
-            skill_competencies={
-                "debt_analysis": 0.0,
-                "growth_indicators": 0.0,
-                "value_assessment": 0.0,
-            }
-        )
+        """Get user progress metrics from persistence layer or return defaults"""
+        try:
+            from .persistence import get_progress_metrics
+
+            raw = get_progress_metrics(user_id)
+            if not raw:
+                return ProgressMetrics(
+                    skill_competencies={
+                        "debt_analysis": 0.0,
+                        "growth_indicators": 0.0,
+                        "value_assessment": 0.0,
+                    }
+                )
+
+            # Build ProgressMetrics from stored dict
+            pm = ProgressMetrics()
+            pm.analysis_count = int(raw.get("analysis_count", pm.analysis_count))
+            pm.pattern_recognition_score = float(
+                raw.get("pattern_recognition_score", pm.pattern_recognition_score)
+            )
+            pm.research_engagement_score = float(
+                raw.get("research_engagement_score", pm.research_engagement_score)
+            )
+            pm.community_contribution_score = float(
+                raw.get("community_contribution_score", pm.community_contribution_score)
+            )
+            pm.current_streak = int(raw.get("current_streak", pm.current_streak))
+            pm.best_streak = int(raw.get("best_streak", pm.best_streak))
+            pm.last_active_date = raw.get("last_active_date", pm.last_active_date)
+            pm.total_session_time = float(
+                raw.get("total_session_time", pm.total_session_time)
+            )
+            pm.stage_progression_points = float(
+                raw.get("stage_progression_points", pm.stage_progression_points)
+            )
+            pm.skill_competencies = raw.get("skill_competencies", pm.skill_competencies)
+            return pm
+        except Exception:
+            return ProgressMetrics(
+                skill_competencies={
+                    "debt_analysis": 0.0,
+                    "growth_indicators": 0.0,
+                    "value_assessment": 0.0,
+                }
+            )
 
     def _store_progress_metrics(self, user_id: str, progress: ProgressMetrics) -> None:
         """Store progress metrics in localStorage-compatible format"""
-        # Implementation would store progress data in localStorage
-        pass
+        try:
+            from .persistence import save_progress_metrics
+
+            payload = {
+                "analysis_count": progress.analysis_count,
+                "pattern_recognition_score": progress.pattern_recognition_score,
+                "research_engagement_score": progress.research_engagement_score,
+                "community_contribution_score": progress.community_contribution_score,
+                "current_streak": progress.current_streak,
+                "best_streak": progress.best_streak,
+                "last_active_date": progress.last_active_date,
+                "total_session_time": progress.total_session_time,
+                "stage_progression_points": progress.stage_progression_points,
+                "skill_competencies": progress.skill_competencies,
+            }
+            save_progress_metrics(user_id, payload)
+        except Exception:
+            return
 
     def _update_stage_progression_points(self, user_id: str, points: int) -> None:
         """Update stage progression points for mastery calculation"""

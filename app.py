@@ -27,6 +27,8 @@ from src.pattern_recognition_trainer import PatternRecognitionTrainer, PatternTy
 from src.educational_framework import LearningStage
 from src.tool_independence_trainer import ToolIndependenceTrainer
 import subprocess, os
+from src.research_guidance_system import ResearchGuidanceSystem
+from src.gamified_progress_tracker import AchievementContext
 import secrets
 
 app = Flask(__name__)
@@ -183,6 +185,169 @@ def get_anonymous_user_id():
             str(request.remote_addr) + str(request.user_agent)
         )
     return session["anonymous_user_id"]
+
+
+research_system = ResearchGuidanceSystem()
+
+
+@app.route("/research-assignment", methods=["POST"])
+def research_assignment():
+    """Create a personalized research assignment from posted gap data.
+
+    Expected JSON body: {"user_gaps": [...], "learning_stage": int}
+    """
+    payload = request.get_json(force=True)
+    user_gaps = payload.get("user_gaps", [])
+    learning_stage = int(payload.get("learning_stage", 2))
+
+    assignment = research_system.generate_personalized_research_assignment(
+        user_gaps, learning_stage
+    )
+    return jsonify({"success": True, "assignment": assignment})
+
+
+@app.route("/research-assignment/<assignment_id>/complete", methods=["POST"])
+def research_assignment_complete(assignment_id=None):
+    payload = request.get_json(force=True)
+    user_id = payload.get("user_id", get_anonymous_user_id())
+    completion = payload.get("completion", {})
+    research_system.track_research_progress(user_id, assignment_id, completion)
+
+    # Evaluate submission (automated first-pass)
+    try:
+        evaluation = research_system.evaluate_research_submission(
+            assignment_id, completion
+        )
+    except Exception:
+        evaluation = {"score": 0, "feedback": "Evaluation failed"}
+
+    # Build completion data for gamification (normalize score to 0..1)
+    try:
+        research_quality = float(evaluation.get("score", 0)) / 100.0
+    except Exception:
+        research_quality = 0.0
+
+    completion_data = {
+        "research_quality": research_quality,
+        "session_duration": completion.get("duration", 0),
+        "skill_improvements": completion.get("skill_improvements", {}),
+    }
+
+    # Update gamification progress and check for new badges
+    awarded_badges = []
+    try:
+        behavioral_tracker.gamification.update_progress_metrics(
+            user_id, completion_data
+        )
+
+        assessment = behavioral_tracker.get_current_stage_assessment()
+        current_stage = assessment.current_stage if assessment else None
+
+        achievement_context = AchievementContext(
+            session_id=user_id,
+            user_id=user_id,
+            current_stage=current_stage,
+            behavioral_data=completion.get("behavioral_snapshot", {}),
+            session_history=(
+                behavioral_tracker._get_session_history(user_id)
+                if hasattr(behavioral_tracker, "_get_session_history")
+                else []
+            ),
+            interaction_counts=(
+                behavioral_tracker._get_interaction_counts(user_id)
+                if hasattr(behavioral_tracker, "_get_interaction_counts")
+                else {}
+            ),
+        )
+
+        newly_earned = behavioral_tracker.gamification.check_achievement_conditions(
+            achievement_context
+        )
+        for badge_type in newly_earned:
+            badge = behavioral_tracker.gamification.award_badge(
+                badge_type, achievement_context
+            )
+            try:
+                behavioral_tracker._store_achievement_notification(user_id, badge)
+            except Exception:
+                pass
+            awarded_badges.append(
+                {
+                    "badge_type": badge.badge_type.value,
+                    "display_name": badge.display_name,
+                    "description": badge.description,
+                }
+            )
+    except Exception as e:
+        print(f"Error updating gamification on completion: {e}")
+
+    return jsonify(
+        {"success": True, "evaluation": evaluation, "awarded_badges": awarded_badges}
+    )
+
+
+@app.route("/research-completions/<user_id>")
+def research_completions(user_id=None):
+    # lightweight listing using persistence layer
+    from src.persistence import get_completions_for_user
+
+    user = user_id or get_anonymous_user_id()
+    rows = get_completions_for_user(user)
+    return jsonify({"success": True, "completions": rows})
+
+
+@app.route("/research-assignment/<assignment_id>")
+def view_research_assignment(assignment_id=None):
+    # Try to load from in-memory store, fallback to persistence
+    assignment = research_system._assignments.get(assignment_id)
+    if not assignment:
+        try:
+            from src.persistence import get_assignment
+
+            assignment = get_assignment(assignment_id)
+        except Exception:
+            assignment = None
+
+    if not assignment:
+        return jsonify({"success": False, "message": "Assignment not found"}), 404
+
+    return render_template("research_assignment.html", assignment=assignment)
+
+
+@app.route("/user/<user_id>/badges")
+def get_user_badges(user_id=None):
+    try:
+        from src.persistence import get_badges_for_user
+
+        uid = user_id or get_anonymous_user_id()
+        badges = get_badges_for_user(uid)
+        return jsonify({"success": True, "badges": badges})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/user/<user_id>/progress")
+def get_user_progress(user_id=None):
+    try:
+        from src.persistence import get_progress_metrics
+
+        uid = user_id or get_anonymous_user_id()
+        progress = get_progress_metrics(uid)
+        return jsonify({"success": True, "progress": progress or {}})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/user/<user_id>/notifications")
+def get_user_notifications(user_id=None):
+    try:
+        from src.persistence import get_notifications_for_user
+
+        uid = user_id or get_anonymous_user_id()
+        notes = get_notifications_for_user(uid)
+        return jsonify({"success": True, "notifications": notes})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 
 @app.route("/")

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Research Assignment</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>{{ assignment.title }}</h1>
+      {% if assignment.company %}
+      <h3>{{ assignment.company }}</h3>
+      {% endif %}
+
+      <p><strong>Category:</strong> {{ assignment.category }}</p>
+      <p><strong>Difficulty:</strong> {{ assignment.difficulty }}</p>
+      <p>
+        <strong>Estimated time:</strong> {{ assignment.time_estimate_minutes }}
+        minutes
+      </p>
+
+      <h4>Instructions</h4>
+      <ol>
+        {% for step in assignment.instructions %}
+        <li>{{ step }}</li>
+        {% endfor %}
+      </ol>
+
+      <h4>Success Criteria</h4>
+      <ul>
+        {% for c in assignment.success_criteria %}
+        <li>{{ c }}</li>
+        {% endfor %}
+      </ul>
+
+      <hr />
+      <h3>Submit Completion</h3>
+      <form id="completion-form">
+        <label for="summary">Summary (200-300 words)</label><br />
+        <textarea id="summary" name="summary" rows="6" cols="80"></textarea
+        ><br />
+
+        <label for="evidence">Evidence / sources (comma-separated)</label><br />
+        <input id="evidence" name="evidence" size="80" /><br />
+
+        <input
+          type="hidden"
+          id="assignment_id"
+          value="{{ assignment.assignment_id }}"
+        />
+        <button id="submit-btn" type="button">Submit Completion</button>
+      </form>
+
+      <div id="result" style="margin-top: 1em"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("submit-btn")
+        .addEventListener("click", async function () {
+          const aid = document.getElementById("assignment_id").value;
+          const summary = document.getElementById("summary").value;
+          const evidence = document.getElementById("evidence").value;
+
+          const payload = {
+            user_id: null,
+            completion: {
+              summary: summary,
+              evidence: evidence
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+              duration: 600,
+            },
+          };
+
+          const resp = await fetch(`/research-assignment/${aid}/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+          document.getElementById("result").innerText = JSON.stringify(
+            data,
+            null,
+            2
+          );
+        });
+    </script>
+  </body>
+</html>

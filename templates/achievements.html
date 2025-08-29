@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Your Achievements</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Your Achievements</h1>
+      <div id="badges" class="badge-grid"></div>
+      <h2>Notifications</h2>
+      <ul id="notifications" class="notifications-list"></ul>
+    </div>
+
+    <script>
+      function badgeCard(b) {
+        const container = document.createElement("div");
+        container.className = "badge-card";
+        const title = document.createElement("h3");
+        title.innerText = b.title || b.type || "Badge";
+        const desc = document.createElement("p");
+        desc.innerText = b.description || b.summary || "";
+        const date = document.createElement("small");
+        date.innerText = b.awarded_at || b.date || "";
+        container.appendChild(title);
+        container.appendChild(desc);
+        container.appendChild(date);
+        return container;
+      }
+
+      function notificationItem(n) {
+        const li = document.createElement("li");
+        li.className = "notification-item";
+        const text = document.createElement("span");
+        text.innerText = n.message || n.summary || "Notification";
+        const when = document.createElement("small");
+        when.innerText = n.created_at || n.date || "";
+        const btn = document.createElement("button");
+        btn.innerText = "Mark read";
+        btn.onclick = async () => {
+          try {
+            // placeholder: calls backend mark-read endpoint if available
+            await fetch(`/user/${uid}/notifications/${n.id}/read`, {
+              method: "POST",
+            });
+            li.classList.add("read");
+          } catch (e) {
+            console.warn("mark read failed", e);
+          }
+        };
+        li.appendChild(text);
+        li.appendChild(when);
+        li.appendChild(btn);
+        return li;
+      }
+
+      async function loadData() {
+        const uid = '{{ user_id or "" }}';
+        const badgesResp = await fetch(`/user/${uid}/badges`);
+        const badges = await badgesResp.json();
+        const badgesRoot = document.getElementById("badges");
+        badgesRoot.innerHTML = "";
+        (badges || []).forEach((b) => badgesRoot.appendChild(badgeCard(b)));
+
+        const notesResp = await fetch(`/user/${uid}/notifications`);
+        const notes = await notesResp.json();
+        const notesRoot = document.getElementById("notifications");
+        notesRoot.innerHTML = "";
+        (notes || []).forEach((n) =>
+          notesRoot.appendChild(notificationItem(n))
+        );
+      }
+
+      loadData();
+    </script>
+  </body>
+</html>
