@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Tool Independence Challenge - Stock Analysis</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .header-section {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px 0;
+        border-radius: 10px;
+        margin-bottom: 30px;
+      }
+
+      .challenge-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: white;
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+
+      .prediction-form {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        margin-top: 20px;
+      }
+
+      .confidence-slider {
+        width: 100%;
+        margin: 15px 0;
+      }
+
+      .stage-badge {
+        font-size: 0.875rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .ticker-badge {
+        font-size: 1.2rem;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: bold;
+        background: #007bff;
+        color: white;
+        display: inline-block;
+        margin-bottom: 20px;
+      }
+
+      .challenge-instructions {
+        background: #e9ecef;
+        border-left: 4px solid #dc3545;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .prediction-section {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        transition: border-color 0.3s ease;
+      }
+
+      .prediction-section:focus-within {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+      }
+
+      .reasoning-textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .confidence-display {
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-top: 10px;
+        color: #007bff;
+      }
+
+      .submit-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+      }
+
+      .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+      }
+
+      .evaluation-results {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      .accuracy-score {
+        text-align: center;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .score-excellent {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .score-good {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+
+      .score-needs-improvement {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .home-link {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        color: #007bff;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .home-link:hover {
+        background: white;
+        color: #0056b3;
+        text-decoration: none;
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 768px) {
+        .prediction-form {
+          padding: 20px;
+        }
+
+        .ticker-badge {
+          font-size: 1rem;
+          padding: 6px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a href="/" class="home-link">← Back to Home</a>
+
+    <div class="container">
+      <!-- Header Section -->
+      <div class="header-section text-center">
+        <h1 class="mb-3">🎯 Tool Independence Challenge</h1>
+        <p class="lead mb-0">
+          Test your analytical skills without automated assistance
+        </p>
+        {% if current_stage %}
+        <span class="stage-badge mt-3 d-inline-block">
+          Learning Stage: {{ current_stage.title() }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Error Display -->
+      {% if error %}
+      <div class="alert alert-danger" role="alert">
+        <h5>⚠️ Challenge Generation Failed</h5>
+        <p class="mb-0">{{ error }}</p>
+        <hr />
+        <p class="mb-0">
+          <a href="/" class="btn btn-primary">Return to Home</a>
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- No Ticker Selected -->
+      {% if not ticker and not error %}
+      <div class="challenge-card text-center">
+        <h3>🔍 Select a Stock to Challenge</h3>
+        <p class="text-muted mb-4">
+          Enter a stock symbol to begin your tool independence challenge
+        </p>
+        <form action="/tool-challenge" method="GET" class="d-inline-block">
+          <div class="input-group" style="max-width: 400px">
+            <input
+              type="text"
+              name="ticker"
+              class="form-control form-control-lg"
+              placeholder="Enter stock symbol (e.g., RELIANCE)"
+              required
+              style="text-transform: uppercase"
+            />
+            <div class="input-group-append">
+              <button class="btn btn-primary btn-lg" type="submit">
+                Start Challenge
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Challenge Display -->
+      {% if challenge and ticker %}
+      <div class="ticker-badge text-center">📊 {{ ticker.upper() }}</div>
+
+      <div class="challenge-instructions">
+        <h4>🎯 Challenge Instructions</h4>
+        <ul>
+          <li>
+            <strong>No automated tools</strong> - Rely on your analytical skills
+          </li>
+          <li>
+            <strong>Make predictions</strong> based on the limited data provided
+          </li>
+          <li><strong>Explain your reasoning</strong> for each prediction</li>
+          <li><strong>Rate your confidence</strong> in each assessment</li>
+          <li>
+            <strong>Learn from feedback</strong> to improve your analytical
+            abilities
+          </li>
+        </ul>
+      </div>
+
+      <div class="challenge-card">
+        <h4>📈 Company Data Snapshot</h4>
+        {% if challenge.company_basic_info %}
+        <div class="row">
+          {% for key, value in challenge.company_basic_info.items() %}
+          <div class="col-md-4 mb-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <h6 class="card-title text-muted text-center">
+                  {{ key.replace('_', ' ').title() }}
+                </h6>
+                {% if value is iterable and value is not string %}
+                <ul class="list-unstyled">
+                  {% for item in value %}
+                  <li class="mb-2">
+                    {% if '🚨' in item or '🔴' in item or '📉' in item or '❌'
+                    in item %}
+                    <i
+                      class="fas fa-exclamation-triangle text-warning me-2"
+                    ></i>
+                    {% elif '💪' in item or '💰' in item or '🌟' in item or '💎'
+                    in item or '🚀' in item %}
+                    <i class="fas fa-star text-success me-2"></i>
+                    {% elif '⚖️' in item or '✅' in item or '📈' in item or '✨'
+                    in item %}
+                    <i class="fas fa-check-circle text-info me-2"></i>
+                    {% else %}
+                    <i class="fas fa-info-circle text-muted me-2"></i>
+                    {% endif %} {{ item }}
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <h5 class="card-text text-primary text-center">{{ value }}</h5>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% if challenge.educational_context and
+        challenge.educational_context.get('context_hints') %}
+        <div class="mt-4">
+          <h5>🔍 Context Clues</h5>
+          <ul>
+            {% for clue in challenge.educational_context.context_hints %}
+            <li>{{ clue }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Prediction Form -->
+      <div class="prediction-form">
+        <h3 class="mb-4">🎯 Make Your Predictions</h3>
+
+        <form id="challenge-form">
+          <input type="hidden" name="ticker" value="{{ ticker }}" />
+          <input
+            type="hidden"
+            name="challenge_id"
+            value="{{ challenge.challenge_id if challenge else '' }}"
+          />
+
+          <!-- Financial Health Prediction -->
+          <div class="prediction-section">
+            <h5>💰 Financial Health Assessment</h5>
+            <div class="form-group">
+              <label>How would you rate this company's financial health?</label>
+              <select class="form-control" name="financial_health" required>
+                <option value="">Select assessment...</option>
+                <option value="excellent">
+                  Excellent - Very strong financials
+                </option>
+                <option value="good">Good - Solid financial position</option>
+                <option value="average">
+                  Average - Adequate financial health
+                </option>
+                <option value="poor">
+                  Poor - Concerning financial indicators
+                </option>
+                <option value="critical">
+                  Critical - Major financial issues
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Growth Potential -->
+          <div class="prediction-section">
+            <h5>📈 Growth Potential</h5>
+            <div class="form-group">
+              <label
+                >What is your assessment of the company's growth
+                potential?</label
+              >
+              <select class="form-control" name="growth_potential" required>
+                <option value="">Select assessment...</option>
+                <option value="high">High - Strong growth prospects</option>
+                <option value="moderate">
+                  Moderate - Steady growth expected
+                </option>
+                <option value="low">Low - Limited growth potential</option>
+                <option value="declining">
+                  Declining - Negative growth trends
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Risk Assessment -->
+          <div class="prediction-section">
+            <h5>⚠️ Risk Factors</h5>
+            <div class="form-group">
+              <label>How would you rate the investment risk?</label>
+              <select class="form-control" name="risk_factors" required>
+                <option value="">Select risk level...</option>
+                <option value="low">Low Risk - Stable and predictable</option>
+                <option value="moderate">
+                  Moderate Risk - Some uncertainty
+                </option>
+                <option value="high">High Risk - Significant volatility</option>
+                <option value="very_high">
+                  Very High Risk - Speculative investment
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Investment Decision -->
+          <div class="prediction-section">
+            <h5>💼 Investment Recommendation</h5>
+            <div class="form-group">
+              <label>What would be your investment recommendation?</label>
+              <select class="form-control" name="investment_decision" required>
+                <option value="">Select recommendation...</option>
+                <option value="strong_buy">
+                  Strong Buy - Excellent opportunity
+                </option>
+                <option value="buy">Buy - Good investment potential</option>
+                <option value="hold">Hold - Maintain current position</option>
+                <option value="sell">Sell - Consider reducing position</option>
+                <option value="strong_sell">
+                  Strong Sell - Exit immediately
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Reasoning -->
+          <div class="prediction-section">
+            <h5>💭 Your Reasoning</h5>
+            <div class="form-group">
+              <label>Explain the reasoning behind your predictions:</label>
+              <textarea
+                class="form-control reasoning-textarea"
+                name="reasoning"
+                placeholder="Describe your analytical approach, key factors considered, and rationale for your assessments..."
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Confidence Level -->
+          <div class="prediction-section">
+            <h5>🎚️ Confidence Level</h5>
+            <div class="form-group">
+              <label
+                >How confident are you in your overall analysis? (1 = Not
+                confident, 5 = Very confident)</label
+              >
+              <input
+                type="range"
+                class="confidence-slider"
+                name="confidence_level"
+                min="1"
+                max="5"
+                value="3"
+                oninput="updateConfidenceDisplay(this.value)"
+              />
+              <div class="confidence-display" id="confidence-display">
+                Confidence: 3/5 (Moderately Confident)
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success submit-btn">
+              🚀 Submit Analysis
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Evaluation Results (Hidden initially) -->
+      <div class="evaluation-results" id="evaluation-results">
+        <h3 class="text-center mb-4">📊 Challenge Results</h3>
+        <div id="results-content">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+
+        <div class="text-center mt-4">
+          <button class="btn btn-primary" onclick="startNewChallenge()">
+            🔄 New Challenge
+          </button>
+          <a href="/" class="btn btn-secondary ml-2"> 🏠 Home </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      function updateConfidenceDisplay(value) {
+        const labels = {
+          1: "1/5 (Not Confident)",
+          2: "2/5 (Slightly Confident)",
+          3: "3/5 (Moderately Confident)",
+          4: "4/5 (Quite Confident)",
+          5: "5/5 (Very Confident)",
+        };
+
+        document.getElementById(
+          "confidence-display"
+        ).textContent = `Confidence: ${labels[value]}`;
+      }
+
+      function startNewChallenge() {
+        window.location.href = "/tool-challenge";
+      }
+
+      // Form submission handler
+      $("#challenge-form").on("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.html("🔄 Evaluating...").prop("disabled", true);
+
+        $.ajax({
+          url: "/tool-challenge/submit",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            if (response.success) {
+              displayResults(response.evaluation);
+              $("#evaluation-results").show();
+              $("html, body").animate(
+                {
+                  scrollTop: $("#evaluation-results").offset().top - 100,
+                },
+                800
+              );
+            } else {
+              alert("Error: " + response.error);
+            }
+          },
+          error: function () {
+            alert("Failed to submit challenge. Please try again.");
+          },
+          complete: function () {
+            submitBtn.html(originalText).prop("disabled", false);
+          },
+        });
+      });
+
+      function displayResults(evaluation) {
+        let resultsHtml = "";
+
+        // Overall accuracy score
+        const scoreClass = getScoreClass(evaluation.overall_accuracy);
+        resultsHtml += `
+          <div class="accuracy-score ${scoreClass}">
+            <h4>Overall Accuracy: ${Math.round(
+              evaluation.overall_accuracy
+            )}%</h4>
+            <p>${getAccuracyMessage(evaluation.overall_accuracy)}</p>
+          </div>
+        `;
+
+        // Individual predictions
+        if (evaluation.prediction_breakdown) {
+          resultsHtml += "<h5>📋 Prediction Breakdown:</h5>";
+          for (const [category, result] of Object.entries(
+            evaluation.prediction_breakdown
+          )) {
+            const isCorrect = result.accuracy > 0.7;
+            const icon = isCorrect ? "✅" : "❌";
+            resultsHtml += `
+              <div class="card mb-2">
+                <div class="card-body">
+                  <h6 class="card-title">${icon} ${category
+              .replace("_", " ")
+              .toUpperCase()}</h6>
+                  <p class="card-text">
+                    Your prediction: <strong>${
+                      result.user_prediction
+                    }</strong><br>
+                    Expected: <strong>${result.expected_range}</strong><br>
+                    Accuracy: ${Math.round(result.accuracy * 100)}%
+                  </p>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        // Learning insights
+        if (
+          evaluation.learning_insights &&
+          evaluation.learning_insights.length > 0
+        ) {
+          resultsHtml += "<h5>💡 Key Insights:</h5><ul>";
+          evaluation.learning_insights.forEach((insight) => {
+            resultsHtml += `<li>${insight}</li>`;
+          });
+          resultsHtml += "</ul>";
+        }
+
+        // Progress update
+        if (evaluation.confidence_progress) {
+          resultsHtml += `
+            <div class="alert alert-info">
+              <h6>📈 Your Progress:</h6>
+              <p>Analytical Confidence: ${Math.round(
+                evaluation.confidence_progress.current_confidence * 100
+              )}%</p>
+              <p>Challenges Completed: ${
+                evaluation.confidence_progress.challenges_completed
+              }</p>
+            </div>
+          `;
+        }
+
+        $("#results-content").html(resultsHtml);
+      }
+
+      function getScoreClass(accuracy) {
+        if (accuracy >= 80) return "score-excellent";
+        if (accuracy >= 60) return "score-good";
+        return "score-needs-improvement";
+      }
+
+      function getAccuracyMessage(accuracy) {
+        if (accuracy >= 90) return "Excellent analytical skills! 🌟";
+        if (accuracy >= 80) return "Great analysis! Well done! 🎉";
+        if (accuracy >= 70) return "Good work! Room for improvement 📈";
+        if (accuracy >= 60) return "Fair analysis. Keep practicing! 💪";
+        return "Keep learning and practicing! 📚";
+      }
+    </script>
+  </body>
+</html>

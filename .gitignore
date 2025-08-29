@@ -87,3 +87,5 @@ obj/
 .bmad-core/
 .github/
 web-bundles/
+# Auto-activate virtual environment (user-specific)
+.envrc

@@ -1,4 +1,13 @@
-from flask import Flask, render_template, jsonify, Response, request, session
+from flask import (
+    Flask,
+    render_template,
+    jsonify,
+    Response,
+    request,
+    session,
+    redirect,
+    url_for,
+)
 from src.basic_analysis import (
     get_financial_ratios,
     analyze_ratios,
@@ -16,6 +25,7 @@ from src.behavioral_analytics import (
 )
 from src.pattern_recognition_trainer import PatternRecognitionTrainer, PatternType
 from src.educational_framework import LearningStage
+from src.tool_independence_trainer import ToolIndependenceTrainer
 import subprocess, os
 import secrets
 
@@ -28,6 +38,142 @@ community_kb = CommunityKnowledgeBase()
 
 # Initialize pattern recognition trainer
 pattern_trainer = PatternRecognitionTrainer()
+
+# Initialize tool independence trainer
+tool_trainer = ToolIndependenceTrainer()
+
+
+def get_company_financial_data(ticker):
+    """Fetch real-time financial data for a company using yfinance API"""
+    try:
+        import yfinance as yf
+        import pandas as pd
+
+        # Ensure ticker has .NS suffix for Indian stocks if not already present
+        if not ticker.endswith(".NS"):
+            ticker_symbol = f"{ticker}.NS"
+        else:
+            ticker_symbol = ticker
+
+        stock = yf.Ticker(ticker_symbol)
+        info = stock.info
+
+        # Fetch financial statements
+        balance_sheet = stock.balance_sheet
+        financials = stock.financials
+
+        # Extract key financial metrics
+        market_cap = info.get("marketCap", 0) / 1e7  # Convert to crores
+        if market_cap == 0:
+            market_cap = info.get("enterpriseValue", 25000) / 1e7
+
+        # Get debt and equity data from balance sheet
+        total_debt = 0
+        total_equity = 1  # Default to avoid division by zero
+
+        if not balance_sheet.empty:
+            # Try different debt field names
+            debt_fields = [
+                "Total Debt",
+                "Long Term Debt",
+                "Short Long Term Debt",
+                "Net Debt",
+            ]
+            for field in debt_fields:
+                if field in balance_sheet.index:
+                    debt_value = (
+                        balance_sheet.loc[field].iloc[0]
+                        if len(balance_sheet.columns) > 0
+                        else 0
+                    )
+                    if pd.notna(debt_value):
+                        total_debt = debt_value / 1e6  # Convert to crores
+                        break
+
+            # Try different equity field names
+            equity_fields = [
+                "Total Equity Gross Minority Interest",
+                "Stockholders Equity",
+                "Common Stock Equity",
+            ]
+            for field in equity_fields:
+                if field in balance_sheet.index:
+                    equity_value = (
+                        balance_sheet.loc[field].iloc[0]
+                        if len(balance_sheet.columns) > 0
+                        else 1
+                    )
+                    if pd.notna(equity_value):
+                        total_equity = equity_value / 1e6  # Convert to crores
+                        break
+
+        # Calculate financial ratios
+        debt_to_equity = (total_debt / total_equity) if total_equity != 0 else 0
+        current_ratio = (
+            info.get("currentRatio", 1.5) if info.get("currentRatio") else 1.5
+        )
+
+        # Get profitability metrics
+        roe = info.get("returnOnEquity", 0.12) if info.get("returnOnEquity") else 0.12
+        profit_margin = (
+            info.get("profitMargins", 0.08) if info.get("profitMargins") else 0.08
+        )
+
+        # Get growth metrics
+        revenue_growth = (
+            info.get("revenueGrowth", 0.10) if info.get("revenueGrowth") else 0.10
+        )
+        earnings_growth = (
+            info.get("earningsGrowth", 0.12) if info.get("earningsGrowth") else 0.12
+        )
+
+        # Clean up description
+        business_description = info.get(
+            "longBusinessSummary",
+            f"Leading company in {info.get('industry', 'technology')} sector",
+        )
+        if len(business_description) > 200:
+            business_description = business_description[:200] + "..."
+
+        return {
+            "symbol": ticker.upper(),
+            "company_name": info.get("longName", f"{ticker.upper()} Limited"),
+            "industry": info.get("industry", "Technology"),
+            "sector": info.get("sector", "Information Technology"),
+            "business_description": business_description,
+            "market_cap": market_cap,
+            "listing_status": "Listed",
+            "exchange": "NSE",
+            # Financial metrics
+            "debt_to_equity": debt_to_equity,
+            "current_ratio": current_ratio,
+            "roe": roe,
+            "net_margin": profit_margin,
+            "revenue_growth": revenue_growth,
+            "earnings_growth": earnings_growth,
+            "asset_growth": 0.08,  # Default if not available
+        }
+
+    except Exception as e:
+        print(f"Error fetching data for {ticker}: {str(e)}")
+        # Return fallback data structure
+        return {
+            "symbol": ticker.upper(),
+            "company_name": f"{ticker.upper()} Limited",
+            "industry": "Technology",
+            "sector": "Information Technology",
+            "business_description": "Company operating in technology sector",
+            "market_cap": 25000,  # Default mid-cap
+            "listing_status": "Listed",
+            "exchange": "NSE",
+            "debt_to_equity": 0.5,
+            "current_ratio": 1.5,
+            "roe": 0.12,
+            "net_margin": 0.08,
+            "revenue_growth": 0.10,
+            "earnings_growth": 0.12,
+            "asset_growth": 0.08,
+        }
 
 
 def get_anonymous_user_id():
@@ -60,13 +206,19 @@ def analyze():
     news_items = get_market_news()
     if request.method == "POST":
         ticker = request.form["ticker"].upper() + ".NS"
+        challenge_mode = request.form.get("challenge_mode", "normal")
     else:
         ticker = request.args.get("ticker", "").upper() + ".NS"
+        challenge_mode = request.args.get("challenge_mode", "normal")
 
     # Track analysis start
     behavioral_tracker.track_interaction_start(
         anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
     )
+
+    # Check if this is a tool independence challenge
+    if challenge_mode == "tool_independence":
+        return redirect(url_for("tool_challenge", ticker=ticker.replace(".NS", "")))
 
     ratios_df = get_financial_ratios(ticker)
     if ratios_df is not None and not ratios_df.empty:
@@ -684,6 +836,99 @@ def get_pattern_progress():
         anonymous_user_id = get_anonymous_user_id()
 
         progress = pattern_trainer.get_exercise_progress_summary(anonymous_user_id)
+
+        return jsonify({"success": True, "progress": progress})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to get progress: {str(e)}"})
+
+
+@app.route("/tool-challenge")
+@app.route("/tool-challenge/<ticker>")
+def tool_challenge(ticker=None):
+    """Tool independence challenge page - blind analysis without automated assistance"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        # Get user's current learning stage for appropriate challenge difficulty
+        learning_context = get_learning_stage_context()
+        current_stage = learning_context.get(
+            "current_stage", LearningStage.GUIDED_DISCOVERY
+        )
+
+        # Generate challenge if ticker is provided
+        challenge = None
+        if ticker:
+            # Get actual company data for the ticker
+            company_data = get_company_financial_data(ticker)
+
+            challenge = tool_trainer.generate_stage_appropriate_challenge(
+                anonymous_user_id, current_stage, company_data
+            )
+
+            # Track challenge initiation
+            behavioral_tracker.track_interaction_start(
+                anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
+            )
+
+        return render_template(
+            "tool_challenge.html",
+            ticker=ticker,
+            challenge=challenge,
+            current_stage=current_stage.value if current_stage else None,
+            **learning_context,
+        )
+
+    except Exception as e:
+        return render_template(
+            "tool_challenge.html",
+            error=f"Failed to generate challenge: {str(e)}",
+            ticker=ticker,
+        )
+
+
+@app.route("/tool-challenge/submit", methods=["POST"])
+def submit_challenge_prediction():
+    """Submit user's prediction for tool independence challenge"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        prediction_data = {
+            "ticker": request.form.get("ticker"),
+            "challenge_id": request.form.get("challenge_id"),
+            "financial_health": request.form.get("financial_health"),
+            "growth_potential": request.form.get("growth_potential"),
+            "risk_factors": request.form.get("risk_factors"),
+            "investment_decision": request.form.get("investment_decision"),
+            "reasoning": request.form.get("reasoning", ""),
+            "confidence_level": int(request.form.get("confidence_level", 1)),
+        }
+
+        # Evaluate the prediction
+        evaluation_result = tool_trainer.evaluate_prediction_accuracy(
+            anonymous_user_id, prediction_data
+        )
+
+        # Track analytical confidence progress
+        tool_trainer.track_analytical_confidence_progress(
+            anonymous_user_id, evaluation_result
+        )
+
+        return jsonify({"success": True, "evaluation": evaluation_result})
+
+    except Exception as e:
+        return jsonify(
+            {"success": False, "error": f"Failed to evaluate prediction: {str(e)}"}
+        )
+
+
+@app.route("/tool-challenge/progress")
+def get_tool_independence_progress():
+    """Get user's tool independence training progress"""
+    try:
+        anonymous_user_id = get_anonymous_user_id()
+
+        progress = tool_trainer.get_analytical_confidence_summary(anonymous_user_id)
 
         return jsonify({"success": True, "progress": progress})
 
