@@ -16,6 +16,8 @@
       integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5"
       crossorigin="anonymous"
     />
+    <!-- Gamification CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='gamification.css') }}" />
     <style>
       body {
         background-image: url("/static/images/wall_street_blue.avif");
@@ -739,6 +741,25 @@
         </div>
       </div>
     </nav>
+    
+    <!-- Gamification Header -->
+    <div class="gamification-header">
+      <div class="gamification-stats">
+        <div class="stat">
+          <span id="total-badges" class="stat-number">0</span>
+          <span class="stat-label">Badges</span>
+        </div>
+        <div class="stat">
+          <span id="achievement-points" class="stat-number">0</span>
+          <span class="stat-label">Points</span>
+        </div>
+        <div class="stat">
+          <span id="current-streak" class="stat-number">0</span>
+          <span class="stat-label">Day Streak</span>
+        </div>
+      </div>
+    </div>
+    
     <h1 class="text-center"><u>{{ company_name }}</u></h1>
     
     <!-- Learning Stage Progress Display -->
@@ -997,6 +1018,30 @@
       </div>
     </div>
     {% endif %}
+    
+    <!-- Gamification Progress Section -->
+    <div class="gamification-section">
+      <div class="row">
+        <div class="col-md-6">
+          <div id="progress-indicators">
+            <!-- Progress indicators will be populated by JavaScript -->
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div id="streak-counter">
+            <!-- Streak counter will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-12">
+          <div id="badge-showcase">
+            <!-- Badge showcase will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- jQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -1222,6 +1267,25 @@
             alert(explanation); // Show explanation in an alert box
           });
         });
+      });
+    </script>
+    
+    <!-- Gamification JavaScript -->
+    <script src="{{ url_for('static', filename='gamification.js') }}"></script>
+    <script>
+      // Initialize gamification after analysis completion
+      document.addEventListener('DOMContentLoaded', function() {
+        // Track analysis completion for gamification
+        if (window.gamificationUI) {
+          window.gamificationUI.updateProgress({
+            analysis_completed: true,
+            skill_improvements: {
+              debt_analysis: 0.05,
+              growth_indicators: 0.05,
+              value_assessment: 0.05
+            }
+          });
+        }
       });
     </script>
   </body>

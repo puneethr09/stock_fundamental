@@ -73,6 +73,7 @@ class PatternAttempt:
 
 
 @dataclass
+@dataclass
 class PatternFeedback:
     """Feedback provided after pattern recognition attempt"""
 
@@ -85,6 +86,11 @@ class PatternFeedback:
     improvement_suggestions: List[str]
     stage_progression_impact: float
     next_exercise_recommendation: Optional[str] = None
+
+    @property
+    def score(self) -> float:
+        """Alias for accuracy_score for backward compatibility"""
+        return self.accuracy_score
 
 
 class PatternRecognitionTrainer:

@@ -3,6 +3,7 @@ Behavioral Analytics Tracker
 
 This module provides session-based behavioral tracking that integrates with the
 Educational Mastery Framework to enable anonymous learning stage assessment.
+Enhanced with gamification integration for achievement tracking.
 """
 
 import time
@@ -16,16 +17,23 @@ from .educational_framework import (
     LearningStage,
     StageAssessmentResult,
 )
+from .gamified_progress_tracker import (
+    GamifiedProgressTracker,
+    AchievementContext,
+    BadgeType,
+)
 
 
 class BehavioralAnalyticsTracker:
     """
     Session-based behavioral analytics tracker for educational framework integration
+    Enhanced with gamification and achievement tracking
     """
 
     def __init__(self):
-        """Initialize the behavioral analytics tracker"""
+        """Initialize the behavioral analytics tracker with gamification"""
         self.framework = EducationalMasteryFramework()
+        self.gamification = GamifiedProgressTracker(self.framework)
         self.interaction_start_times = {}  # Track interaction start times
 
     def track_interaction_start(
@@ -41,6 +49,7 @@ class BehavioralAnalyticsTracker:
     ) -> None:
         """
         Track the end of an interaction and log it to the educational framework
+        Enhanced with gamification achievement processing
 
         Args:
             interaction_type: Type of interaction that ended
@@ -60,8 +69,12 @@ class BehavioralAnalyticsTracker:
 
         # Track the behavior in the framework
         interaction_data = {"duration": duration, "context": context or {}}
-
         self.framework.track_user_behavior(session, interaction_type, interaction_data)
+
+        # Process gamification achievements
+        self._process_gamification_achievements(
+            session_id, interaction_type, duration, context or {}
+        )
 
     def track_tooltip_usage(self, tooltip_id: str, tooltip_content: str) -> None:
         """Track tooltip usage for learning stage assessment"""
@@ -384,6 +397,143 @@ class BehavioralAnalyticsTracker:
                 :3
             ],  # Limit to top 3 recommendations
         }
+
+    def _process_gamification_achievements(
+        self,
+        session_id: str,
+        interaction_type: InteractionType,
+        duration: float,
+        context: Dict[str, Any],
+    ) -> None:
+        """
+        Process achievements and update gamification progress based on user interaction
+
+        Args:
+            session_id: User session identifier
+            interaction_type: Type of interaction completed
+            duration: Duration of the interaction
+            context: Additional interaction context
+        """
+        try:
+            # Get current learning stage for context
+            current_stage = self._get_current_learning_stage(session_id)
+
+            # Prepare completion data for progress update
+            completion_data = {
+                "session_duration": duration,
+                "interaction_type": interaction_type.value,
+                "context": context,
+            }
+
+            # Update progress based on interaction type
+            if interaction_type == InteractionType.ANALYSIS_COMPLETION:
+                completion_data.update(
+                    {
+                        "analysis_completed": True,
+                        "skill_improvements": self._extract_skill_improvements(context),
+                    }
+                )
+
+            elif interaction_type == InteractionType.COMMUNITY_CONTRIBUTION:
+                completion_data.update(
+                    {
+                        "community_contribution": self._calculate_contribution_quality(
+                            context
+                        )
+                    }
+                )
+
+            elif interaction_type == InteractionType.RESEARCH_GUIDE_ACCESS:
+                completion_data.update(
+                    {"research_quality": self._assess_research_engagement(context)}
+                )
+
+            # Update progress metrics
+            self.gamification.update_progress_metrics(session_id, completion_data)
+
+            # Check for new achievements
+            achievement_context = AchievementContext(
+                session_id=session_id,
+                user_id=session_id,  # Using session_id as anonymous user_id
+                current_stage=current_stage,
+                behavioral_data=context,
+                session_history=self._get_session_history(session_id),
+                interaction_counts=self._get_interaction_counts(session_id),
+            )
+
+            newly_earned = self.gamification.check_achievement_conditions(
+                achievement_context
+            )
+
+            # Award new badges
+            for badge_type in newly_earned:
+                badge = self.gamification.award_badge(badge_type, achievement_context)
+                self._store_achievement_notification(session_id, badge)
+
+        except Exception as e:
+            # Log error but don't break the main tracking flow
+            print(f"Gamification processing error: {e}")
+
+    def _get_current_learning_stage(self, session_id: str) -> LearningStage:
+        """Get current learning stage for the user"""
+        try:
+            assessment = self.framework.assess_learning_stage(
+                {"anonymous_user_id": session_id}
+            )
+            return assessment.current_stage
+        except:
+            return LearningStage.GUIDED_DISCOVERY
+
+    def _extract_skill_improvements(self, context: Dict[str, Any]) -> Dict[str, float]:
+        """Extract skill improvement data from analysis context"""
+        improvements = {}
+
+        if "analysis_depth" in context:
+            depth = context["analysis_depth"]
+            if depth == "comprehensive":
+                improvements["debt_analysis"] = 0.1
+                improvements["growth_indicators"] = 0.1
+                improvements["value_assessment"] = 0.1
+            elif depth == "detailed":
+                improvements["debt_analysis"] = 0.05
+                improvements["growth_indicators"] = 0.05
+                improvements["value_assessment"] = 0.05
+
+        return improvements
+
+    def _calculate_contribution_quality(self, context: Dict[str, Any]) -> float:
+        """Calculate quality score for community contributions"""
+        base_score = 0.5
+
+        if "content_length" in context:
+            length = context["content_length"]
+            if length > 200:
+                base_score = 0.8
+            elif length > 100:
+                base_score = 0.7
+
+        return base_score
+
+    def _assess_research_engagement(self, context: Dict[str, Any]) -> float:
+        """Assess quality of research guide engagement"""
+        # Basic implementation - can be enhanced
+        return 0.6
+
+    def _get_session_history(self, session_id: str) -> List[Dict[str, Any]]:
+        """Get historical session data for the user"""
+        # Placeholder - would load from localStorage or framework data
+        return []
+
+    def _get_interaction_counts(self, session_id: str) -> Dict[InteractionType, int]:
+        """Get interaction counts by type for the user"""
+        # Placeholder - would calculate from historical data
+        return {interaction_type: 0 for interaction_type in InteractionType}
+
+    def _store_achievement_notification(self, session_id: str, badge) -> None:
+        """Store achievement notification for UI display"""
+        # This would store the notification for display in the UI
+        # Implementation would use localStorage or session storage
+        pass
 
 
 # Global tracker instance

@@ -663,10 +663,10 @@ def submit_pattern_attempt():
                 "success": True,
                 "result": {
                     "score": result.score,
-                    "accuracy": result.accuracy,
-                    "feedback": result.feedback,
+                    "accuracy": result.accuracy_score,
+                    "feedback": result.educational_explanation,
                     "missed_patterns": result.missed_patterns,
-                    "recommendations": result.improvement_recommendations,
+                    "recommendations": result.improvement_suggestions,
                 },
             }
         )
