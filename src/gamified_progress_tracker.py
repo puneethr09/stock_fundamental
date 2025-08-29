@@ -388,9 +388,9 @@ class GamifiedProgressTracker:
         if "skill_improvements" in completion_data:
             for skill, improvement in completion_data["skill_improvements"].items():
                 current_score = progress.skill_competencies.get(skill, 0.0)
-                # Weighted average update with recent performance (give more weight to improvement)
-                progress.skill_competencies[skill] = (
-                    current_score * 0.7 + improvement * 0.3
+                # Add improvement to current score, capped at 1.0
+                progress.skill_competencies[skill] = min(
+                    1.0, current_score + improvement
                 )
 
         # Update pattern recognition score

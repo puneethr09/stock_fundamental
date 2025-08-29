@@ -17,6 +17,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app import app  # Import Flask app for context
 from src.gamified_progress_tracker import (
     GamifiedProgressTracker,
     BadgeType,
@@ -88,10 +89,12 @@ class TestGamifiedProgressTracker(unittest.TestCase):
 
         for analysis_count, expected_badges in test_cases:
             with self.subTest(analysis_count=analysis_count):
-                # Mock the progress metrics
+                # Mock both methods in the same context
                 with patch.object(
                     self.tracker, "_get_progress_metrics"
-                ) as mock_progress:
+                ) as mock_progress, patch.object(
+                    self.tracker, "_get_earned_badges"
+                ) as mock_badges:
                     mock_progress.return_value = ProgressMetrics(
                         analysis_count=analysis_count,
                         skill_competencies={
@@ -100,32 +103,36 @@ class TestGamifiedProgressTracker(unittest.TestCase):
                             "value_assessment": 0.0,
                         },
                     )
-
-                with patch.object(self.tracker, "_get_earned_badges") as mock_badges:
                     mock_badges.return_value = []  # No earned badges yet
 
-                earned = self.tracker.check_achievement_conditions(self.sample_context)
+                    earned = self.tracker.check_achievement_conditions(
+                        self.sample_context
+                    )
 
-                # Should earn all badges up to this level
-                expected_all = []
-                if analysis_count >= 1:
-                    expected_all.append(BadgeType.FIRST_ANALYSIS)
-                if analysis_count >= 10:
-                    expected_all.append(BadgeType.BRONZE_ANALYST)
-                if analysis_count >= 50:
-                    expected_all.append(BadgeType.SILVER_ANALYST)
-                if analysis_count >= 100:
-                    expected_all.append(BadgeType.GOLD_ANALYST)
-                if analysis_count >= 500:
-                    expected_all.append(BadgeType.PLATINUM_ANALYST)
+                    # Should earn all badges up to this level
+                    expected_all = []
+                    if analysis_count >= 1:
+                        expected_all.append(BadgeType.FIRST_ANALYSIS)
+                    if analysis_count >= 10:
+                        expected_all.append(BadgeType.BRONZE_ANALYST)
+                    if analysis_count >= 50:
+                        expected_all.append(BadgeType.SILVER_ANALYST)
+                    if analysis_count >= 100:
+                        expected_all.append(BadgeType.GOLD_ANALYST)
+                    if analysis_count >= 500:
+                        expected_all.append(BadgeType.PLATINUM_ANALYST)
 
-                for badge in expected_all:
-                    self.assertIn(badge, earned)
+                    for badge in expected_all:
+                        self.assertIn(badge, earned)
 
     def test_pattern_recognition_achievement_detection(self):
         """Test detection of pattern recognition achievements"""
         # Test debt detective badge
-        with patch.object(self.tracker, "_get_progress_metrics") as mock_progress:
+        with patch.object(
+            self.tracker, "_get_progress_metrics"
+        ) as mock_progress, patch.object(
+            self.tracker, "_get_earned_badges"
+        ) as mock_badges:
             mock_progress.return_value = ProgressMetrics(
                 skill_competencies={
                     "debt_analysis": 0.85,  # Above threshold
@@ -133,15 +140,17 @@ class TestGamifiedProgressTracker(unittest.TestCase):
                     "value_assessment": 0.7,
                 }
             )
-
-        with patch.object(self.tracker, "_get_earned_badges") as mock_badges:
             mock_badges.return_value = []
 
-        earned = self.tracker.check_achievement_conditions(self.sample_context)
-        self.assertIn(BadgeType.DEBT_DETECTIVE, earned)
+            earned = self.tracker.check_achievement_conditions(self.sample_context)
+            self.assertIn(BadgeType.DEBT_DETECTIVE, earned)
 
         # Test growth spotter badge
-        with patch.object(self.tracker, "_get_progress_metrics") as mock_progress:
+        with patch.object(
+            self.tracker, "_get_progress_metrics"
+        ) as mock_progress, patch.object(
+            self.tracker, "_get_earned_badges"
+        ) as mock_badges:
             mock_progress.return_value = ProgressMetrics(
                 skill_competencies={
                     "debt_analysis": 0.6,
@@ -149,12 +158,10 @@ class TestGamifiedProgressTracker(unittest.TestCase):
                     "value_assessment": 0.7,
                 }
             )
-
-        with patch.object(self.tracker, "_get_earned_badges") as mock_badges:
             mock_badges.return_value = []
 
-        earned = self.tracker.check_achievement_conditions(self.sample_context)
-        self.assertIn(BadgeType.GROWTH_SPOTTER, earned)
+            earned = self.tracker.check_achievement_conditions(self.sample_context)
+            self.assertIn(BadgeType.GROWTH_SPOTTER, earned)
 
     def test_pattern_master_badge_requires_all_patterns(self):
         """Test that Pattern Master badge requires all pattern badges"""
@@ -178,7 +185,11 @@ class TestGamifiedProgressTracker(unittest.TestCase):
             ),
         ]
 
-        with patch.object(self.tracker, "_get_progress_metrics") as mock_progress:
+        with patch.object(
+            self.tracker, "_get_progress_metrics"
+        ) as mock_progress, patch.object(
+            self.tracker, "_get_earned_badges"
+        ) as mock_badges:
             mock_progress.return_value = ProgressMetrics(
                 skill_competencies={
                     "debt_analysis": 0.85,
@@ -186,15 +197,13 @@ class TestGamifiedProgressTracker(unittest.TestCase):
                     "value_assessment": 0.85,  # All above threshold
                 }
             )
-
-        with patch.object(self.tracker, "_get_earned_badges") as mock_badges:
             mock_badges.return_value = existing_badges
 
-        earned = self.tracker.check_achievement_conditions(self.sample_context)
+            earned = self.tracker.check_achievement_conditions(self.sample_context)
 
-        # Should earn Value Hunter and Pattern Master
-        self.assertIn(BadgeType.VALUE_HUNTER, earned)
-        self.assertIn(BadgeType.PATTERN_MASTER, earned)
+            # Should earn Value Hunter and Pattern Master
+            self.assertIn(BadgeType.VALUE_HUNTER, earned)
+            self.assertIn(BadgeType.PATTERN_MASTER, earned)
 
     def test_learning_streak_achievement_detection(self):
         """Test detection of learning streak achievements"""
@@ -208,7 +217,9 @@ class TestGamifiedProgressTracker(unittest.TestCase):
             with self.subTest(streak_days=streak_days):
                 with patch.object(
                     self.tracker, "_get_progress_metrics"
-                ) as mock_progress:
+                ) as mock_progress, patch.object(
+                    self.tracker, "_get_earned_badges"
+                ) as mock_badges:
                     mock_progress.return_value = ProgressMetrics(
                         current_streak=streak_days,
                         skill_competencies={
@@ -217,12 +228,12 @@ class TestGamifiedProgressTracker(unittest.TestCase):
                             "value_assessment": 0.0,
                         },
                     )
-
-                with patch.object(self.tracker, "_get_earned_badges") as mock_badges:
                     mock_badges.return_value = []
 
-                earned = self.tracker.check_achievement_conditions(self.sample_context)
-                self.assertIn(expected_badge, earned)
+                    earned = self.tracker.check_achievement_conditions(
+                        self.sample_context
+                    )
+                    self.assertIn(expected_badge, earned)
 
     def test_badge_award_process(self):
         """Test the badge awarding process"""
@@ -334,9 +345,9 @@ class TestGamifiedProgressTracker(unittest.TestCase):
             user_id, session_history
         )
 
-        # Current streak should be 2 (most recent consecutive days)
+        # Current streak should be 3 (most recent consecutive days: 0,1,2)
         # Best streak should be 3 (the longest consecutive period)
-        self.assertEqual(current_streak, 2)
+        self.assertEqual(current_streak, 3)
         self.assertEqual(best_streak, 3)
 
     def test_personalized_goals_generation(self):
@@ -437,62 +448,89 @@ class TestBehavioralAnalyticsGamificationIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
+        self.app = app
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+
+        # Create a test client for request context
+        self.client = self.app.test_client()
+
         self.tracker = BehavioralAnalyticsTracker()
 
         # Mock Flask session
         self.mock_session = {"anonymous_user_id": "test_session_123"}
 
-    @patch("src.behavioral_analytics.session")
-    def test_gamification_processing_on_analysis_completion(self, mock_session):
+    def tearDown(self):
+        """Clean up test fixtures"""
+        self.app_context.pop()
+
+    def test_gamification_processing_on_analysis_completion(self):
         """Test gamification processing when analysis is completed"""
-        mock_session.configure_mock(**self.mock_session)
+        with self.app.test_request_context():
+            # Set up session data in Flask session directly
+            from flask import session
 
-        # Mock gamification methods
-        with patch.object(
-            self.tracker.gamification, "update_progress_metrics"
-        ) as mock_update:
+            session["anonymous_user_id"] = "test_session_123"
+
+            # Mock gamification methods
             with patch.object(
-                self.tracker.gamification, "check_achievement_conditions"
-            ) as mock_check:
+                self.tracker.gamification, "update_progress_metrics"
+            ) as mock_update:
                 with patch.object(
-                    self.tracker.gamification, "award_badge"
-                ) as mock_award:
-                    mock_check.return_value = [BadgeType.FIRST_ANALYSIS]
+                    self.tracker.gamification, "check_achievement_conditions"
+                ) as mock_check:
+                    with patch.object(
+                        self.tracker.gamification, "award_badge"
+                    ) as mock_award:
+                        mock_check.return_value = [BadgeType.FIRST_ANALYSIS]
 
-                    # Simulate analysis completion
-                    self.tracker.track_analysis_completion("AAPL", "comprehensive")
+                        # Simulate analysis completion
+                        self.tracker.track_analysis_completion("AAPL", "comprehensive")
 
-                    # Verify gamification methods were called
-                    mock_update.assert_called_once()
-                    mock_check.assert_called_once()
-                    mock_award.assert_called_once()
+                        # Verify gamification methods were called
+                        mock_update.assert_called_once()
+                        mock_check.assert_called_once()
+                        mock_award.assert_called_once()
 
-    @patch("src.behavioral_analytics.session")
-    def test_skill_improvement_extraction(self, mock_session):
+    def test_skill_improvement_extraction(self):
         """Test extraction of skill improvements from analysis context"""
-        mock_session.configure_mock(**self.mock_session)
+        with self.app.test_request_context():
+            with patch("src.behavioral_analytics.session") as mock_session:
+                mock_session.configure_mock(**self.mock_session)
 
-        context = {"analysis_depth": "comprehensive"}
-        improvements = self.tracker._extract_skill_improvements(context)
+                context = {"analysis_depth": "comprehensive"}
+                improvements = self.tracker._extract_skill_improvements(context)
 
-        # Should have improvements for all skills
-        expected_skills = ["debt_analysis", "growth_indicators", "value_assessment"]
-        for skill in expected_skills:
-            self.assertIn(skill, improvements)
-            self.assertGreater(improvements[skill], 0)
+                # Should have improvements for all skills
+                expected_skills = [
+                    "debt_analysis",
+                    "growth_indicators",
+                    "value_assessment",
+                ]
+                for skill in expected_skills:
+                    self.assertIn(skill, improvements)
+                    self.assertGreater(improvements[skill], 0)
 
-    @patch("src.behavioral_analytics.session")
-    def test_community_contribution_quality_calculation(self, mock_session):
+    def test_community_contribution_quality_calculation(self):
         """Test calculation of community contribution quality scores"""
-        mock_session.configure_mock(**self.mock_session)
+        with self.app.test_request_context():
+            with patch("src.behavioral_analytics.session") as mock_session:
+                mock_session.configure_mock(**self.mock_session)
 
-        # Test high-quality contribution
-        high_quality_context = {"content_length": 250}
-        high_score = self.tracker._calculate_contribution_quality(high_quality_context)
-        self.assertGreaterEqual(high_score, 0.8)
+                # Test high-quality contribution
+                high_quality_context = {"content_length": 250}
+                high_score = self.tracker._calculate_contribution_quality(
+                    high_quality_context
+                )
+                self.assertGreaterEqual(high_score, 0.8)
 
-        # Test medium-quality contribution
-        medium_quality_context = {"content_length": 120}
+                # Test medium-quality contribution
+                medium_quality_context = {"content_length": 120}
+                medium_score = self.tracker._calculate_contribution_quality(
+                    medium_quality_context
+                )
+                self.assertGreaterEqual(medium_score, 0.5)
+                self.assertLess(medium_score, 0.8)
         medium_score = self.tracker._calculate_contribution_quality(
             medium_quality_context
         )
