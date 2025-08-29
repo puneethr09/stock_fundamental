@@ -265,18 +265,31 @@ class PatternRecognitionTrainer:
 
         # Select company example (use provided company_info or random selection)
         if company_info:
+            # Validate and clean company_info fields
+            company_name = (company_info.get("name") or "").strip()
+            company_ticker = (company_info.get("ticker") or "").strip()
+            company_industry = (company_info.get("industry") or "").strip()
+
+            # Use fallbacks for empty/invalid fields
+            if not company_name:
+                company_name = company_ticker if company_ticker else "Unknown Company"
+            if not company_ticker:
+                company_ticker = "N/A"
+            if not company_industry:
+                company_industry = "General"
+
             # Use provided company info and add missing fields for compatibility
             company_example = {
-                "company": company_info["name"],
-                "ticker": company_info["ticker"],
-                "industry": company_info["industry"],
+                "company": company_name,
+                "ticker": company_ticker,
+                "industry": company_industry,
                 "sector": company_info.get(
-                    "sector", company_info["industry"]
+                    "sector", company_industry
                 ),  # Use industry as sector if not provided
-                "description": f"Analysis of {company_info['name']} from the {company_info['industry']} sector",  # Add missing description field
-                "pattern_description": f"Analyzing {company_info['name']} financial patterns",
+                "description": f"Analysis of {company_name} from the {company_industry} sector",  # Clean description
+                "pattern_description": f"Analyzing {company_name} financial patterns",
                 "pattern_period": "2019-2025",  # Default period for our updated date range
-                "context": f"Real-time analysis of {company_info['name']} from the {company_info['industry']} sector",
+                "context": f"Real-time analysis of {company_name} from the {company_industry} sector",
             }
         else:
             # Select appropriate company example from predefined list
