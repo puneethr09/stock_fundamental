@@ -7,6 +7,13 @@ from src.basic_analysis import (
 )
 from src.utils import load_company_data
 from src.community_knowledge import CommunityKnowledgeBase, InsightCategory
+from src.behavioral_analytics import (
+    behavioral_tracker,
+    get_learning_stage_context,
+    adapt_content_for_stage,
+    track_page_interaction,
+    InteractionType,
+)
 import subprocess, os
 import secrets
 
@@ -30,8 +37,14 @@ def get_anonymous_user_id():
 @app.route("/")
 @app.route("/home")  # Adding both routes for flexibility
 def home():
+    # Initialize session for anonymous user tracking
+    anonymous_user_id = get_anonymous_user_id()
+
+    # Get learning stage context for UI adaptation
+    learning_context = get_learning_stage_context()
+
     news_items = get_market_news()
-    return render_template("index.html", news=news_items)
+    return render_template("index.html", news=news_items, **learning_context)
 
 
 @app.route("/analyze", methods=["POST", "GET"])
@@ -44,6 +57,11 @@ def analyze():
         ticker = request.form["ticker"].upper() + ".NS"
     else:
         ticker = request.args.get("ticker", "").upper() + ".NS"
+
+    # Track analysis start
+    behavioral_tracker.track_interaction_start(
+        anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
+    )
 
     ratios_df = get_financial_ratios(ticker)
     if ratios_df is not None and not ratios_df.empty:
@@ -58,22 +76,44 @@ def analyze():
         # Get community insights for this ticker
         community_insights = community_kb.get_insights_for_ticker(ticker_for_analysis)
 
+        # Track successful analysis completion
+        behavioral_tracker.track_analysis_completion(
+            ticker_for_analysis, "comprehensive" if gaps else "basic"
+        )
+
+        # Get learning stage context for UI adaptation
+        analysis_context = {
+            "company_name": company_name,
+            "ticker": ticker_for_analysis,
+            "has_gaps": bool(gaps),
+            "confidence_score": confidence_score,
+        }
+        learning_context = get_learning_stage_context()
+
+        # Adapt content based on learning stage
+        content_data = {
+            "warnings": warnings,
+            "explanations": explanations,
+            "gaps": gaps,
+            "research_guides": research_guides,
+            "community_insights": community_insights,
+        }
+        adapted_content = adapt_content_for_stage(content_data, analysis_context)
+
+        # Use adapted content instead of original to avoid keyword conflicts
         return render_template(
             "results.html",
             tables=[display_df.to_html(classes="data table-hover", index=False)],
             titles=display_df.columns.values,
             plot_html=plot_html,
-            warnings=warnings,
-            explanations=explanations,
             company_name=company_name,
             news=news_items,
-            community_insights=community_insights,
             insight_categories=InsightCategory,
             ticker=ticker_for_analysis,
-            gaps=gaps,
-            research_guides=research_guides,
             confidence_score=confidence_score,
             zip=zip,
+            **learning_context,
+            **adapted_content,
         )
     else:
         return render_template(
@@ -81,6 +121,7 @@ def analyze():
             error="No data available for the provided ticker.",
             plot_html=None,
             zip=zip,
+            **get_learning_stage_context(),
         )
 
 
@@ -122,6 +163,10 @@ def contribute_insight():
             ticker, category, content, anonymous_user_id
         )
 
+        # Track community contribution for learning assessment
+        if success:
+            behavioral_tracker.track_community_contribution(category_str, len(content))
+
         return jsonify({"success": success, "message": message})
 
     except Exception as e:
@@ -144,6 +189,12 @@ def vote_on_insight():
         success, message = community_kb.vote_on_insight(
             insight_id, anonymous_user_id, vote_type
         )
+
+        # Track community engagement for learning assessment
+        if success:
+            behavioral_tracker.track_community_contribution(
+                f"vote_{vote_type}", 1  # Minimal content length for voting
+            )
 
         return jsonify({"success": success, "message": message})
 
@@ -196,6 +247,112 @@ def get_ticker_insights(ticker):
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"})
+
+
+# Behavioral Analytics Routes
+@app.route("/track/tooltip", methods=["POST"])
+def track_tooltip_interaction():
+    """Track tooltip usage for learning stage assessment"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"success": False, "message": "No session found"})
+
+        data = request.json
+        tooltip_id = data.get("tooltip_id", "")
+        tooltip_content = data.get("content", "")
+
+        behavioral_tracker.track_tooltip_usage(tooltip_id, tooltip_content)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/track/warning", methods=["POST"])
+def track_warning_engagement():
+    """Track user engagement with warnings"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"success": False, "message": "No session found"})
+
+        data = request.json
+        warning_type = data.get("warning_type", "")
+        duration = data.get("duration", 0)
+
+        behavioral_tracker.track_warning_engagement(warning_type, duration)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/track/research_guide", methods=["POST"])
+def track_research_guide_access():
+    """Track research guide access from gap-filling system"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"success": False, "message": "No session found"})
+
+        data = request.json
+        guide_type = data.get("guide_type", "")
+        complexity = data.get("complexity", "basic")
+
+        behavioral_tracker.track_research_guide_access(guide_type, complexity)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/track/prediction", methods=["POST"])
+def track_prediction_attempt():
+    """Track user prediction attempts"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"success": False, "message": "No session found"})
+
+        data = request.json
+        prediction_type = data.get("prediction_type", "")
+        confidence = data.get("confidence", "medium")
+
+        behavioral_tracker.track_prediction_attempt(prediction_type, confidence)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/track/comparison", methods=["POST"])
+def track_stock_comparison():
+    """Track cross-stock comparison activities"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"success": False, "message": "No session found"})
+
+        data = request.json
+        stocks = data.get("stocks", [])
+
+        behavioral_tracker.track_cross_stock_comparison(stocks)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route("/learning/stage")
+def get_learning_stage():
+    """Get current learning stage information"""
+    try:
+        if "anonymous_user_id" not in session:
+            return jsonify({"stage": "guided_discovery", "progress": 0})
+
+        progress_data = behavioral_tracker.get_stage_progress_data()
+        if not progress_data:
+            return jsonify({"stage": "guided_discovery", "progress": 0})
+
+        return jsonify(progress_data)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 def run_command(command):

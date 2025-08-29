@@ -149,6 +149,134 @@
         background-color: #0056b3;
       }
 
+      /* Learning Stage Progress Styles */
+      .learning-stage-progress {
+        background: rgba(25, 135, 84, 0.1);
+        border-left: 4px solid #198754;
+        margin: 20px auto;
+        width: 90%;
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .stage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .stage-name {
+        font-weight: bold;
+        color: #198754;
+        font-size: 1.1em;
+      }
+
+      .stage-confidence {
+        background: #6c757d;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+      }
+
+      .progress-bars {
+        margin: 10px 0;
+      }
+
+      .progress-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 8px 0;
+      }
+
+      .progress-label {
+        font-size: 0.9em;
+        color: #495057;
+        min-width: 140px;
+      }
+
+      .progress {
+        flex-grow: 1;
+        margin: 0 10px;
+        height: 8px;
+      }
+
+      .progress-value {
+        font-size: 0.8em;
+        color: #6c757d;
+        min-width: 35px;
+        text-align: right;
+      }
+
+      .learning-recommendations {
+        background: rgba(13, 110, 253, 0.1);
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+      }
+
+      .learning-prompts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .learning-prompt {
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        border: 1px solid rgba(13, 110, 253, 0.2);
+      }
+
+      /* Enhanced tooltip styles for learning stages */
+      .learning-tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+      }
+
+      .learning-tooltip:hover .learning-tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .learning-tooltiptext {
+        visibility: hidden;
+        opacity: 0;
+        width: 300px;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -150px;
+        transition: opacity 0.3s;
+        font-size: 0.9em;
+        line-height: 1.4;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .learning-tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
       /* Educational Gaps Styles */
       .educational-gaps-section {
         background: rgba(255, 252, 240, 0.95);
@@ -612,6 +740,64 @@
       </div>
     </nav>
     <h1 class="text-center"><u>{{ company_name }}</u></h1>
+    
+    <!-- Learning Stage Progress Display -->
+    {% if show_stage_progress and stage_progress %}
+    <div class="learning-stage-progress">
+      <div class="stage-header">
+        <div class="stage-name">
+          🎓 {{ stage_progress.stage_name }}
+          <span class="learning-tooltip">
+            ℹ️
+            <span class="learning-tooltiptext">
+              You're currently in the {{ stage_progress.stage_name }} stage of learning.
+              {% if learning_stage.educational_content.focus %}
+              Focus: {{ learning_stage.educational_content.focus }}
+              {% endif %}
+            </span>
+          </span>
+        </div>
+        <div class="stage-confidence">{{ stage_progress.confidence_score }}% confidence</div>
+      </div>
+      
+      <div class="progress-bars">
+        <div class="progress-item">
+          <div class="progress-label">Stage Progress</div>
+          <div class="progress">
+            <div class="progress-bar bg-success" style="width: {{ stage_progress.progress_within_stage }}%"></div>
+          </div>
+          <div class="progress-value">{{ stage_progress.progress_within_stage }}%</div>
+        </div>
+        <div class="progress-item">
+          <div class="progress-label">Next Stage Ready</div>
+          <div class="progress">
+            <div class="progress-bar bg-info" style="width: {{ stage_progress.next_stage_readiness }}%"></div>
+          </div>
+          <div class="progress-value">{{ stage_progress.next_stage_readiness }}%</div>
+        </div>
+      </div>
+      
+      {% if stage_progress.recommendations %}
+      <div class="learning-recommendations">
+        <strong>💡 Learning Recommendations:</strong>
+        <ul class="mb-0 mt-1">
+        {% for recommendation in stage_progress.recommendations %}
+          <li>{{ recommendation }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      
+      {% if learning_stage.learning_prompts %}
+      <div class="learning-prompts">
+        {% for prompt in learning_stage.learning_prompts %}
+          <span class="learning-prompt">{{ prompt }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    
     <div class="text-center">
       {% for table in tables %}
       <div class="table-responsive">{{ table|safe }}</div>
@@ -646,22 +832,15 @@
           {% for gap in gaps %}
           <div class="gap-item">
             <div class="gap-header">
-              <span class="gap-type">{{ gap.gap_type.value.title() }}</span>
-              <span class="gap-impact gap-impact-{{ gap.impact_level.value }}">
-                {{ gap.impact_level.value.title() }} Impact
+              <span class="gap-type">{{ gap.category.value.title() }}</span>
+              <span class="gap-impact gap-impact-{{ gap.severity.value }}">
+                {{ gap.severity.value.title() }} Impact
               </span>
             </div>
             <p class="gap-description">{{ gap.description }}</p>
-            {% if gap.suggested_actions %}
-            <div class="gap-actions">
-              <strong>Suggested Actions:</strong>
-              <ul>
-                {% for action in gap.suggested_actions %}
-                <li>{{ action }}</li>
-                {% endfor %}
-              </ul>
+            <div class="gap-details">
+              <small><strong>Missing Metrics:</strong> {{ gap.missing_metrics|join(', ') }}</small>
             </div>
-            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -675,11 +854,11 @@
         <div class="research-guide">
           <div class="guide-header">
             <h5>{{ guide.title }}</h5>
-            <span class="guide-priority guide-priority-{{ guide.priority.value }}">
-              {{ guide.priority.value.title() }} Priority
+            <span class="guide-priority guide-priority-{{ guide.difficulty_level }}">
+              {{ guide.difficulty_level.title() }} Level
             </span>
           </div>
-          <p class="guide-description">{{ guide.description }}</p>
+          <p class="guide-description">{{ guide.objective }}</p>
           
           {% if guide.research_questions %}
           <div class="research-questions">
@@ -692,26 +871,21 @@
           </div>
           {% endif %}
           
-          {% if guide.information_sources %}
+          {% if guide.indian_market_sources %}
           <div class="information-sources">
             <h6><i class="fas fa-link"></i> Recommended Sources:</h6>
             <div class="sources-grid">
-              {% for source in guide.information_sources %}
+              {% for source in guide.indian_market_sources %}
               <div class="source-item">
                 <div class="source-header">
-                  <strong>{{ source.source_name }}</strong>
-                  <span class="source-type">{{ source.source_type.value.title() }}</span>
+                  <strong>{{ source.name or source.source_name or 'Financial Source' }}</strong>
+                  <span class="source-type">{{ source.type or source.source_type or 'Website' }}</span>
                 </div>
-                <p class="source-description">{{ source.description }}</p>
+                <p class="source-description">{{ source.description or 'Financial information source' }}</p>
                 {% if source.url %}
                 <a href="{{ source.url }}" target="_blank" class="source-link">
                   <i class="fas fa-external-link-alt"></i> Visit Source
                 </a>
-                {% endif %}
-                {% if source.search_tips %}
-                <div class="search-tips">
-                  <small><strong>Search Tips:</strong> {{ source.search_tips }}</small>
-                </div>
                 {% endif %}
               </div>
               {% endfor %}
@@ -865,6 +1039,80 @@
             }
           }
         });
+
+        // Learning Stage Behavioral Analytics Tracking
+        
+        // Track tooltip interactions
+        $('.learning-tooltip').on('mouseenter', function() {
+          const tooltipId = $(this).attr('data-tooltip-id') || 'generic';
+          const content = $(this).find('.learning-tooltiptext').text();
+          
+          $.post('/track/tooltip', {
+            tooltip_id: tooltipId,
+            content: content
+          });
+        });
+        
+        // Track warning engagement (when user hovers over warnings for more than 2 seconds)
+        let warningHoverTimeout = {};
+        $('.warning, .explanation').on('mouseenter', function() {
+          const element = $(this);
+          const warningType = element.hasClass('warning') ? 'warning' : 'explanation';
+          
+          warningHoverTimeout[warningType] = setTimeout(function() {
+            $.post('/track/warning', {
+              warning_type: warningType,
+              duration: 2.0
+            });
+          }, 2000);
+        }).on('mouseleave', function() {
+          const warningType = $(this).hasClass('warning') ? 'warning' : 'explanation';
+          if (warningHoverTimeout[warningType]) {
+            clearTimeout(warningHoverTimeout[warningType]);
+          }
+        });
+        
+        // Track research guide access
+        $('.research-guides-section a, .gap-item a').on('click', function() {
+          const guideType = $(this).closest('.guide-item').find('.guide-type').text() || 'general';
+          const complexity = $(this).hasClass('advanced') ? 'advanced' : 'basic';
+          
+          $.post('/track/research_guide', {
+            guide_type: guideType,
+            complexity: complexity
+          });
+        });
+        
+        // Track prediction attempts (can be extended with prediction interface)
+        function trackPredictionAttempt(predictionType, confidence) {
+          $.post('/track/prediction', {
+            prediction_type: predictionType,
+            confidence: confidence
+          });
+        }
+        
+        // Track stock comparisons (can be extended when comparison feature is added)
+        function trackStockComparison(stocks) {
+          $.post('/track/comparison', {
+            stocks: stocks
+          });
+        }
+        
+        // Add stage-appropriate tooltip behavior
+        {% if learning_stage.ui_adaptations.show_tooltips %}
+        // Show detailed tooltips for guided discovery and assisted analysis stages
+        $('[title]').tooltip({
+          html: true,
+          placement: 'top',
+          trigger: 'hover'
+        });
+        {% else %}
+        // Minimal tooltips for independent thinking and analytical mastery stages
+        $('[title]').tooltip({
+          placement: 'top',
+          trigger: 'hover'
+        });
+        {% endif %}
 
         // Community Features JavaScript
 
