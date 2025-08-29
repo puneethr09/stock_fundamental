@@ -363,6 +363,15 @@ def home():
     return render_template("index.html", news=news_items, **learning_context)
 
 
+@app.route("/achievements")
+def achievements():
+    try:
+        uid = get_anonymous_user_id()
+    except Exception:
+        uid = ""
+    return render_template("achievements.html", user_id=uid)
+
+
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
     # Initialize session for anonymous user tracking

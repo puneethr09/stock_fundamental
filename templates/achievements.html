@@ -58,18 +58,32 @@
       async function loadData() {
         const uid = '{{ user_id or "" }}';
         const badgesResp = await fetch(`/user/${uid}/badges`);
-        const badges = await badgesResp.json();
+        const badgesJson = await badgesResp.json();
+        const badgesList = badgesJson.badges || badgesJson || [];
         const badgesRoot = document.getElementById("badges");
         badgesRoot.innerHTML = "";
-        (badges || []).forEach((b) => badgesRoot.appendChild(badgeCard(b)));
+        if (!(badgesList || []).length) {
+          badgesRoot.innerHTML =
+            '<p class="muted">No badges yet. Complete assignments to earn achievements.</p>';
+        } else {
+          (badgesList || []).forEach((b) =>
+            badgesRoot.appendChild(badgeCard(b))
+          );
+        }
 
         const notesResp = await fetch(`/user/${uid}/notifications`);
-        const notes = await notesResp.json();
+        const notesJson = await notesResp.json();
+        const notesList =
+          notesJson.notifications || notesJson.notifications || notesJson || [];
         const notesRoot = document.getElementById("notifications");
         notesRoot.innerHTML = "";
-        (notes || []).forEach((n) =>
-          notesRoot.appendChild(notificationItem(n))
-        );
+        if (!(notesList || []).length) {
+          notesRoot.innerHTML = '<li class="muted">No notifications yet.</li>';
+        } else {
+          (notesList || []).forEach((n) =>
+            notesRoot.appendChild(notificationItem(n))
+          );
+        }
       }
 
       loadData();
