@@ -85,7 +85,17 @@ obj/
 
 # bmad specific
 .bmad-core/
-.github/
+.github/chatmodes
 web-bundles/
 # Auto-activate virtual environment (user-specific)
 .envrc
+
+# Ignore local data/db files (don't commit local sqlite or db files)
+# Keep any canonical seeds in a separate folder (e.g. data/seed/) if needed
+/data/*.db
+/data/*.sqlite
+/data/*.sqlite3
+/data/*.sqlite*
+/data/*.db-journal
+/data/*.sqlite-wal
+/data/*.sqlite-shm
