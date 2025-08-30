@@ -2,13 +2,15 @@
 Tests for Educational Mastery Framework and Behavioral Analytics Tracker
 
 This module tests the learning stage assessment system, behavioral tracking,
-and adaptive content delivery functionality.
+and adaptive content delivery functionality with comprehensive coverage.
 """
 
 import pytest
 import time
 from unittest.mock import Mock, patch, MagicMock
 from flask import Flask
+from datetime import datetime, timedelta
+
 from src.educational_framework import (
     EducationalMasteryFramework,
     InteractionType,
