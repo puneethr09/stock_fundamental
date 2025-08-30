@@ -16,6 +16,8 @@ from enum import Enum
 import json
 import random
 from datetime import datetime, timedelta
+import sqlite3
+import os
 
 from src.educational_framework import EducationalMasteryFramework, LearningStage
 
@@ -107,6 +109,94 @@ class PatternRecognitionTrainer:
         self.indian_companies = self._load_indian_company_examples()
         self.pattern_templates = self._initialize_pattern_templates()
         self.exercise_cache = {}
+        # Simple on-disk persistence for exercises (SQLite)
+        self.data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+        # normalize path
+        self.data_dir = os.path.abspath(self.data_dir)
+        self.db_path = os.path.join(self.data_dir, "exercises.db")
+        self._ensure_db()
+
+    def _ensure_db(self):
+        """Create data directory and exercises table if missing"""
+        os.makedirs(self.data_dir, exist_ok=True)
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute(
+            """
+            CREATE TABLE IF NOT EXISTS exercises (
+                exercise_id TEXT PRIMARY KEY,
+                payload TEXT,
+                created_at TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+        conn.close()
+
+    def _persist_exercise(self, exercise: PatternExercise):
+        """Persist a PatternExercise to the local SQLite store (JSON payload)."""
+        payload = asdict(exercise)
+        # Serialize enums to their values for JSON compatibility
+        if isinstance(payload.get("pattern_type"), Enum):
+            payload["pattern_type"] = exercise.pattern_type.value
+        if isinstance(payload.get("difficulty"), Enum):
+            payload["difficulty"] = exercise.difficulty.value
+
+        payload_json = json.dumps(payload, default=str)
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute(
+            "INSERT OR REPLACE INTO exercises (exercise_id, payload, created_at) VALUES (?, ?, ?)",
+            (exercise.exercise_id, payload_json, datetime.now()),
+        )
+        conn.commit()
+        conn.close()
+
+    def _load_exercise_from_db(self, exercise_id: str) -> Optional[PatternExercise]:
+        """Load a persisted exercise and reconstruct a PatternExercise, or None if missing."""
+        if not os.path.exists(self.db_path):
+            return None
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT payload FROM exercises WHERE exercise_id = ?", (exercise_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            return None
+
+        try:
+            payload = json.loads(row[0])
+        except Exception:
+            return None
+
+        # Convert enums back
+        pattern_type = (
+            PatternType(payload["pattern_type"])
+            if payload.get("pattern_type")
+            else None
+        )
+        difficulty = (
+            ExerciseDifficulty(payload["difficulty"])
+            if payload.get("difficulty")
+            else None
+        )
+
+        return PatternExercise(
+            exercise_id=payload.get("exercise_id"),
+            pattern_type=pattern_type,
+            difficulty=difficulty,
+            title=payload.get("title", ""),
+            description=payload.get("description", ""),
+            ticker=payload.get("ticker", ""),
+            company_name=payload.get("company_name", ""),
+            chart_data=payload.get("chart_data", {}),
+            pattern_zones=payload.get("pattern_zones", []),
+            expected_patterns=payload.get("expected_patterns", []),
+            hints=payload.get("hints", []),
+            educational_context=payload.get("educational_context", ""),
+            success_criteria=payload.get("success_criteria", {}),
+            time_limit_seconds=payload.get("time_limit_seconds"),
+        )
 
     def _load_indian_company_examples(self) -> Dict[PatternType, List[Dict]]:
         """Load curated Indian company examples for each pattern type"""
@@ -365,6 +455,13 @@ class PatternRecognitionTrainer:
         # Cache exercise for later evaluation
         self.exercise_cache[exercise_id] = exercise
 
+        # Persist exercise to local SQLite store for durability
+        try:
+            self._persist_exercise(exercise)
+        except Exception:
+            # Persistence failure should not break in-memory flow; log silently
+            pass
+
         return exercise
 
     def _generate_pattern_chart_data(
@@ -372,9 +469,14 @@ class PatternRecognitionTrainer:
     ) -> Dict[str, Any]:
         """Generate realistic chart data showing the specified pattern"""
 
-        # Create base time series (quarterly data over 6 years - more recent data)
+        # Create base time series (quarterly data over N periods - default 6 years)
         periods = 24
-        quarters = pd.date_range(start="2019-03-31", periods=periods, freq="QE")
+
+        # Calculate end_date as the end of the current quarter and start_date accordingly
+        end_date = pd.Timestamp(datetime.now()).to_period("Q").end_time
+        # start_date such that the final quarter is the current quarter
+        start_date = end_date - pd.offsets.QuarterEnd(periods - 1)
+        quarters = pd.date_range(start=start_date, periods=periods, freq="QE")
 
         base_data = {
             "dates": [q.strftime("%Y-%m-%d") for q in quarters],
@@ -1584,54 +1686,62 @@ class PatternRecognitionTrainer:
         Returns:
             PatternFeedback with score, accuracy, and educational feedback
         """
-        # For now, create a mock evaluation since we don't have stored exercises
-        # In a full implementation, this would retrieve the exercise and compare patterns
+        # Retrieve the exercise (prefer cache, fallback to stored retrieval)
+        exercise = self.exercise_cache.get(exercise_id)
 
-        # Mock expected patterns based on common pattern types
-        expected_patterns = []
-        if (
-            "deleveraging_trend" in user_patterns
-            or "increasing_debt_trend" in user_patterns
-        ):
-            expected_patterns.extend(["deleveraging_trend", "high_debt_periods"])
-        elif (
-            "consistent_strong_roe" in user_patterns
-            or "healthy_revenue_growth" in user_patterns
-        ):
-            expected_patterns.extend(["consistent_strong_roe", "roe_improvement_trend"])
-        elif (
-            "low_valuation" in user_patterns
-            or "deteriorating_fundamentals" in user_patterns
-        ):
-            expected_patterns.extend(["low_valuation", "potential_value_trap"])
-        else:
-            # Default patterns for testing
-            expected_patterns = ["debt_analysis_required", "growth_analysis_required"]
+        if exercise is None:
+            try:
+                exercise = self._get_stored_exercise(exercise_id)
+            except Exception:
+                # Could not retrieve exercise - return a clear feedback object
+                return PatternFeedback(
+                    attempt_id=f"{exercise_id}_{user_session_id}_{int(time_taken_seconds)}",
+                    accuracy_score=0.0,
+                    correct_patterns=[],
+                    missed_patterns=[],
+                    false_positives=list(user_patterns),
+                    educational_explanation=(
+                        "Exercise not found or invalid. Unable to evaluate the attempt."
+                    ),
+                    improvement_suggestions=[],
+                    stage_progression_impact=0.0,
+                    next_exercise_recommendation=None,
+                )
 
-        # Calculate accuracy
-        correct_patterns = set(user_patterns) & set(expected_patterns)
-        missed_patterns = set(expected_patterns) - set(user_patterns)
-        false_positives = set(user_patterns) - set(expected_patterns)
+        # Ensure exercise exposes expected_patterns
+        expected_patterns = getattr(exercise, "expected_patterns", None)
+        if not expected_patterns or not isinstance(expected_patterns, list):
+            return PatternFeedback(
+                attempt_id=f"{exercise_id}_{user_session_id}_{int(time_taken_seconds)}",
+                accuracy_score=0.0,
+                correct_patterns=[],
+                missed_patterns=[],
+                false_positives=list(user_patterns),
+                educational_explanation=(
+                    "Exercise does not contain expected patterns. Cannot evaluate."
+                ),
+                improvement_suggestions=[],
+                stage_progression_impact=0.0,
+                next_exercise_recommendation=None,
+            )
 
+        # Compare user-identified patterns against expected patterns
+        correct_patterns = list(set(user_patterns) & set(expected_patterns))
+        missed_patterns = list(set(expected_patterns) - set(user_patterns))
+        false_positives = list(set(user_patterns) - set(expected_patterns))
+
+        # Basic accuracy: proportion of expected patterns identified
         accuracy = (
             len(correct_patterns) / len(expected_patterns) if expected_patterns else 0.0
         )
 
-        # Penalize for false positives
+        # Penalize for false positives (small penalty per false positive)
         if false_positives:
-            accuracy *= 1 - (
-                len(false_positives) * 0.1
-            )  # Reduce by 10% per false positive
-            accuracy = max(0.0, accuracy)
+            accuracy *= max(0.0, 1 - (len(false_positives) * 0.1))
 
-        # Calculate score based on accuracy and time
-        base_score = accuracy * 100
-        time_bonus = max(
-            0, 10 - (time_taken_seconds / 60)
-        )  # Bonus for completing under 10 minutes
-        score = min(100, base_score + time_bonus)
-
-        # Generate feedback
+        # Time-based bonus (same heuristic as other evaluation paths)
+        time_bonus = max(0, 10 - (time_taken_seconds / 60))
+        # Compose a human-friendly explanation
         if accuracy >= 0.9:
             feedback_msg = "Excellent pattern recognition! You identified the key patterns correctly."
         elif accuracy >= 0.7:
@@ -1649,25 +1759,28 @@ class PatternRecognitionTrainer:
         if false_positives:
             feedback_msg += f" Be careful about false signals - double-check these patterns: {', '.join(false_positives)}."
 
+        # Suggest improvements
+        improvement_suggestions = (
+            [
+                "Focus on the relationship between debt levels and coverage ratios",
+                "Look for sustained trends rather than temporary fluctuations",
+                "Consider the broader market context when identifying patterns",
+            ]
+            if accuracy < 0.8
+            else [
+                "Excellent pattern recognition skills!",
+                "Try more advanced exercises to challenge yourself",
+            ]
+        )
+
         return PatternFeedback(
             attempt_id=f"{exercise_id}_{user_session_id}_{int(time_taken_seconds)}",
             accuracy_score=accuracy,
-            correct_patterns=list(correct_patterns),
-            missed_patterns=list(missed_patterns),
-            false_positives=list(false_positives),
+            correct_patterns=correct_patterns,
+            missed_patterns=missed_patterns,
+            false_positives=false_positives,
             educational_explanation=feedback_msg,
-            improvement_suggestions=(
-                [
-                    "Focus on the relationship between debt levels and coverage ratios",
-                    "Look for sustained trends rather than temporary fluctuations",
-                    "Consider the broader market context when identifying patterns",
-                ]
-                if accuracy < 0.8
-                else [
-                    "Excellent pattern recognition skills!",
-                    "Try more advanced exercises to challenge yourself",
-                ]
-            ),
+            improvement_suggestions=improvement_suggestions,
             stage_progression_impact=accuracy,
             next_exercise_recommendation=None,
         )
@@ -1677,20 +1790,40 @@ class PatternRecognitionTrainer:
         Retrieve stored exercise by ID (mock implementation for testing)
         In production, this would query a database or cache
         """
-        # Mock exercise for testing
+        # Try DB first
+        persisted = self._load_exercise_from_db(exercise_id)
+        if persisted is not None:
+            return persisted
+
+        # Return a minimal, valid PatternExercise compatible with the dataclass (fallback)
+        expected_patterns = ["deleveraging_trend", "high_debt_periods"]
+
+        chart_data = {
+            "dates": ["2020-01-01", "2020-04-01", "2020-07-01", "2020-10-01"],
+            "quarters": ["Q1 2020", "Q2 2020", "Q3 2020", "Q4 2020"],
+            "debt_to_equity": [1.2, 1.1, 1.0, 0.8],
+            "interest_coverage": [5.0, 4.5, 6.0, 7.0],
+        }
+
+        success_criteria = self._define_success_criteria(
+            ExerciseDifficulty.GUIDED, expected_patterns
+        )
+
         return PatternExercise(
             exercise_id=exercise_id,
             pattern_type=PatternType.DEBT_ANALYSIS,
             difficulty=ExerciseDifficulty.GUIDED,
-            title="Mock Exercise",
-            description="Mock exercise for testing",
-            company_name="Test Company",
-            chart_html="<div>Mock Chart</div>",
-            chart_data={"debt_to_equity": [1.0, 1.2, 1.1, 0.9]},
-            expected_patterns=["deleveraging_trend"],
-            interactive_zones=[],
-            time_limit_minutes=15,
-            hints=[],
+            title="Mock Debt Analysis Exercise",
+            description="Mock exercise for testing debt patterns",
+            ticker="MOCK",
+            company_name="Mock Company",
+            chart_data=chart_data,
+            pattern_zones=[],
+            expected_patterns=expected_patterns,
+            hints=["Look for decreasing debt-to-equity trend"],
+            educational_context="Mock context for testing",
+            success_criteria=success_criteria,
+            time_limit_seconds=900,
         )
 
     def _generate_educational_feedback(

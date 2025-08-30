@@ -31,18 +31,24 @@ class TestPatternRecognitionTrainer:
 
     @pytest.fixture
     def sample_chart_data(self):
-        """Sample chart data for testing pattern detection"""
+        """Sample chart data for testing pattern detection.
+
+        The `debt_to_equity_deleveraging_example` shows a clear deleveraging trend
+        where debt falls from a peak to a low value; the low value (0.4) was chosen so
+        the change (0.8 -> 0.4) exceeds the detection threshold used in the trainer.
+        """
+        debt_to_equity_deleveraging_example = [
+            0.8,
+            1.0,
+            1.5,
+            1.8,
+            1.2,
+            0.9,
+            0.6,
+            0.4,
+        ]
         return {
-            "debt_to_equity": [
-                0.8,
-                1.0,
-                1.5,
-                1.8,
-                1.2,
-                0.9,
-                0.6,
-                0.4,
-            ],  # Changed from 0.6 to 0.4 for deleveraging (0.8 - 0.4 = 0.4 > 0.3)
+            "debt_to_equity": debt_to_equity_deleveraging_example,
             "interest_coverage": [5.2, 4.8, 3.5, 2.8, 3.2, 4.1, 4.9, 5.3],
             "roe": [12.5, 14.2, 16.8, 18.3, 17.9, 19.2, 20.1, 21.5],
             "revenue_growth": [8.5, 12.3, 15.7, 18.9, 16.2, 14.8, 13.5, 11.9],

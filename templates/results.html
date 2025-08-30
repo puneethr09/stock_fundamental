@@ -1062,14 +1062,46 @@
 
         // Learning Stage Behavioral Analytics Tracking
         
-        // Track tooltip interactions
+        // Track tooltip interactions (fire-and-forget)
         $('.learning-tooltip').on('mouseenter', function() {
           const tooltipId = $(this).attr('data-tooltip-id') || 'generic';
           const content = $(this).find('.learning-tooltiptext').text();
-          
-          $.post('/track/tooltip', {
-            tooltip_id: tooltipId,
-            content: content
+
+          // Prepare payload
+          const payload = JSON.stringify({ tooltip_id: tooltipId, content: content });
+
+          // Prefer sendBeacon for non-blocking analytics
+          if (navigator && navigator.sendBeacon) {
+            try {
+              navigator.sendBeacon('/track/tooltip', new Blob([payload], { type: 'application/json' }));
+              return;
+            } catch (e) {
+              // fall through to fetch fallback
+              console.debug('sendBeacon failed for tooltip tracking:', e);
+            }
+          }
+
+          // Use fetch with keepalive if available
+          if (window.fetch) {
+            try {
+              fetch('/track/tooltip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+                keepalive: true,
+              }).catch((err) => {
+                // don't disturb the user; log for debugging
+                console.debug('tooltip tracking failed (fetch):', err);
+              });
+              return;
+            } catch (e) {
+              console.debug('fetch failed for tooltip tracking:', e);
+            }
+          }
+
+          // Last-resort: jQuery post with a silent failure handler
+          $.post('/track/tooltip', { tooltip_id: tooltipId, content: content }).fail(function (err) {
+            console.debug('tooltip tracking failed (jquery):', err);
           });
         });
         
