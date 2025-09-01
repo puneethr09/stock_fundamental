@@ -19,35 +19,134 @@
     <!-- Gamification CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='gamification.css') }}" />
     <style>
+      /* Mobile-first responsive enhancements */
       body {
         background-image: url("/static/images/wall_street_blue.avif");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        background-attachment: scroll; /* Better for mobile */
       }
+      
+      /* Mobile-responsive background attachment */
+      @media (min-width: 768px) {
+        body {
+          background-attachment: fixed;
+        }
+      }
+      
       h1.text-center {
-        color: rgb(255, 255, 255); /* Change this to your desired color */
+        color: rgb(255, 255, 255);
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
       }
+      
+      /* Mobile-first table styling */
       .data {
-        background: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
-        width: 90%;
-        margin: 20px auto;
+        background: rgba(255, 255, 255, 0.95);
+        width: 100%;
+        margin: 10px auto;
         border-collapse: collapse;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        font-size: 0.75rem;
+        border-radius: 8px;
+        overflow: hidden;
       }
+      
+      /* Mobile table container */
+      .table-responsive {
+        border-radius: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      
+      /* Mobile-specific table behavior */
+      @media (max-width: 576px) {
+        .data {
+          font-size: 0.7rem;
+        }
+        .data th, .data td {
+          padding: 4px 6px;
+          text-align: left;
+        }
+        .data th {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+      }
+      
+      .data thead, .data tbody, .data tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+      
       .data th {
-        background-color: rgba(0, 123, 255, 0.5); /* Blue with 80% opacity */
+        background-color: rgba(0, 123, 255, 0.5);
         color: white;
         font-weight: bold;
-        padding: 12px;
+        padding: 8px;
         text-align: center;
+        font-size: 0.8rem;
       }
+      
       .data td {
-        padding: 10px;
+        padding: 6px 8px;
         text-align: right;
-        border: 1px solid rgba(221, 221, 221, 0.5); /* Light grey with 80% opacity */
-        background-color: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
+        border: 1px solid rgba(221, 221, 221, 0.5);
+        background-color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+      }
+      
+      /* Tablet and desktop responsive breakpoints */
+      @media (min-width: 576px) {
+        .data {
+          font-size: 0.9rem;
+          width: 95%;
+        }
+        .data th {
+          padding: 10px;
+          font-size: 0.85rem;
+        }
+        .data td {
+          padding: 8px 10px;
+          font-size: 0.85rem;
+        }
+        h1.text-center {
+          font-size: 2rem;
+        }
+      }
+      
+      @media (min-width: 768px) {
+        .data {
+          font-size: 1rem;
+          width: 90%;
+          display: table;
+          white-space: normal;
+          overflow-x: visible;
+        }
+        .data th {
+          padding: 12px;
+          font-size: 1rem;
+        }
+        .data td {
+          padding: 10px;
+          font-size: 1rem;
+        }
+        h1.text-center {
+          font-size: 2.25rem;
+        }
+      }
+      
+      @media (min-width: 992px) {
+        .data {
+          margin: 20px auto;
+        }
+        h1.text-center {
+          font-size: 2.5rem;
+        }
+      }
       }
       .data tr:nth-child(even) td {
         background-color: rgba(
@@ -67,11 +166,27 @@
       }
       .plot {
         text-align: center;
-        margin: 20px;
-        background-color: rgba(255, 255, 255, 0.5); /* White with 80% opacity */
-        padding: 20px;
+        margin: 10px auto;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 15px;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 95%;
+        overflow-x: auto;
+      }
+      
+      /* Mobile-first responsive chart container */
+      .plot > div {
+        min-width: 300px;
+        width: 100%;
+      }
+      
+      @media (min-width: 576px) {
+        .plot {
+          padding: 20px;
+          margin: 20px auto;
+          width: 90%;
+        }
       }
       .positive {
         color: #067320;
@@ -794,20 +909,45 @@
     </div>
     {% endif %}
     
-    <div class="text-center">
+    <div class="container-fluid">
       {% for table in tables %}
-      <div class="table-responsive">{{ table|safe }}</div>
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0">Financial Data</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">{{ table|safe }}</div>
+        </div>
+      </div>
       {% endfor %}
     </div>
-    <div class="warning">
-      {% for warning, explanation in zip(warnings, explanations) %}
-      <p>
-        {{ warning }}
-        <span class="info-button" data-explanation="{{ explanation }}">ℹ️</span>
-      </p>
-      {% endfor %}
+    <div class="container-fluid">
+      {% if warnings %}
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0 text-warning">⚠️ Important Notes</h5>
+        </div>
+        <div class="card-body">
+          {% for warning, explanation in zip(warnings, explanations) %}
+          <div class="alert alert-warning d-flex justify-content-between align-items-start">
+            <span class="flex-grow-1">{{ warning }}</span>
+            <span class="info-button ml-2" data-explanation="{{ explanation }}" style="cursor: pointer;">ℹ️</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
-    <div class="plot">{{ plot_html | safe }}</div>
+    <div class="container-fluid">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0">Price Chart</h5>
+        </div>
+        <div class="card-body p-2">
+          <div class="plot">{{ plot_html | safe }}</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Educational Gap-Filling Section -->
     {% if gaps or research_guides %}

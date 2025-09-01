@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Research Assignment</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -21,38 +22,63 @@
       </p>
 
       <h4>Instructions</h4>
-      <ol>
+      <ol class="list-group list-group-flush">
         {% for step in assignment.instructions %}
-        <li>{{ step }}</li>
+        <li class="list-group-item">{{ step }}</li>
         {% endfor %}
       </ol>
 
       <h4>Success Criteria</h4>
-      <ul>
+      <ul class="list-group list-group-flush">
         {% for c in assignment.success_criteria %}
-        <li>{{ c }}</li>
+        <li class="list-group-item">{{ c }}</li>
         {% endfor %}
       </ul>
 
       <hr />
       <h3>Submit Completion</h3>
-      <form id="completion-form">
-        <label for="summary">Summary (200-300 words)</label><br />
-        <textarea id="summary" name="summary" rows="6" cols="80"></textarea
-        ><br />
+      <form id="completion-form" class="row">
+        <div class="col-12 mb-3">
+          <label for="summary" class="form-label"
+            >Summary (200-300 words)</label
+          >
+          <textarea
+            id="summary"
+            name="summary"
+            rows="6"
+            class="form-control"
+          ></textarea>
+        </div>
 
-        <label for="evidence">Evidence / sources (comma-separated)</label><br />
-        <input id="evidence" name="evidence" size="80" /><br />
+        <div class="col-12 mb-3">
+          <label for="evidence" class="form-label"
+            >Evidence / sources (comma-separated)</label
+          >
+          <input id="evidence" name="evidence" class="form-control" />
+        </div>
 
         <input
           type="hidden"
           id="assignment_id"
           value="{{ assignment.assignment_id }}"
         />
-        <button id="submit-btn" type="button">Submit Completion</button>
+        <div class="col-12">
+          <button
+            id="submit-btn"
+            type="button"
+            class="btn btn-primary"
+            style="min-height: 44px"
+          >
+            Submit Completion
+          </button>
+        </div>
       </form>
 
-      <div id="result" style="margin-top: 1em"></div>
+      <div
+        id="result"
+        class="alert alert-info mt-3"
+        style="display: none"
+      ></div>
     </div>
 
     <script>
@@ -81,11 +107,9 @@
             body: JSON.stringify(payload),
           });
           const data = await resp.json();
-          document.getElementById("result").innerText = JSON.stringify(
-            data,
-            null,
-            2
-          );
+          const resultDiv = document.getElementById("result");
+          resultDiv.style.display = "block";
+          resultDiv.innerText = JSON.stringify(data, null, 2);
         });
     </script>
     {% include '_footer.html' %}

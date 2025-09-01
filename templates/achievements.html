@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Achievements</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -9,15 +10,15 @@
     {% include '_header.html' %}
     <div class="container">
       <h1>Your Achievements</h1>
-      <div id="badges" class="badge-grid"></div>
+      <div id="badges" class="badge-grid row"></div>
       <h2>Notifications</h2>
-      <ul id="notifications" class="notifications-list"></ul>
+      <ul id="notifications" class="notifications-list list-unstyled"></ul>
     </div>
 
     <script>
       function badgeCard(b) {
         const container = document.createElement("div");
-        container.className = "badge-card";
+        container.className = "badge-card col-lg-4 col-md-6 col-sm-12 mb-3";
         const title = document.createElement("h3");
         title.innerText = b.title || b.type || "Badge";
         const desc = document.createElement("p");
@@ -38,7 +39,9 @@
         const when = document.createElement("small");
         when.innerText = n.created_at || n.date || "";
         const btn = document.createElement("button");
+        btn.className = "btn btn-sm btn-outline-primary";
         btn.innerText = "Mark read";
+        btn.style.minHeight = "44px"; // Touch target
         btn.onclick = async () => {
           try {
             // placeholder: calls backend mark-read endpoint if available
