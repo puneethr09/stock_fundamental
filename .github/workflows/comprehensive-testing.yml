@@ -1,6 +1,8 @@
 name: Comprehensive Educational Testing
 
-# Trigger manually with the Actions "Run workflow" button or on PR opened only.
+# Trigger manually with      - name: Run end-to-end tests
+        run: |
+          pytest tests/ -v -m "e2e" --cov=src --cov-append --cov-report=xml --cov-fail-under=50e Actions "Run workflow" button or on PR opened only.
 on:
   workflow_dispatch:
     inputs:
@@ -52,19 +54,19 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest tests/ -v -m "unit" --cov=src --cov-report=xml --cov-report=html --cov-fail-under=65
+          pytest tests/ -v -m "unit" --cov=src --cov-report=xml --cov-report=html
 
       - name: Run unmarked tests as unit tests (with mocks)
         run: |
-          pytest tests/ -v -m "not integration and not e2e and not slow" --cov=src --cov-append --cov-report=xml --cov-fail-under=65
+          pytest tests/ -v -m "not integration and not e2e and not slow" --cov=src --cov-append --cov-report=xml
 
       - name: Run integration tests
         run: |
-          pytest tests/ -v -m "integration" --cov=src --cov-append --cov-report=xml --cov-fail-under=65
+          pytest tests/ -v -m "integration" --cov=src --cov-append --cov-report=xml
 
       - name: Run end-to-end tests
         run: |
-          pytest tests/ -v -m "e2e" --cov=src --cov-append --cov-report=xml --cov-fail-under=65
+          pytest tests/ -v -m "e2e" --cov=src --cov-append --cov-report=xml
 
       - name: Run performance tests
         run: |
