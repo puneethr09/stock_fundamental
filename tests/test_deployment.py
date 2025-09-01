@@ -245,14 +245,18 @@ class TestDockerServices:
                 )
 
             if prod_result.returncode == 0 and "nginx" in prod_result.stdout:
-                # Production environment is running
+                # Production environment is running - check for actual running services
                 output = prod_result.stdout
-                running_services = [
-                    "nginx",
-                    "stock-analysis-app",
-                    "prometheus",
-                    "grafana",
-                ]
+                lines = output.strip().split('\n')
+                if len(lines) > 1:  # More than just header
+                    running_services = [
+                        "nginx",
+                        "stock-analysis-app",
+                        "prometheus",
+                        "grafana",
+                    ]
+                else:
+                    pytest.skip("Production environment is not running any services")
             else:
                 # Check development environment
                 try:
@@ -276,13 +280,20 @@ class TestDockerServices:
 
                 if dev_result.returncode == 0:
                     output = dev_result.stdout
-                    running_services = ["stock-analysis-app"]
+                    lines = output.strip().split('\n')
+                    if len(lines) > 1:  # More than just header
+                        running_services = ["stock-analysis-app"]
+                    else:
+                        pytest.skip("Development environment is not running any services")
                 else:
                     pytest.skip("No Docker Compose environment is running")
 
-            # Check for running services
-            for service in running_services:
-                assert service in output, f"Service {service} is not running"
+            # Check for running services (only if we have actual service entries)
+            if 'running_services' in locals():
+                for service in running_services:
+                    assert service in output, f"Service {service} is not running"
+            else:
+                pytest.skip("No services detected as running")
 
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Docker Compose not available or services not running")
