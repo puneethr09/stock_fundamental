@@ -15,8 +15,14 @@ import shutil
 
 
 # Skip all tests if Chrome is not available
-chrome_available = shutil.which("google-chrome") or shutil.which("chromium-browser") or shutil.which("chrome")
-pytestmark = pytest.mark.skipif(not chrome_available, reason="Chrome browser not available")
+chrome_available = (
+    shutil.which("google-chrome")
+    or shutil.which("chromium-browser")
+    or shutil.which("chrome")
+)
+pytestmark = pytest.mark.skipif(
+    not chrome_available, reason="Chrome browser not available"
+)
 
 
 class TestMobileResponsiveness:
