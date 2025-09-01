@@ -102,9 +102,6 @@ main, .hero, .showcase, .container, .container-fluid, .page-content {
 .mode-box.highlight {
   box-shadow: 0 8px 24px rgba(4, 8, 20, 0.45);
   transform: translateY(-4px);
-  display: block;
-  margin: 0 auto;
-  max-width: 760px;
 }
 .search-row {
   display: flex;
@@ -147,6 +144,10 @@ main, .hero, .showcase, .container, .container-fluid, .page-content {
   border: 1px solid rgba(255, 255, 255, 0.02);
   min-width: 180px;
   text-align: left;
+  /* layout defaults for mode boxes (kept out of state-specific rules) */
+  display: block;
+  margin: 0 auto;
+  max-width: 760px;
 }
 .mode-box strong {
   display: block;
