@@ -1148,9 +1148,14 @@ def tool_challenge(ticker=None):
             "current_stage", LearningStage.GUIDED_DISCOVERY
         )
 
+        # Get ticker from path parameter or query parameter
+        if not ticker:
+            ticker = request.args.get("ticker")
+
         # Generate challenge if ticker is provided
         challenge = None
         if ticker:
+            ticker = ticker.upper()  # Normalize to uppercase
             # Get actual company data for the ticker
             company_data = get_company_financial_data(ticker)
 

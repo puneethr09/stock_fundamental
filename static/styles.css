@@ -1009,13 +1009,62 @@ body,
   border-radius: 8px;
   border: 1px solid rgba(71, 85, 105, 0.5);
   background: rgba(30, 41, 59, 0.8);
-  color: #e2e8f0;
+  color: #f8fafc !important;
 }
 .tool-challenge-page .form-control:focus {
   border-color: #6366f1;
   background: rgba(30, 41, 59, 0.9);
-  color: #f8fafc;
+  color: #f8fafc !important;
   box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+.tool-challenge-page .form-control::placeholder {
+  color: #94a3b8;
+}
+.tool-challenge-page .form-control option {
+  background: rgba(30, 41, 59, 0.95);
+  color: #f9fafb;
+  padding: 8px;
+}
+.tool-challenge-page .form-control option[value=""] {
+  color: #94a3b8;
+  font-style: italic;
+}
+.tool-challenge-page .form-group label {
+  color: #f8fafc;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.tool-challenge-page #suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+.tool-challenge-page #suggestions-list li {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: #eaf3ff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+.tool-challenge-page #suggestions-list li:last-child {
+  border-bottom: none;
+}
+.tool-challenge-page #suggestions-list li:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
 }
 .tool-challenge-page .btn {
   border-radius: 8px;
