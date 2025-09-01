@@ -1292,5 +1292,206 @@ def export_report():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/export/analysis/<ticker>", methods=["GET"])
+def export_analysis(ticker=None):
+    """Export analysis results for a ticker in requested format.
+
+    Query param: format=csv|xlsx|pdf (default csv)
+    """
+    fmt = (request.args.get("format") or "csv").lower()
+    try:
+        t = (ticker or "").upper()
+        if not t.endswith(".NS"):
+            t = f"{t}.NS"
+
+        # Reuse existing analysis functions
+        ratios_df = get_financial_ratios(t)
+        if ratios_df is None or ratios_df.empty:
+            return jsonify({"success": False, "error": "No data for ticker"}), 404
+
+        ticker_for_analysis = t.replace(".NS", "")
+        (warnings, explanations, plot_html, gaps, research_guides, confidence_score) = (
+            analyze_ratios(ratios_df, ticker_for_analysis)
+        )
+
+        # Flatten some of the results for tabular export
+        rows = []
+        # include summary row
+        summary = {
+            "ticker": ticker_for_analysis,
+            "company": (
+                ratios_df["Company"].iloc[0] if "Company" in ratios_df.columns else ""
+            ),
+            "confidence_score": confidence_score,
+            "has_gaps": bool(gaps),
+        }
+        rows.append(summary)
+
+        # include ratio rows
+        try:
+            display_df = (
+                ratios_df.drop(columns=["Company"])
+                if "Company" in ratios_df.columns
+                else ratios_df
+            )
+            for _, r in display_df.iterrows():
+                rows.append(r.to_dict())
+        except Exception:
+            pass
+
+        filename = f"analysis_{ticker_for_analysis}"
+        return _respond_with_format(rows, fmt, filename)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+def _respond_with_format(rows, fmt, filename):
+    fmt = (fmt or "csv").lower()
+    if fmt == "csv":
+        return Response(
+            ExportService.generate_csv(rows),
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}.csv"},
+        )
+
+    if fmt in ("xlsx", "xls", "excel"):
+        try:
+            return Response(
+                ExportService.generate_excel_bytes(rows),
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}.xlsx"
+                },
+            )
+        except ModuleNotFoundError:
+            return Response(
+                ExportService.generate_csv(rows).encode("utf-8"),
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}.xlsx"
+                },
+            )
+
+    if fmt == "pdf":
+        return Response(
+            ExportService.generate_pdf_bytes(rows, title=filename),
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}.pdf"},
+        )
+
+    return jsonify({"success": False, "error": "unsupported format"}), 400
+
+
+@app.route("/export/progress/<user_id>", methods=["GET"])
+def export_progress(user_id=None):
+    """Export learning progress and achievements for a user."""
+    fmt = (request.args.get("format") or "csv").lower()
+    try:
+        uid = user_id or get_anonymous_user_id()
+        from src.persistence import get_progress_metrics, get_badges_for_user
+
+        progress = get_progress_metrics(uid) or {}
+        badges = get_badges_for_user(uid) or []
+
+        # Build rows: one summary row and badge rows
+        rows = []
+        rows.append({"user_id": uid, "progress_snapshot": progress})
+        for b in badges:
+            rows.append(
+                {
+                    "badge_type": b.get("badge_type"),
+                    "earned_at": b.get("earned_at"),
+                    "payload": b.get("payload"),
+                }
+            )
+
+        filename = f"progress_{uid}"
+        return _respond_with_format(rows, fmt, filename)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/export/portfolio/<user_id>", methods=["GET"])
+def export_portfolio(user_id=None):
+    """Export portfolio holdings and a small deterministic historical sample.
+
+    If no explicit portfolio persistence exists, fall back to a sample derived from input CSVs.
+    """
+    fmt = (request.args.get("format") or "csv").lower()
+    try:
+        uid = user_id or get_anonymous_user_id()
+        # Try to load a saved portfolio JSON first
+        portfolio_path = os.path.join(
+            os.path.dirname(__file__), f"data/portfolio_{uid}.json"
+        )
+        rows = []
+        if os.path.exists(portfolio_path):
+            import json as _json
+
+            with open(portfolio_path, "r", encoding="utf-8") as fh:
+                holdings = _json.load(fh)
+            # holdings expected: list of {ticker, qty}
+            for h in holdings:
+                rows.append({"ticker": h.get("ticker"), "quantity": h.get("quantity")})
+        else:
+            # Fallback: sample top N from input CSV
+            import csv
+
+            input_dir = os.path.join(os.path.dirname(__file__), "input")
+            sample = []
+            csv_file = os.path.join(input_dir, "Indian_stocks_nifty_50.csv")
+            if os.path.exists(csv_file):
+                with open(csv_file, "r", encoding="utf-8") as fh:
+                    reader = csv.DictReader(fh)
+                    for i, r in enumerate(reader):
+                        if i >= 5:
+                            break
+                        sample.append(
+                            {
+                                "ticker": r.get("Ticker"),
+                                "name": r.get("Company Name"),
+                                "quantity": 10 * (i + 1),
+                            }
+                        )
+            else:
+                # Minimal hardcoded sample
+                sample = [
+                    {
+                        "ticker": "RELIANCE",
+                        "name": "Reliance Industries Ltd.",
+                        "quantity": 10,
+                    },
+                    {
+                        "ticker": "TCS",
+                        "name": "Tata Consultancy Services Ltd.",
+                        "quantity": 5,
+                    },
+                ]
+
+            # Create simple deterministic historical series for each holding (last 5 days)
+            import datetime
+
+            for s in sample:
+                base = sum(ord(c) for c in (s.get("ticker") or "")) % 50 + 50
+                for d in range(5):
+                    date = (
+                        datetime.date.today() - datetime.timedelta(days=5 - d)
+                    ).isoformat()
+                    price = base + d * 0.5
+                    rows.append(
+                        {
+                            "ticker": s.get("ticker"),
+                            "date": date,
+                            "price": round(price, 2),
+                            "quantity": s.get("quantity"),
+                        }
+                    )
+
+        filename = f"portfolio_{uid}"
+        return _respond_with_format(rows, fmt, filename)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

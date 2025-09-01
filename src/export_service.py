@@ -10,6 +10,7 @@ import io
 import base64
 
 import pandas as pd
+import json
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -32,13 +33,40 @@ class ExportService:
             return ""
 
         output = io.StringIO()
-        # Preserve header order from first row
-        fieldnames = list(rows[0].keys())
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
+
+        # Build a deterministic field order: keys from first row, then
+        # any keys seen later in order of first appearance. This prevents
+        # csv.DictWriter from raising when later rows contain additional keys.
+        fieldnames: List[str] = []
+        seen = set()
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            for k in r.keys():
+                if k not in seen:
+                    seen.add(k)
+                    fieldnames.append(k)
+
+        # Create writer that will ignore extra keys (defensive) and use
+        # the computed union of keys as headers.
+        writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
+
         for row in rows:
-            # Normalize values to simple types
-            safe_row = {k: ("" if v is None else v) for k, v in row.items()}
+            # Normalize values to simple types and stringify nested structures
+            safe_row = {}
+            for fn in fieldnames:
+                v = row.get(fn, "") if isinstance(row, dict) else ""
+                if v is None:
+                    safe_row[fn] = ""
+                elif isinstance(v, (dict, list, tuple)):
+                    try:
+                        safe_row[fn] = json.dumps(v, default=str)
+                    except Exception:
+                        safe_row[fn] = str(v)
+                else:
+                    safe_row[fn] = v
+
             writer.writerow(safe_row)
 
         return output.getvalue()
