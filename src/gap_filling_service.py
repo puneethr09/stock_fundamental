@@ -114,25 +114,25 @@ class EducationalGapFillingService:
             ResearchCategory.ECONOMIC_MOATS.value: [
                 {
                     "name": "BSE Company Information",
-                    "url": "https://www.bseindia.com",
+                    "url": "https://www.bseindia.com/corporates.html",
                     "description": "Official company profiles and annual reports",
                     "access": "free",
                 },
                 {
                     "name": "NSE Corporate Information",
-                    "url": "https://www.nseindia.com",
+                    "url": "https://www.nseindia.com/market-data",
                     "description": "Listed company information and investor presentations",
                     "access": "free",
                 },
                 {
                     "name": "Economic Times Company Reports",
-                    "url": "https://economictimes.indiatimes.com",
+                    "url": "https://economictimes.indiatimes.com/markets/stocks/companyid-{ticker}.cms",
                     "description": "Company analysis and industry reports",
                     "access": "free",
                 },
                 {
                     "name": "Business Standard Archives",
-                    "url": "https://www.business-standard.com",
+                    "url": "https://www.business-standard.com/company/{ticker}",
                     "description": "Historical company performance and industry trends",
                     "access": "free",
                 },
@@ -140,19 +140,19 @@ class EducationalGapFillingService:
             ResearchCategory.MANAGEMENT_QUALITY.value: [
                 {
                     "name": "Annual Reports (BSE/NSE)",
-                    "url": "Company website investor relations section",
+                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-annual-reports",
                     "description": "Management discussion and analysis sections",
                     "access": "free",
                 },
                 {
                     "name": "Corporate Governance Reports",
-                    "url": "BSE/NSE regulatory filing sections",
+                    "url": "https://www.sebi.gov.in/sebiweb/other/OtherAction.do?doCorporateGovernance=yes",
                     "description": "Board composition and governance practices",
                     "access": "free",
                 },
                 {
                     "name": "Investor Presentations",
-                    "url": "Company IR pages",
+                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-announcements",
                     "description": "Management outlook and strategic direction",
                     "access": "free",
                 },
@@ -160,25 +160,25 @@ class EducationalGapFillingService:
             ResearchCategory.INDUSTRY_ANALYSIS.value: [
                 {
                     "name": "CII Industry Reports",
-                    "url": "https://www.cii.in",
+                    "url": "https://www.cii.in/Sectors.aspx?enc=8qSJ2uu0O2KHQF5FgFpJfQ==",
                     "description": "Confederation of Indian Industry sector analysis",
                     "access": "free",
                 },
                 {
                     "name": "FICCI Sector Studies",
-                    "url": "https://www.ficci.in",
+                    "url": "https://ficci.in/sector-wise",
                     "description": "Federation of Indian Chambers sector insights",
                     "access": "free",
                 },
                 {
                     "name": "ASSOCHAM Industry Analysis",
-                    "url": "https://www.assocham.org",
+                    "url": "https://www.assocham.org/industry",
                     "description": "Associated Chambers of Commerce reports",
                     "access": "free",
                 },
                 {
                     "name": "Ministry of Corporate Affairs",
-                    "url": "https://www.mca.gov.in",
+                    "url": "https://www.mca.gov.in/content/mca/global/en/home.html",
                     "description": "Official government industry data and regulations",
                     "access": "free",
                 },
@@ -186,19 +186,19 @@ class EducationalGapFillingService:
             ResearchCategory.FINANCIAL_DEEP_DIVE.value: [
                 {
                     "name": "Company Annual Reports",
-                    "url": "BSE/NSE company pages",
+                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-annual-reports",
                     "description": "Detailed financial statements and notes",
                     "access": "free",
                 },
                 {
                     "name": "Quarterly Results",
-                    "url": "BSE/NSE results section",
+                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-quarterly-results",
                     "description": "Recent financial performance data",
                     "access": "free",
                 },
                 {
                     "name": "SEBI EDIFAR Database",
-                    "url": "https://www.sebi.gov.in",
+                    "url": "https://www.sebi.gov.in/sebiweb/other/EDIFAR.jsp",
                     "description": "Electronic Data Information Filing and Retrieval",
                     "access": "free",
                 },
@@ -206,14 +206,28 @@ class EducationalGapFillingService:
             ResearchCategory.COMPETITIVE_LANDSCAPE.value: [
                 {
                     "name": "Industry Association Reports",
-                    "url": "Sector-specific association websites",
+                    "url": "https://www.cii.in/Sectors.aspx?enc=8qSJ2uu0O2KHQF5FgFpJfQ==",
                     "description": "Competitive positioning and market share data",
                     "access": "free",
                 },
                 {
                     "name": "Business News Analysis",
-                    "url": "ET, BS, Mint, Hindu Business Line",
+                    "url": "https://economictimes.indiatimes.com/markets",
                     "description": "Competitive moves and market developments",
+                    "access": "free",
+                },
+            ],
+            ResearchCategory.GOVERNANCE_ASSESSMENT.value: [
+                {
+                    "name": "SEBI Corporate Governance",
+                    "url": "https://www.sebi.gov.in/sebiweb/other/OtherAction.do?doCorporateGovernance=yes",
+                    "description": "Corporate governance regulations and compliance",
+                    "access": "free",
+                },
+                {
+                    "name": "MCA Company Information",
+                    "url": "https://www.mca.gov.in/content/mca/global/en/home.html",
+                    "description": "Official company registration and compliance data",
                     "access": "free",
                 },
             ],
@@ -517,6 +531,17 @@ class EducationalGapFillingService:
             if not template:
                 continue
 
+            # Get sources and replace ticker placeholders
+            sources = self.indian_market_sources.get(gap.category.value, [])
+            processed_sources = []
+            for source in sources:
+                processed_source = source.copy()
+                if "url" in processed_source and "{ticker}" in processed_source["url"]:
+                    processed_source["url"] = processed_source["url"].format(
+                        ticker=gap.ticker.upper()
+                    )
+                processed_sources.append(processed_source)
+
             guide = ResearchGuide(
                 guide_id=f"guide_{gap.gap_id}",
                 gap_id=gap.gap_id,
@@ -525,9 +550,7 @@ class EducationalGapFillingService:
                 objective=template["objective"].format(company_name=gap.company_name),
                 research_questions=template["research_questions"],
                 step_by_step_instructions=template["step_by_step_instructions"],
-                indian_market_sources=self.indian_market_sources.get(
-                    gap.category.value, []
-                ),
+                indian_market_sources=processed_sources,
                 estimated_time_minutes=template["estimated_time_minutes"],
                 difficulty_level=template["difficulty_level"],
                 deliverables=template["deliverables"],
@@ -569,18 +592,30 @@ class EducationalGapFillingService:
         return guides
 
     def get_indian_market_sources(
-        self, category: ResearchCategory
+        self, category: ResearchCategory, ticker: str = ""
     ) -> List[Dict[str, str]]:
         """
         Get Indian market-specific sources for a research category
 
         Args:
             category: Research category
+            ticker: Stock ticker symbol for URL templating
 
         Returns:
             List of relevant Indian market sources
         """
-        return self.indian_market_sources.get(category.value, [])
+        sources = self.indian_market_sources.get(category.value, [])
+        if ticker:
+            processed_sources = []
+            for source in sources:
+                processed_source = source.copy()
+                if "url" in processed_source and "{ticker}" in processed_source["url"]:
+                    processed_source["url"] = processed_source["url"].format(
+                        ticker=ticker.upper()
+                    )
+                processed_sources.append(processed_source)
+            return processed_sources
+        return sources
 
     def track_research_progress(
         self,
