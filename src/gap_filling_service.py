@@ -160,25 +160,25 @@ class EducationalGapFillingService:
             ResearchCategory.INDUSTRY_ANALYSIS.value: [
                 {
                     "name": "CII Industry Reports",
-                    "url": "https://www.cii.in/Sectors.aspx?enc=8qSJ2uu0O2KHQF5FgFpJfQ==",
+                    "url": "https://www.cii.in",
                     "description": "Confederation of Indian Industry sector analysis",
                     "access": "free",
                 },
                 {
                     "name": "FICCI Sector Studies",
-                    "url": "https://ficci.in/sector-wise",
+                    "url": "https://www.ficci.in",
                     "description": "Federation of Indian Chambers sector insights",
                     "access": "free",
                 },
                 {
                     "name": "ASSOCHAM Industry Analysis",
-                    "url": "https://www.assocham.org/industry",
+                    "url": "https://www.assocham.org",
                     "description": "Associated Chambers of Commerce reports",
                     "access": "free",
                 },
                 {
                     "name": "Ministry of Corporate Affairs",
-                    "url": "https://www.mca.gov.in/content/mca/global/en/home.html",
+                    "url": "https://www.mca.gov.in",
                     "description": "Official government industry data and regulations",
                     "access": "free",
                 },
