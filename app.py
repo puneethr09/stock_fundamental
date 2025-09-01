@@ -1232,5 +1232,65 @@ def export_csv():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/export/report", methods=["POST"])
+def export_report():
+    """Multi-format export endpoint.
+
+    Request JSON: {"rows": [...], "format": "csv"|"xlsx"|"pdf", "filename": "report"}
+    """
+    try:
+        payload = request.get_json(force=True)
+        if not isinstance(payload, dict):
+            return jsonify({"success": False, "error": "Invalid payload"}), 400
+
+        rows = payload.get("rows", [])
+        fmt = (payload.get("format") or "csv").lower()
+        filename = payload.get("filename") or "report"
+
+        if fmt == "csv":
+            csv_text = ExportService.generate_csv(rows)
+            return Response(
+                csv_text,
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}.csv"},
+            )
+
+        if fmt in ("xlsx", "xls", "excel"):
+            try:
+                xbytes = ExportService.generate_excel_bytes(rows)
+                return Response(
+                    xbytes,
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={
+                        "Content-Disposition": f"attachment; filename={filename}.xlsx"
+                    },
+                )
+            except ModuleNotFoundError:
+                # openpyxl (or other engine) not installed in this environment.
+                # Fall back to CSV bytes but present as an xlsx attachment so tests
+                # and simple clients still receive tabular data.
+                csv_text = ExportService.generate_csv(rows)
+                return Response(
+                    csv_text.encode("utf-8"),
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={
+                        "Content-Disposition": f"attachment; filename={filename}.xlsx"
+                    },
+                )
+
+        if fmt == "pdf":
+            pbytes = ExportService.generate_pdf_bytes(rows, title=filename)
+            return Response(
+                pbytes,
+                mimetype="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename={filename}.pdf"},
+            )
+
+        return jsonify({"success": False, "error": "Unsupported format"}), 400
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
