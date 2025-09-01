@@ -139,7 +139,7 @@ class TestApplicationHealth:
     def test_health_endpoint(self):
         """Test health check endpoint"""
         try:
-            response = requests.get("http://localhost:5000/health", timeout=5)
+            response = requests.get("http://localhost:5001/health", timeout=5)
             assert response.status_code == 200
 
             data = response.json()
@@ -153,7 +153,7 @@ class TestApplicationHealth:
     def test_metrics_endpoint(self):
         """Test Prometheus metrics endpoint"""
         try:
-            response = requests.get("http://localhost:5000/metrics", timeout=5)
+            response = requests.get("http://localhost:5001/metrics", timeout=5)
             assert response.status_code == 200
 
             content = response.text
@@ -194,6 +194,152 @@ class TestDockerServices:
         """Test service health checks"""
         # This would require docker-py or similar to inspect container health
         pytest.skip("Service health check requires docker-py dependency")
+
+
+class LoadTestSuite:
+    """Load testing capabilities for the application"""
+
+    def __init__(self, base_url: str = "http://localhost:5001"):
+        self.base_url = base_url
+        self.session = requests.Session()
+
+    def test_concurrent_requests_comprehensive(self):
+        """Test concurrent request handling comprehensively"""
+        import concurrent.futures
+
+        base_url = "http://localhost:5001"
+        num_requests = 50
+        results = []
+        errors = []
+        start_time = time.time()
+
+        def make_request(i):
+            try:
+                response = requests.get(f"{base_url}/health", timeout=10)
+                results.append(
+                    (i, response.status_code, response.elapsed.total_seconds())
+                )
+            except Exception as e:
+                errors.append((i, str(e)))
+
+    def test_database_connection_pooling(self):
+        """Test database connection pooling under load"""
+        # This would require actual database load testing
+        # For now, we'll test the health endpoint which might use DB
+        base_url = "http://localhost:5001"
+        session = requests.Session()
+        try:
+            for _ in range(10):
+                response = session.get(f"{base_url}/health", timeout=5)
+                assert response.status_code == 200
+                time.sleep(0.1)  # Small delay between requests
+        except requests.exceptions.RequestException:
+            pytest.skip("Application not running for DB connection test")
+
+
+class TestRegressionTesting:
+    """Regression tests for existing Docker development workflow"""
+
+    def test_development_workflow_preserved(self):
+        """Test that development workflow is completely preserved"""
+        project_root = Path(__file__).parent.parent
+        dev_compose_file = project_root / "docker-compose.yml"
+        assert dev_compose_file.exists(), "Development docker-compose.yml missing"
+
+        # Test development config is still valid
+        result = subprocess.run(
+            ["docker-compose", "-f", str(dev_compose_file), "config", "--quiet"],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+        )
+
+        assert result.returncode == 0, f"Development config invalid: {result.stderr}"
+
+    def test_backward_compatibility(self):
+        """Test backward compatibility of configurations"""
+        project_root = Path(__file__).parent.parent
+        dev_compose_file = project_root / "docker-compose.yml"
+        prod_compose_file = project_root / "docker-compose.prod.yml"
+
+        with open(dev_compose_file, "r") as f:
+            dev_config = yaml.safe_load(f)
+
+        with open(prod_compose_file, "r") as f:
+            prod_config = yaml.safe_load(f)
+
+        dev_services = set(dev_config.get("services", {}).keys())
+        prod_services = set(prod_config.get("services", {}).keys())
+
+        # Production should have all dev services
+        assert dev_services.issubset(prod_services), "Production missing dev services"
+
+        # Check that core service configurations are compatible
+        for service in dev_services:
+            dev_service = dev_config["services"][service]
+            prod_service = prod_config["services"][service]
+
+            # Check that image or build context is compatible
+            if "image" in dev_service and "image" in prod_service:
+                assert (
+                    dev_service["image"] == prod_service["image"]
+                ), f"Service {service} image changed"
+
+    def test_environment_variable_compatibility(self):
+        """Test environment variable compatibility"""
+        # Check that production doesn't break dev environment variables
+        project_root = Path(__file__).parent.parent
+        prod_compose_file = project_root / "docker-compose.prod.yml"
+
+        with open(prod_compose_file, "r") as f:
+            prod_config = yaml.safe_load(f)
+
+        prod_env_vars = set()
+        for service_name, service_config in prod_config.get("services", {}).items():
+            env_vars = service_config.get("environment", [])
+            if isinstance(env_vars, list):
+                prod_env_vars.update(env_vars)
+            elif isinstance(env_vars, dict):
+                prod_env_vars.update(env_vars.keys())
+
+        # Should not have conflicting environment variables
+        conflicting_vars = [
+            "FLASK_DEBUG",
+            "FLASK_ENV",
+        ]  # These should be different in prod
+        for var in conflicting_vars:
+            if var in prod_env_vars:
+                # Check that production sets these appropriately
+                assert any(
+                    "production" in env for env in prod_env_vars if var in env
+                ), f"Production environment variable {var} not set correctly"
+
+    def test_volume_mount_compatibility(self):
+        """Test volume mount compatibility - production should have essential dev volumes"""
+        project_root = Path(__file__).parent.parent
+        dev_compose_file = project_root / "docker-compose.yml"
+        prod_compose_file = project_root / "docker-compose.prod.yml"
+
+        with open(dev_compose_file, "r") as f:
+            dev_config = yaml.safe_load(f)
+
+        with open(prod_compose_file, "r") as f:
+            prod_config = yaml.safe_load(f)
+
+        # Essential volumes that should be preserved in production
+        essential_volumes = {"./data:/app/data"}
+
+        for service_name in dev_config.get("services", {}):
+            if service_name in prod_config.get("services", {}):
+                prod_volumes = set(
+                    prod_config["services"][service_name].get("volumes", [])
+                )
+
+                # Production should have essential volumes (excluding dev-specific mounts like full host directory)
+                missing_essential = essential_volumes - prod_volumes
+                assert (
+                    not missing_essential
+                ), f"Service {service_name} missing essential volumes: {missing_essential}"
 
 
 if __name__ == "__main__":

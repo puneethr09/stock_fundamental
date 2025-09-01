@@ -99,3 +99,10 @@ web-bundles/
 /data/*.db-journal
 /data/*.sqlite-wal
 /data/*.sqlite-shm
+
+# Backup files - NEVER commit these!
+backups/
+*.tar.gz
+*.tar.bz2
+backup_*.tar.gz
+backup_report_*.txt
