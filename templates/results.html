@@ -829,7 +829,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="results-page">
   {% include '_header.html' %}
     
     <!-- Gamification Header -->
@@ -1433,6 +1433,27 @@
             }
           });
         }
+      });
+    </script>
+    <script>
+      // Normalize backend tables: add Bootstrap table classes for better mobile rendering
+      document.addEventListener('DOMContentLoaded', function(){
+        // Ensure tables inside .table-responsive have Bootstrap classes
+        document.querySelectorAll('.table-responsive table').forEach(function(t){
+          if (!t.classList.contains('data')) t.classList.add('data');
+          if (!t.classList.contains('table')) t.classList.add('table','table-sm');
+          t.style.width = '100%';
+        });
+
+        // For any standalone tables (legacy), wrap them in .table-responsive
+        document.querySelectorAll('body > table, .container-fluid > table').forEach(function(raw){
+          if (raw.closest('.table-responsive')) return;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'table-responsive';
+          raw.parentNode.insertBefore(wrapper, raw);
+          wrapper.appendChild(raw);
+          raw.classList.add('table','table-sm','data');
+        });
       });
     </script>
   {% include '_footer.html' %}

@@ -1,17 +1,33 @@
-<!-- Shared site footer -->
+<!-- Simple site footer (client-side year to avoid template helper dependency) -->
 <footer class="site-footer">
-  <div class="container">
-    <div class="footer-inner">
-      <div class="brand">Stock Analysis</div>
-      <div class="foot-links">
-        <a href="{{ url_for('home') }}">Home</a> ·
-        <a href="{{ url_for('news') }}">Market News</a> ·
-        <a href="{{ url_for('pattern_training_home') }}">Pattern Training</a>
-      </div>
-      <div class="copyright">
-        &copy; {{ current_year if current_year is defined else 2025 }} Stock
-        Analysis
-      </div>
-    </div>
+  <div class="container text-center py-3">
+    <small class="text-muted"
+      ><span id="footer-year"></span> © Stock Analysis — Built for mobile-first
+      learning</small
+    >
   </div>
+
+  <style>
+    .site-footer {
+      background: #f8f9fa;
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+      margin-top: 1.5rem;
+    }
+    .site-footer .text-muted {
+      color: #6c757d;
+    }
+  </style>
 </footer>
+
+<script>
+  // Populate year client-side so template doesn't require a helper
+  (function () {
+    try {
+      var y = new Date().getFullYear();
+      var el = document.getElementById("footer-year");
+      if (el) el.textContent = y;
+    } catch (e) {
+      /* no-op */
+    }
+  })();
+</script>
