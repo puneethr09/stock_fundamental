@@ -247,7 +247,7 @@ class TestDockerServices:
             if prod_result.returncode == 0 and "nginx" in prod_result.stdout:
                 # Production environment is running - check for actual running services
                 output = prod_result.stdout
-                lines = output.strip().split('\n')
+                lines = output.strip().split("\n")
                 if len(lines) > 1:  # More than just header
                     running_services = [
                         "nginx",
@@ -280,16 +280,18 @@ class TestDockerServices:
 
                 if dev_result.returncode == 0:
                     output = dev_result.stdout
-                    lines = output.strip().split('\n')
+                    lines = output.strip().split("\n")
                     if len(lines) > 1:  # More than just header
                         running_services = ["stock-analysis-app"]
                     else:
-                        pytest.skip("Development environment is not running any services")
+                        pytest.skip(
+                            "Development environment is not running any services"
+                        )
                 else:
                     pytest.skip("No Docker Compose environment is running")
 
             # Check for running services (only if we have actual service entries)
-            if 'running_services' in locals():
+            if "running_services" in locals():
                 for service in running_services:
                     assert service in output, f"Service {service} is not running"
             else:
