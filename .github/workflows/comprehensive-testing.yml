@@ -99,9 +99,24 @@ jobs:
         run: |
           mypy src/ --ignore-missing-imports --no-strict-optional
 
-      - name: Run security scan
+      - name: Run security scan (guard typer compat)
         run: |
-          safety check
+          # Run safety from a Python wrapper so we can patch typer before safety imports it
+          python - <<'PY'
+          import sys, types
+          try:
+              import typer
+              if not hasattr(typer, "rich_utils"):
+                  typer.rich_utils = types.SimpleNamespace(STYLE_HELPTEXT="")
+          except Exception:
+              # best-effort patch; continue to let safety run and fail with its own errors
+              pass
+
+          # Invoke safety CLI programmatically in this patched process
+          sys.argv = ["safety", "check", "-r", "requirements.txt"]
+          from safety.cli import cli
+          cli()
+          PY
           bandit -r src/ -f json -o bandit-report.json || true
 
       - name: Upload quality reports
