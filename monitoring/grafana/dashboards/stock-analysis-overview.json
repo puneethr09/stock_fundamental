@@ -7,14 +7,45 @@
     "panels": [
       {
         "id": 1,
-        "title": "Application Response Time",
-        "type": "graph",
+        "title": "System Health Overview",
+        "type": "stat",
         "targets": [
           {
-            "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
-            "legendFormat": "Response Time"
+            "expr": "up{job=\"stock-analysis-app\"}",
+            "legendFormat": "Stock Analysis App"
+          },
+          {
+            "expr": "up{job=\"nginx\"}",
+            "legendFormat": "Nginx"
+          },
+          {
+            "expr": "up{job=\"prometheus\"}",
+            "legendFormat": "Prometheus"
+          },
+          {
+            "expr": "up{job=\"grafana\"}",
+            "legendFormat": "Grafana"
           }
         ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
         "gridPos": {
           "h": 8,
           "w": 12,
@@ -28,8 +59,20 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "rate(http_requests_total[5m])",
-            "legendFormat": "Requests/sec"
+            "expr": "rate(http_requests_total{job=\"stock-analysis-app\"}[5m])",
+            "legendFormat": "Total Requests"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"stock-analysis-app\", status=~\"2..\"}[5m])",
+            "legendFormat": "2xx Success"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"stock-analysis-app\", status=~\"4..\"}[5m])",
+            "legendFormat": "4xx Client Errors"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"stock-analysis-app\", status=~\"5..\"}[5m])",
+            "legendFormat": "5xx Server Errors"
           }
         ],
         "gridPos": {
@@ -41,12 +84,22 @@
       },
       {
         "id": 3,
-        "title": "System CPU Usage",
+        "title": "Request Latency (95th percentile)",
         "type": "graph",
         "targets": [
           {
-            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-            "legendFormat": "CPU Usage %"
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"stock-analysis-app\"}[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"stock-analysis-app\"}[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "seconds",
+            "format": "s"
           }
         ],
         "gridPos": {
@@ -58,12 +111,18 @@
       },
       {
         "id": 4,
-        "title": "System Memory Usage",
+        "title": "CPU Usage",
         "type": "graph",
         "targets": [
           {
-            "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
-            "legendFormat": "Memory Usage %"
+            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "max": 100
           }
         ],
         "gridPos": {
@@ -71,6 +130,167 @@
           "w": 12,
           "x": 12,
           "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Disk Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "(node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100",
+            "legendFormat": "{{ mountpoint }} Usage %"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "Network I/O",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "Receive {{ device }}"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total[5m])",
+            "legendFormat": "Transmit {{ device }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "bytes",
+            "format": "Bps"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Active Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}",
+            "legendFormat": "{{ alertname }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "firing": {
+                    "text": "🔴 FIRING",
+                    "color": "red"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 9,
+        "title": "Top Endpoints by Request Rate",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, rate(http_requests_total{job=\"stock-analysis-app\"}[5m]))",
+            "legendFormat": "{{ endpoint }}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "Error Rate by Endpoint",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"stock-analysis-app\", status=~\"5..\"}[5m]) / rate(http_requests_total{job=\"stock-analysis-app\"}[5m])",
+            "legendFormat": "{{ endpoint }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 0.05
+                },
+                {
+                  "color": "red",
+                  "value": 0.1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
         }
       }
     ],
@@ -85,7 +305,7 @@
     "annotations": {
       "list": []
     },
-    "refresh": "5s",
+    "refresh": "30s",
     "schemaVersion": 27,
     "version": 0,
     "links": []

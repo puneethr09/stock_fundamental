@@ -1,0 +1,130 @@
+groups:
+  - name: stock_analysis_alerts
+    rules:
+      # Application Health Alerts
+      - alert: StockAnalysisAppDown
+        expr: up{job="stock-analysis-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: stock-analysis
+        annotations:
+          summary: "Stock Analysis Application is down"
+          description: "Stock Analysis Application has been down for more than 1 minute."
+          runbook_url: "http://localhost:3000/d/stock-analysis/runbook"
+
+      - alert: StockAnalysisHighErrorRate
+        expr: rate(http_requests_total{job="stock-analysis-app", status=~"5.."}[5m]) / rate(http_requests_total{job="stock-analysis-app"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: stock-analysis
+        annotations:
+          summary: "High error rate detected"
+          description: 'Error rate is {{ $value | printf "%.2f" }}% over the last 5 minutes.'
+
+      # Performance Alerts
+      - alert: StockAnalysisHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="stock-analysis-app"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: stock-analysis
+        annotations:
+          summary: "High request latency detected"
+          description: '95th percentile latency is {{ $value | printf "%.2f" }}s over the last 5 minutes.'
+
+      - alert: StockAnalysisHighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: 'CPU usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}.'
+
+      - alert: StockAnalysisHighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: 'Memory usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}.'
+
+      # System Resource Alerts
+      - alert: StockAnalysisLowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% on {{ $labels.instance }}:{{ $labels.mountpoint }}."
+
+      - alert: StockAnalysisHighDiskIO
+        expr: rate(node_disk_io_time_seconds_total[5m]) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk I/O usage"
+          description: 'Disk I/O time is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}.'
+
+      # Network Alerts
+      - alert: StockAnalysisNetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 5 or rate(node_network_transmit_errs_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Network interface errors detected"
+          description: "Network errors detected on {{ $labels.instance }}:{{ $labels.device }}."
+
+      # Nginx Alerts
+      - alert: NginxDown
+        expr: up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nginx
+        annotations:
+          summary: "Nginx is down"
+          description: "Nginx reverse proxy has been down for more than 1 minute."
+
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) / rate(nginx_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "Nginx high error rate"
+          description: 'Nginx error rate is {{ $value | printf "%.2f" }}% over the last 5 minutes.'
+
+      # Backup Service Alerts
+      - alert: BackupServiceDown
+        expr: up{job="backup-service"} == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: backup
+        annotations:
+          summary: "Backup service is down"
+          description: "Backup service has been down for more than 10 minutes."
+
+      # Grafana Alerts
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard service has been down for more than 5 minutes."

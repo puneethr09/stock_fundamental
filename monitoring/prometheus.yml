@@ -3,8 +3,13 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
@@ -17,13 +22,33 @@ scrape_configs:
       - targets: ["stock-analysis-app:5000"]
     scrape_interval: 5s
     metrics_path: "/metrics"
+    scrape_timeout: 10s
+    # Enable service discovery for multiple replicas
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "$1"
 
   - job_name: "nginx"
     static_configs:
       - targets: ["nginx:80"]
     scrape_interval: 10s
+    metrics_path: "/status"
+    params:
+      format: ["prometheus"]
 
   - job_name: "node-exporter"
     static_configs:
       - targets: ["node-exporter:9100"]
     scrape_interval: 15s
+
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  - job_name: "backup-service"
+    static_configs:
+      - targets: ["backup:8080"]
+    scrape_interval: 60s
