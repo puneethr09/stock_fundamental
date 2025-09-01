@@ -1,32 +1,15 @@
 #!/bin/bash
-# Stock Analysis Platform - Production Deployment Script
+# 🚀 Stock Analysis Platform - Production Deployment Script
 # Usage: ./deploy.sh [environment]
 # Environments: local, staging, production
 
 set -e
 
-# Handle command line arguments first
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [environment]"
-    echo
-    echo "Environments:"
-    echo "  local      - Local development (default)"
-    echo "  staging    - Staging environment"
-    echo "  production - Production environment"
-    echo
-    echo "Examples:"
-    echo "  $0              # Deploy to local"
-    echo "  $0 production   # Deploy to production"
-    echo "  $0 --help       # Show this help"
-    exit 0
-fi
-
-# Set environment (default to local if not specified)
 ENVIRONMENT=${1:-local}
 PROJECT_NAME="stock-analysis-platform"
 DOCKER_COMPOSE_FILE="docker-compose.yml"
 
-echo "Deploying $PROJECT_NAME to $ENVIRONMENT environment"
+echo "🚀 Deploying $PROJECT_NAME to $ENVIRONMENT environment"
 
 # Colors for output
 RED='\033[0;31m'
@@ -76,7 +59,7 @@ pre_deployment_checks() {
         fi
     fi
 
-    print_status "Pre-deployment checks completed"
+    print_status "Pre-deployment checks completed ✅"
 }
 
 # Setup environment-specific configuration
@@ -142,9 +125,9 @@ check_health() {
 
     # Try to connect to health endpoint
     if curl -f -s "$health_url" > /dev/null 2>&1; then
-        print_status "Application is healthy!"
+        print_status "✅ Application is healthy!"
     else
-        print_warning "Health check failed. Checking container status..."
+        print_warning "⚠️  Health check failed. Checking container status..."
         docker-compose -f $DOCKER_COMPOSE_FILE ps
 
         print_warning "You may need to check the logs:"
@@ -155,9 +138,9 @@ check_health() {
 # Show deployment information
 show_deployment_info() {
     echo
-    print_status "Deployment completed!"
+    print_status "🎉 Deployment completed!"
     echo
-    echo "Deployment Information:"
+    echo "📋 Deployment Information:"
     echo "  Environment: $ENVIRONMENT"
     echo "  Docker Compose File: $DOCKER_COMPOSE_FILE"
     if [ "$ENVIRONMENT" = "local" ]; then
@@ -168,19 +151,19 @@ show_deployment_info() {
         echo "  Health Check: http://localhost/health"
     fi
     echo
-    echo "Useful Commands:"
+    echo "🔧 Useful Commands:"
     echo "  View logs: docker-compose -f $DOCKER_COMPOSE_FILE logs -f"
     echo "  Stop app: docker-compose -f $DOCKER_COMPOSE_FILE down"
     echo "  Restart app: docker-compose -f $DOCKER_COMPOSE_FILE restart"
     echo "  Update app: docker-compose -f $DOCKER_COMPOSE_FILE pull && docker-compose -f $DOCKER_COMPOSE_FILE up -d"
     echo
-    print_status "Happy deploying!"
+    print_status "Happy deploying! 🚀"
 }
 
 # Main deployment flow
 main() {
-    echo "Stock Analysis Platform Deployment Script"
-    echo "========================================"
+    echo "🚀 Stock Analysis Platform Deployment Script"
+    echo "=========================================="
     echo
 
     pre_deployment_checks
@@ -189,5 +172,24 @@ main() {
     show_deployment_info
 }
 
-# Run main function
-main
+# Handle command line arguments
+case "${1:-}" in
+    --help|-h)
+        echo "Usage: $0 [environment]"
+        echo
+        echo "Environments:"
+        echo "  local      - Local development (default)"
+        echo "  staging    - Staging environment"
+        echo "  production - Production environment"
+        echo
+        echo "Examples:"
+        echo "  $0              # Deploy to local"
+        echo "  $0 production   # Deploy to production"
+        echo "  $0 --help       # Show this help"
+        exit 0
+        ;;
+    *)
+        main "$@"
+        ;;
+esac</content>
+<parameter name="filePath">/Users/puneeth/repo/stock_fundamental/deploy.sh
