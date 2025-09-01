@@ -19,68 +19,84 @@ import pandas as pd
 def mock_yfinance():
     """Mock yfinance to avoid external API calls in unit tests"""
     with patch("yfinance.Ticker") as mock_ticker_class:
-        # Create a mock ticker instance
-        mock_ticker = Mock()
 
-        # Mock info property
-        mock_ticker.info = {
-            "longName": "Test Company Ltd",
-            "sharesOutstanding": 1000000,
-        }
+        def ticker_side_effect(ticker):
+            mock_ticker = Mock()
 
-        # Mock balance sheet
-        mock_balance_sheet = pd.DataFrame(
-            {
-                "Total Assets": [1000, 1100, 1200],
-                "Current Assets": [500, 550, 600],
-                "Current Liabilities": [200, 220, 240],
-                "Common Stock Equity": [600, 660, 720],
-                "Total Debt": [100, 110, 120],
-                "Inventory": [50, 55, 60],
-                "Prepaid Assets": [10, 11, 12],
-            }
-        ).T
-        mock_balance_sheet.columns = pd.to_datetime(
-            ["2022-12-31", "2023-12-31", "2024-12-31"]
-        )
+            # Handle invalid tickers
+            if "INVALID" in ticker.upper():
+                # Mock info for invalid ticker
+                mock_ticker.info = {}
 
-        # Mock income statement
-        mock_income_stmt = pd.DataFrame(
-            {
-                "Total Revenue": [800, 880, 968],
-                "Operating Income": [200, 220, 242],
-                "Net Income": [120, 132, 145],
-                "Operating Expense": [600, 660, 726],
-                "Interest Expense": [20, 22, 24],
-            }
-        ).T
-        mock_income_stmt.columns = mock_balance_sheet.columns
+                # Return empty DataFrame for invalid ticker
+                empty_df = pd.DataFrame()
+                mock_ticker.history.return_value = empty_df
+                mock_ticker.balance_sheet = pd.DataFrame()
+                mock_ticker.financials = pd.DataFrame()
+                mock_ticker.cashflow = pd.DataFrame()
+            else:
+                # Mock info for valid ticker
+                mock_ticker.info = {
+                    "longName": "Test Company Ltd",
+                    "sharesOutstanding": 1000000,
+                }
 
-        # Mock cash flow
-        mock_cash_flow = pd.DataFrame({"Operating Cash Flow": [150, 165, 181]}).T
-        mock_cash_flow.columns = mock_balance_sheet.columns
+                # Mock balance sheet
+                mock_balance_sheet = pd.DataFrame(
+                    {
+                        "Total Assets": [1000, 1100, 1200],
+                        "Current Assets": [500, 550, 600],
+                        "Current Liabilities": [200, 220, 240],
+                        "Common Stock Equity": [600, 660, 720],
+                        "Total Debt": [100, 110, 120],
+                        "Inventory": [50, 55, 60],
+                        "Prepaid Assets": [10, 11, 12],
+                    }
+                ).T
+                mock_balance_sheet.columns = pd.to_datetime(
+                    ["2022-12-31", "2023-12-31", "2024-12-31"]
+                )
 
-        # Mock financials
-        mock_ticker.balance_sheet = mock_balance_sheet
-        mock_ticker.financials = mock_income_stmt
-        mock_ticker.cashflow = mock_cash_flow
+                # Mock income statement
+                mock_income_stmt = pd.DataFrame(
+                    {
+                        "Total Revenue": [800, 880, 968],
+                        "Operating Income": [200, 220, 242],
+                        "Net Income": [120, 132, 145],
+                        "Operating Expense": [600, 660, 726],
+                        "Interest Expense": [20, 22, 24],
+                    }
+                ).T
+                mock_income_stmt.columns = mock_balance_sheet.columns
 
-        # Mock history
-        dates = pd.date_range("2020-01-01", "2024-12-31", freq="D")
-        mock_history = pd.DataFrame(
-            {
-                "Open": [100] * len(dates),
-                "High": [105] * len(dates),
-                "Low": [95] * len(dates),
-                "Close": [102] * len(dates),
-                "Volume": [1000000] * len(dates),
-            },
-            index=dates,
-        )
-        mock_ticker.history.return_value = mock_history
+                # Mock cash flow
+                mock_cash_flow = pd.DataFrame(
+                    {"Operating Cash Flow": [150, 165, 181]}
+                ).T
+                mock_cash_flow.columns = mock_balance_sheet.columns
 
-        # Configure the mock class to return our mock instance
-        mock_ticker_class.return_value = mock_ticker
+                # Mock financials
+                mock_ticker.balance_sheet = mock_balance_sheet
+                mock_ticker.financials = mock_income_stmt
+                mock_ticker.cashflow = mock_cash_flow
+
+                # Mock history
+                dates = pd.date_range("2020-01-01", "2024-12-31", freq="D")
+                mock_history = pd.DataFrame(
+                    {
+                        "Open": [100] * len(dates),
+                        "High": [105] * len(dates),
+                        "Low": [95] * len(dates),
+                        "Close": [102] * len(dates),
+                        "Volume": [1000000] * len(dates),
+                    },
+                    index=dates,
+                )
+                mock_ticker.history.return_value = mock_history
+
+            return mock_ticker
+
+        mock_ticker_class.side_effect = ticker_side_effect
 
         yield mock_ticker_class
 

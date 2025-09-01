@@ -20,6 +20,21 @@ except ImportError:
     yaml = None
 
 
+# Check if Docker is available
+def check_docker_available():
+    """Check if Docker is available on the system"""
+    try:
+        result = subprocess.run(
+            ["docker", "--version"], capture_output=True, text=True, timeout=5
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        return False
+
+
+DOCKER_AVAILABLE = check_docker_available()
+
+
 class TestProductionDeployment:
     """Test production deployment infrastructure"""
 
@@ -183,6 +198,9 @@ class TestDockerServices:
 
     def test_services_running(self):
         """Test that required services are running"""
+        if not DOCKER_AVAILABLE:
+            pytest.skip("Docker not available - skipping service running test")
+
         try:
             # Check if production environment is running
             prod_result = subprocess.run(
@@ -275,6 +293,9 @@ class TestRegressionTesting:
 
     def test_development_workflow_preserved(self):
         """Test that development workflow is completely preserved"""
+        if not DOCKER_AVAILABLE:
+            pytest.skip("Docker not available - skipping Docker workflow test")
+
         project_root = Path(__file__).parent.parent
         dev_compose_file = project_root / "docker-compose.yml"
         assert dev_compose_file.exists(), "Development docker-compose.yml missing"
