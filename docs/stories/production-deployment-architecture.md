@@ -4,7 +4,7 @@
 
 ## Status
 
-Draft
+Ready for Development
 
 ## Story
 
@@ -45,6 +45,13 @@ Draft
   - [ ] Production readiness validation with load testing
 
 ## Dev Notes
+
+### Next steps
+
+- Create production `docker-compose.prod.yml` with nginx reverse proxy and environment variables.
+- Add basic Prometheus metrics endpoint to Flask app for monitoring.
+- Set up automated backup script for SQLite database and user data.
+- Configure HTTPS with Let's Encrypt for security.
 
 ### Architecture Context
 
