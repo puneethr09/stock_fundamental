@@ -8,7 +8,10 @@ on:
         description: "Label for run (optional) - e.g. PR check start"
         required: false
         default: "PR check start"
-  # No automatic PR triggers: workflow only runs via the Actions "Run workflow" button
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   test:
