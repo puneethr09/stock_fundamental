@@ -32,7 +32,27 @@ def check_docker_available():
         return False
 
 
+def check_docker_compose_available():
+    """Check if Docker Compose is available on the system"""
+    try:
+        # Try docker compose (newer syntax)
+        result = subprocess.run(
+            ["docker", "compose", "version"], capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            return True
+
+        # Try docker-compose (older syntax)
+        result = subprocess.run(
+            ["docker-compose", "--version"], capture_output=True, text=True, timeout=5
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        return False
+
+
 DOCKER_AVAILABLE = check_docker_available()
+DOCKER_COMPOSE_AVAILABLE = check_docker_compose_available()
 
 
 class TestProductionDeployment:
@@ -198,8 +218,8 @@ class TestDockerServices:
 
     def test_services_running(self):
         """Test that required services are running"""
-        if not DOCKER_AVAILABLE:
-            pytest.skip("Docker not available - skipping service running test")
+        if not DOCKER_COMPOSE_AVAILABLE:
+            pytest.skip("Docker Compose not available - skipping service running test")
 
         try:
             # Check if production environment is running
@@ -293,8 +313,8 @@ class TestRegressionTesting:
 
     def test_development_workflow_preserved(self):
         """Test that development workflow is completely preserved"""
-        if not DOCKER_AVAILABLE:
-            pytest.skip("Docker not available - skipping Docker workflow test")
+        if not DOCKER_COMPOSE_AVAILABLE:
+            pytest.skip("Docker Compose not available - skipping Docker workflow test")
 
         project_root = Path(__file__).parent.parent
         dev_compose_file = project_root / "docker-compose.yml"
