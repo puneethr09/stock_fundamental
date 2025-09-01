@@ -11,3 +11,9 @@ openpyxl
 selenium
 webdriver-manager
 prometheus-client
+pyyaml
+pytest
+pytest-mock
+pytest-cov
+pytest-xdist
+pytest-benchmark
