@@ -114,25 +114,25 @@ class EducationalGapFillingService:
             ResearchCategory.ECONOMIC_MOATS.value: [
                 {
                     "name": "BSE Company Information",
-                    "url": "https://www.bseindia.com/corporates.html",
+                    "url": "https://www.bseindia.com",
                     "description": "Official company profiles and annual reports",
                     "access": "free",
                 },
                 {
                     "name": "NSE Corporate Information",
-                    "url": "https://www.nseindia.com/market-data",
+                    "url": "https://www.nseindia.com",
                     "description": "Listed company information and investor presentations",
                     "access": "free",
                 },
                 {
                     "name": "Economic Times Company Reports",
-                    "url": "https://economictimes.indiatimes.com/markets/stocks/companyid-{ticker}.cms",
+                    "url": "https://economictimes.indiatimes.com",
                     "description": "Company analysis and industry reports",
                     "access": "free",
                 },
                 {
                     "name": "Business Standard Archives",
-                    "url": "https://www.business-standard.com/company/{ticker}",
+                    "url": "https://www.business-standard.com",
                     "description": "Historical company performance and industry trends",
                     "access": "free",
                 },
@@ -192,13 +192,13 @@ class EducationalGapFillingService:
                 },
                 {
                     "name": "Quarterly Results",
-                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-quarterly-results",
+                    "url": "https://www.nseindia.com/companies-listing/corporate-filings-financial-results",
                     "description": "Recent financial performance data",
                     "access": "free",
                 },
                 {
                     "name": "SEBI EDIFAR Database",
-                    "url": "https://www.sebi.gov.in/sebiweb/other/EDIFAR.jsp",
+                    "url": "https://www.sebi.gov.in",
                     "description": "Electronic Data Information Filing and Retrieval",
                     "access": "free",
                 },
@@ -206,7 +206,7 @@ class EducationalGapFillingService:
             ResearchCategory.COMPETITIVE_LANDSCAPE.value: [
                 {
                     "name": "Industry Association Reports",
-                    "url": "https://www.cii.in/Sectors.aspx?enc=8qSJ2uu0O2KHQF5FgFpJfQ==",
+                    "url": "https://www.cii.in/",
                     "description": "Competitive positioning and market share data",
                     "access": "free",
                 },
