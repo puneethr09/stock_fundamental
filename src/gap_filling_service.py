@@ -323,6 +323,40 @@ class EducationalGapFillingService:
             ],
         }
 
+        # Industry Analysis Template
+        templates[ResearchCategory.INDUSTRY_ANALYSIS.value] = {
+            "title": "Industry Analysis for {company_name}",
+            "objective": "Analyze the industry context and competitive landscape to better understand {company_name}'s position and performance",
+            "research_questions": [
+                "What is the current state of {company_name}'s industry?",
+                "What are the key industry trends and drivers affecting {company_name}?",
+                "How does {company_name} compare to industry benchmarks?",
+                "What are the industry growth prospects and challenges?",
+                "How do industry regulations impact {company_name}'s operations?",
+                "What are the competitive dynamics in {company_name}'s market segments?",
+            ],
+            "step_by_step_instructions": [
+                "Research the industry classification (GICS/SIC codes) for {company_name}",
+                "Review industry reports from sources like IBISWorld, Statista, or industry associations",
+                "Analyze industry growth rates, market size, and segmentation",
+                "Identify key competitors and their market shares",
+                "Review industry-specific regulations and their impact on {company_name}",
+                "Analyze supply chain and input cost trends affecting the industry",
+                "Assess technological changes and innovation in the industry",
+                "Compare {company_name}'s financial ratios with industry averages",
+            ],
+            "estimated_time_minutes": 90,
+            "difficulty_level": "intermediate",
+            "deliverables": [
+                "Industry overview and classification summary",
+                "Key industry trends and growth analysis",
+                "Competitive landscape assessment",
+                "Regulatory environment analysis",
+                "Industry benchmark comparisons",
+                "SWOT analysis for {company_name}'s industry position",
+            ],
+        }
+
         return templates
 
     def detect_analysis_gaps(
