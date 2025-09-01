@@ -573,7 +573,7 @@ cd stock_fundamental
 # Start development environment
 docker-compose up --build
 
-# Access at http://localhost:5000
+# Access at http://localhost:5001
 ```
 
 **Step 4: Production Deployment on Windows**
@@ -633,14 +633,14 @@ pip install --trusted-host pypi.org --trusted-host pypi.python.org -r requiremen
 # Start the application
 python app.py
 
-# Access at http://localhost:5000
+# Access at http://localhost:5001
 ```
 
 **Windows-Specific Troubleshooting**:
 
 - **Execution Policy Error**: Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 - **Long Path Issues**: Enable long paths in Windows 10/11: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force`
-- **Port Conflicts**: Use `netstat -an | findstr 5000` to check if port 5000 is already in use
+- **Port Conflicts**: Use `netstat -an | findstr 5001` to check if port 5001 is already in use
 
 ### 🐧 Linux Installation (Comprehensive Guide)
 
@@ -806,7 +806,7 @@ pip install -r requirements.txt
 # Run application
 python app.py
 
-# Access at http://localhost:5000
+# Access at http://localhost:5001
 ```
 
 **Step 3: Docker Setup**
@@ -925,9 +925,9 @@ pip install -r requirements.txt
 pip install gunicorn
 
 # Run with gunicorn (production setup)
-gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 app:app
+gunicorn --bind 0.0.0.0:5001 --workers 2 --timeout 120 app:app
 
-# Access at http://raspberry-pi-ip:5000
+# Access at http://raspberry-pi-ip:5001
 ```
 
 #### **Raspberry Pi Performance Optimization**
@@ -970,21 +970,21 @@ ifconfig | grep inet
 ipconfig
 
 # Access from other devices on same network:
-http://YOUR_IP_ADDRESS:5000
+http://YOUR_IP_ADDRESS:5001
 ```
 
 #### **Port Configuration**
 
 ```bash
 # Default ports used:
-# 5000 - Main application
+# 5001 - Main application
 # 3000 - Grafana monitoring dashboard
 # 9090 - Prometheus metrics
 # 9093 - Alertmanager
 # 9100 - Node Exporter
 
 # To change default port, modify docker-compose.yml:
-# Change "5000:5000" to "8080:5000" for port 8080 access
+# Change "5001:5001" to "8080:5001" for port 8080 access
 ```
 
 #### **Firewall Configuration**
@@ -992,7 +992,7 @@ http://YOUR_IP_ADDRESS:5000
 **Linux (UFW)**:
 
 ```bash
-sudo ufw allow 5000
+sudo ufw allow 5001
 sudo ufw allow 3000  # For Grafana
 sudo ufw allow 9090  # For Prometheus
 sudo ufw enable
@@ -1002,7 +1002,7 @@ sudo ufw enable
 
 ```powershell
 # Allow specific port
-New-NetFirewallRule -DisplayName "Stock Analysis App" -Direction Inbound -Port 5000 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Stock Analysis App" -Direction Inbound -Port 5001 -Protocol TCP -Action Allow
 ```
 
 **macOS**:
@@ -1114,7 +1114,7 @@ docker system prune -a
 docker volume prune
 
 # Port already in use
-lsof -i :5000  # Find what's using the port
+lsof -i :5001  # Find what's using the port
 kill -9 PID    # Kill the process
 ```
 
@@ -1140,7 +1140,7 @@ sudo chown -R $USER:$USER /path/to/stock_fundamental
 ```bash
 # Cannot access from other devices
 # Check if binding to all interfaces
-# In app.py, ensure: app.run(host='0.0.0.0', port=5000)
+# In app.py, ensure: app.run(host='0.0.0.0', port=5001)
 
 # DNS resolution issues
 # Add to /etc/hosts (Linux/macOS) or C:\Windows\System32\drivers\etc\hosts (Windows)
@@ -1158,7 +1158,7 @@ ping -c 4 8.8.8.8
 
 ```bash
 # Application health
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # Docker container health
 docker compose ps

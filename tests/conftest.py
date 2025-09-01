@@ -111,7 +111,7 @@ def app():
             "TESTING": True,
             "WTF_CSRF_ENABLED": False,
             "SECRET_KEY": "test-secret-key",
-            "SERVER_NAME": "localhost:5000",
+            "SERVER_NAME": "localhost:5001",
         }
     )
 

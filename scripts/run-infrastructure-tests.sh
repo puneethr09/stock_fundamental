@@ -101,8 +101,8 @@ run_load_tests() {
     local report_file="$REPORTS_DIR/load-test-report.html"
 
     # Check if application is running
-    if ! curl -f http://localhost:5000/health &>/dev/null; then
-        warn "Application not running on localhost:5000 - skipping load tests"
+    if ! curl -f http://localhost:5001/health &>/dev/null; then
+        warn "Application not running on localhost:5001 - skipping load tests"
         return 0
     fi
 

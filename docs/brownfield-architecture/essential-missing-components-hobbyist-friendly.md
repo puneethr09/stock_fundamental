@@ -427,10 +427,10 @@ services:
       - ./data:/app/data
       - ./backups:/app/backups
     ports:
-      - "5000:5000"
+      - "5001:5001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
