@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   </head>
-  <body class="light-page tool-challenge-page">
+  <body class="tool-challenge-page">
   {% include '_header.html' %}
 
   <div class="container">
@@ -100,13 +100,22 @@
         {% if challenge.company_basic_info %}
         <div class="row">
           {% for key, value in challenge.company_basic_info.items() %}
-          <div class="col-md-4 mb-3">
+          {% if key != 'business_description_full' %}
+          <div class="col-md-6 col-lg-4 mb-3">
             <div class="card h-100">
               <div class="card-body">
                 <h6 class="card-title text-muted text-center">
                   {{ key.replace('_', ' ').title() }}
                 </h6>
-                {% if value is iterable and value is not string %}
+                {% if key == 'business_description' %}
+                <div class="business-description-container">
+                  <h5 class="card-text text-primary text-center business-description-text" style="cursor: pointer;" onclick="showBusinessDescription('{{ challenge.challenge_id }}')">
+                    {{ value }}
+                    <i class="fas fa-external-link-alt ml-2" style="font-size: 0.8em;"></i>
+                  </h5>
+                  <small class="text-muted text-center d-block">Click to read full description</small>
+                </div>
+                {% elif value is iterable and value is not string %}
                 <ul class="list-unstyled">
                   {% for item in value %}
                   <li class="mb-2">
@@ -133,6 +142,7 @@
               </div>
             </div>
           </div>
+          {% endif %}
           {% endfor %}
         </div>
         {% endif %} {% if challenge.educational_context and
@@ -308,11 +318,32 @@
       {% endif %}
     </div>
 
+    <!-- Business Description Popup -->
+    <div id="business-description-popup" class="business-description-popup">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3 class="popup-title">🏢 Business Description</h3>
+          <button class="close-btn" onclick="closeBusinessDescription()">&times;</button>
+        </div>
+        <div class="popup-body" id="business-description-content">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
     <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+      // Store full business descriptions in a JavaScript object
+      const businessDescriptions = {};
+      {% for key, value in challenge.company_basic_info.items() %}
+      {% if key == 'business_description_full' %}
+      businessDescriptions['{{ challenge.challenge_id }}'] = {{ value|tojson }};
+      {% endif %}
+      {% endfor %}
+
       function updateConfidenceDisplay(value) {
         const labels = {
           1: "1/5 (Not Confident)",
@@ -455,6 +486,80 @@
         if (accuracy >= 60) return "Fair analysis. Keep practicing! 💪";
         return "Keep learning and practicing! 📚";
       }
+
+      // Business Description Popup Functions
+      function showBusinessDescription(challengeId) {
+        const popup = document.getElementById('business-description-popup');
+        const content = document.getElementById('business-description-content');
+
+        if (!popup || !content) {
+          console.error('Popup elements not found');
+          alert('Popup functionality is not available. Please refresh the page.');
+          return;
+        }
+
+        let fullDescription;
+        try {
+          // Get the full description from the JavaScript object
+          fullDescription = businessDescriptions[challengeId];
+          console.log('Retrieved description from JS object, length:', fullDescription ? fullDescription.length : 0);
+
+          if (!fullDescription || fullDescription.length < 10) {
+            console.log('Description too short, using default message');
+            fullDescription = 'Full business description is not available for this company. The displayed text is already the complete description.';
+          }
+        } catch (e) {
+          console.error('Error retrieving description:', e);
+          fullDescription = 'Unable to load full description. The displayed text contains the available business information.';
+        }
+
+        console.log('Final description to display:', fullDescription.substring(0, 100) + '...');
+
+        // Set the full description content
+        content.innerHTML = `<p>${fullDescription.replace(/\n/g, '</p><p>')}</p>`;
+
+        // Show the popup
+        popup.classList.add('show');
+
+        // Prevent body scroll when popup is open
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeBusinessDescription() {
+        const popup = document.getElementById('business-description-popup');
+
+        if (!popup) {
+          console.error('Popup element not found');
+          return;
+        }
+
+        // Hide the popup
+        popup.classList.remove('show');
+
+        // Restore body scroll
+        document.body.style.overflow = 'auto';
+      }
+
+      // Initialize popup event listeners when DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('business-description-popup');
+
+        if (popup) {
+          // Close popup when clicking outside
+          popup.addEventListener('click', function(e) {
+            if (e.target === this) {
+              closeBusinessDescription();
+            }
+          });
+        }
+
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            closeBusinessDescription();
+          }
+        });
+      });
     </script>
   {% include '_footer.html' %}
   </body>

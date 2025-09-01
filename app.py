@@ -142,20 +142,24 @@ def get_company_financial_data(ticker):
             info.get("earningsGrowth", 0.12) if info.get("earningsGrowth") else 0.12
         )
 
-        # Clean up description
+        # Clean up description - keep full for popup, truncate for display
         business_description = info.get(
             "longBusinessSummary",
             f"Leading company in {info.get('industry', 'technology')} sector",
         )
-        if len(business_description) > 200:
-            business_description = business_description[:200] + "..."
+        business_description_truncated = (
+            business_description[:200] + "..."
+            if len(business_description) > 200
+            else business_description
+        )
 
         return {
             "symbol": ticker.upper(),
             "company_name": info.get("longName", f"{ticker.upper()} Limited"),
             "industry": info.get("industry", "Technology"),
             "sector": info.get("sector", "Information Technology"),
-            "business_description": business_description,
+            "business_description": business_description_truncated,
+            "business_description_full": business_description,  # Full description for popup
             "market_cap": market_cap,
             "listing_status": "Listed",
             "exchange": "NSE",
@@ -178,6 +182,7 @@ def get_company_financial_data(ticker):
             "industry": "Technology",
             "sector": "Information Technology",
             "business_description": "Company operating in technology sector",
+            "business_description_full": "Company operating in technology sector with focus on innovation and growth in the digital economy.",
             "market_cap": 25000,  # Default mid-cap
             "listing_status": "Listed",
             "exchange": "NSE",

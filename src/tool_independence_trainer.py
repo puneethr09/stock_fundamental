@@ -411,6 +411,13 @@ class ToolIndependenceTrainer:
                 "business_description",
                 "A technology company focused on software solutions and digital services.",
             ),
+            "business_description_full": company_data.get(
+                "business_description_full",
+                company_data.get(
+                    "business_description",
+                    "A technology company focused on software solutions and digital services.",
+                ),
+            ),
             "market_cap_range": self._categorize_market_cap(
                 company_data.get("market_cap", 25000)
             ),

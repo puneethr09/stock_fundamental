@@ -956,42 +956,66 @@ body,
   transform: translateY(-2px);
 }
 
-/* Tool challenge page styles */
+/* Tool challenge page styles - Dark Mode */
 .tool-challenge-page {
-  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
   min-height: 100vh;
+  color: #e2e8f0;
 }
 .tool-challenge-page .container {
   padding: 2rem 1rem;
 }
 .tool-challenge-page h1 {
-  color: #fff;
+  color: #f8fafc;
   text-align: center;
   animation: fadeInUp 1s ease-out;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 .tool-challenge-page .lead {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(248, 250, 252, 0.8);
   text-align: center;
 }
 .tool-challenge-page .stage-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-weight: 600;
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 .tool-challenge-page .challenge-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   margin: 2rem auto;
-  max-width: 600px;
+  max-width: 800px;
   animation: fadeInUp 1.2s ease-out;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+.tool-challenge-page .challenge-card .card {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  color: #e2e8f0;
+}
+.tool-challenge-page .challenge-card .card .card-title {
+  color: #f1f5f9;
+}
+.tool-challenge-page .challenge-card .card .card-text {
+  color: #cbd5e1;
 }
 .tool-challenge-page .form-control {
   border-radius: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+}
+.tool-challenge-page .form-control:focus {
+  border-color: #6366f1;
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
 }
 .tool-challenge-page .btn {
   border-radius: 8px;
@@ -999,9 +1023,171 @@ body,
   font-weight: 600;
   transition: all 0.3s ease;
 }
-.tool-challenge-page .btn:hover {
+.tool-challenge-page .btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  color: #fff;
+}
+.tool-challenge-page .btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+.tool-challenge-page .btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: #fff;
+}
+.tool-challenge-page .btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+.tool-challenge-page .btn-secondary {
+  background: rgba(71, 85, 105, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  color: #e2e8f0;
+}
+.tool-challenge-page .btn-secondary:hover {
+  background: rgba(71, 85, 105, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
+}
+.tool-challenge-page .text-muted {
+  color: #94a3b8 !important;
+}
+.tool-challenge-page .text-primary {
+  color: #60a5fa !important;
+}
+.tool-challenge-page .text-success {
+  color: #34d399 !important;
+}
+.tool-challenge-page .text-info {
+  color: #38bdf8 !important;
+}
+.tool-challenge-page .text-warning {
+  color: #fbbf24 !important;
+}
+
+/* Business Description Popup Styles */
+.business-description-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: none;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+.business-description-popup.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.business-description-popup .popup-content {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  margin: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+}
+.business-description-popup .popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+.business-description-popup .popup-title {
+  color: #f8fafc;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+.business-description-popup .close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+.business-description-popup .close-btn:hover {
+  background: rgba(71, 85, 105, 0.3);
+  color: #f8fafc;
+}
+.business-description-popup .popup-body {
+  color: #e2e8f0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+.business-description-popup .popup-body p {
+  margin-bottom: 1rem;
+}
+.business-description-popup .popup-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Desktop responsive improvements for tool challenge page */
+@media (min-width: 768px) {
+  .tool-challenge-page .container {
+    padding: 2rem 2rem;
+  }
+  .tool-challenge-page .challenge-card {
+    max-width: 1000px;
+    padding: 2.5rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .tool-challenge-page .container {
+    padding: 3rem 3rem;
+    max-width: 1400px;
+  }
+  .tool-challenge-page .challenge-card {
+    max-width: 1300px;
+    padding: 3rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .tool-challenge-page .container {
+    padding: 3rem 4rem;
+  }
+  .tool-challenge-page .challenge-card {
+    max-width: 1500px;
+  }
 }
 
 /* Pages that intentionally use light backgrounds should opt-in to this class
@@ -1251,5 +1437,135 @@ body,
   }
   .hero-features {
     flex-direction: column;
+  }
+}
+
+/* Business Description Popup Styles */
+.business-description-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.business-description-popup.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.popup-content {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 98vw;
+  max-height: 90vh;
+  width: 1200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.popup-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, var(--card), rgba(108, 126, 246, 0.05));
+}
+
+.popup-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.popup-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  line-height: 1.6;
+  color: #eaf3ff;
+}
+
+.popup-body p {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+}
+
+.popup-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive popup adjustments */
+@media (max-width: 768px) {
+  .popup-content {
+    width: 95vw;
+    max-height: 90vh;
+  }
+
+  .popup-header {
+    padding: 16px 20px;
+  }
+
+  .popup-title {
+    font-size: 1.2rem;
+  }
+
+  .popup-body {
+    padding: 20px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .popup-content {
+    width: 98vw;
+    margin: 10px;
+  }
+
+  .popup-header {
+    padding: 14px 16px;
+  }
+
+  .popup-title {
+    font-size: 1.1rem;
+  }
+
+  .popup-body {
+    padding: 16px;
+    font-size: 0.9rem;
   }
 }
