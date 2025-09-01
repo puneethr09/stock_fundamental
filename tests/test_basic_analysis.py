@@ -16,6 +16,25 @@ from basic_analysis import (
 
 
 def test_get_financial_ratios_valid():
+    """Unit test with mocked yfinance data"""
+    df = get_financial_ratios("TCS.NS")
+    assert df is not None
+    assert "ROE" in df.columns
+    assert len(df) > 0  # Should have data from mock
+
+
+@pytest.mark.integration
+def test_get_financial_ratios_valid_integration():
+    """Integration test that actually calls external APIs"""
+    df = get_financial_ratios("TCS.NS")
+    assert df is not None
+    assert "ROE" in df.columns
+
+
+def test_get_financial_ratios_invalid():
+    df = get_financial_ratios("INVALIDTICKER.NS")
+    assert df is None
+    """Integration test that actually calls external APIs"""
     df = get_financial_ratios("TCS.NS")
     assert df is not None
     assert "ROE" in df.columns
