@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from types import SimpleNamespace
 import uuid
 from src.persistence import save_assignment, get_assignment, save_completion
 
@@ -69,6 +70,53 @@ class ResearchGuidanceSystem:
             # non-fatal in test environment
             pass
         return assignment
+
+    # Backwards-compatible alias
+    def create_research_assignment(
+        self,
+        assignment_type: str,
+        user_profile: Dict[str, Any],
+        company_context: Dict[str, Any],
+    ):
+        """Compatibility wrapper for older tests that call create_research_assignment.
+
+        We map their inputs into the generate_personalized_research_assignment signature
+        by constructing a minimal gap object derived from company_context.
+        """
+        gap = {
+            "category": assignment_type,
+            "company": company_context.get("ticker")
+            or company_context.get("company_name"),
+            "severity": "medium",
+        }
+
+        learning_stage = 2
+        if isinstance(user_profile, dict):
+            learning_stage = user_profile.get("learning_stage", 2)
+
+        # If learning_stage is enum-like, try to extract numeric value
+        if hasattr(learning_stage, "value"):
+            try:
+                learning_stage = int(learning_stage.value)
+            except Exception:
+                # fallback to default
+                learning_stage = 2
+
+        assignment = self.generate_personalized_research_assignment(
+            [gap], learning_stage
+        )
+
+        # Wrap into a simple object with attribute access expected by tests
+        obj = SimpleNamespace()
+        obj.assignment_id = assignment.get("assignment_id")
+        obj.title = assignment.get("title")
+        obj.company = assignment.get("company")
+        obj.instructions = assignment.get("instructions", [])
+        # convert minutes to seconds for compatibility
+        obj.time_estimate = assignment.get("time_estimate_minutes", 0) * 60
+        obj.assignment_type = assignment.get("category") or assignment_type
+        obj.difficulty = assignment.get("difficulty")
+        return obj
 
     def create_step_by_step_research_instructions(
         self, assignment_type: str, company: str, difficulty: str

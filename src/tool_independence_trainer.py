@@ -111,6 +111,32 @@ class ToolIndependenceTrainer:
         # Initialize challenge templates
         self.challenge_templates = self._initialize_challenge_templates()
 
+    # Backwards-compatible wrapper expected by some tests
+    def generate_challenge(
+        self, user_stage: Any, challenge_type: Any, ticker: str, user_session_id: str
+    ):
+        """Compatibility wrapper: older tests call generate_challenge with different param names."""
+        # Map inputs to current API
+        try:
+            stage = user_stage if not hasattr(user_stage, "value") else user_stage
+        except Exception:
+            stage = user_stage
+
+        return self.generate_stage_appropriate_challenge(user_session_id, stage, ticker)
+
+    def track_analytical_confidence_progress(
+        self, session_id: str, evaluation_result: dict
+    ):
+        """Record evaluation results into internal confidence history"""
+        try:
+            history = self.confidence_progression.setdefault(session_id, [])
+            history.append({"timestamp": time.time(), "result": evaluation_result})
+            # Keep window reasonable
+            if len(history) > 100:
+                history.pop(0)
+        except Exception:
+            pass
+
     def _initialize_challenge_templates(self) -> Dict[str, Dict]:
         """Initialize challenge templates for different stages and types"""
 

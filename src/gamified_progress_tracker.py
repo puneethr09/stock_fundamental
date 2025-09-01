@@ -85,6 +85,7 @@ class ProgressMetrics:
     total_session_time: float = 0.0
     stage_progression_points: float = 0.0
     skill_competencies: Dict[str, float] = field(default_factory=dict)
+    research_assignments_completed: int = 0
 
 
 @dataclass
@@ -446,6 +447,49 @@ class GamifiedProgressTracker:
 
         return progress
 
+    # Compatibility helpers expected by tests
+    def update_pattern_recognition_progress(
+        self, user_id: str, accuracy_score: float, pattern_type: Any
+    ) -> None:
+        progress = self._get_progress_metrics(user_id)
+        # update pattern_recognition_score conservatively
+        progress.pattern_recognition_score = min(
+            1.0, max(progress.pattern_recognition_score, accuracy_score)
+        )
+        self._store_progress_metrics(user_id, progress)
+
+    def update_research_progress(
+        self, user_id: str, score: float, assignment_type: str
+    ) -> None:
+        progress = self._get_progress_metrics(user_id)
+        # track completed assignments count
+        current = getattr(progress, "research_assignments_completed", 0)
+        # store in skill_competencies for simplicity
+        progress.skill_competencies[assignment_type] = (
+            progress.skill_competencies.get(assignment_type, 0.0) + score
+        )
+        # persist
+        self._store_progress_metrics(user_id, progress)
+
+    def get_user_progress(self, user_id: str) -> Dict[str, Any]:
+        progress = self._get_progress_metrics(user_id)
+        return {
+            "pattern_recognition_score": progress.pattern_recognition_score,
+            "research_assignments_completed": (
+                int(progress.stage_progression_points // 100)
+                if progress.stage_progression_points
+                else 0
+            ),
+            "analysis_count": progress.analysis_count,
+        }
+
+    def get_user_badges(self, user_id: str) -> List[Dict[str, Any]]:
+        badges = self._get_earned_badges(user_id)
+        return [
+            {"badge_type": b.badge_type.value, "display_name": b.display_name}
+            for b in badges
+        ]
+
     def calculate_learning_streak(
         self, user_id: str, session_history: List[Dict[str, Any]]
     ) -> Tuple[int, int]:
@@ -703,6 +747,9 @@ class GamifiedProgressTracker:
             pm.research_engagement_score = float(
                 raw.get("research_engagement_score", pm.research_engagement_score)
             )
+            pm.research_assignments_completed = int(
+                raw.get("research_assignments_completed", 0)
+            )
             pm.community_contribution_score = float(
                 raw.get("community_contribution_score", pm.community_contribution_score)
             )
@@ -735,6 +782,7 @@ class GamifiedProgressTracker:
                 "analysis_count": progress.analysis_count,
                 "pattern_recognition_score": progress.pattern_recognition_score,
                 "research_engagement_score": progress.research_engagement_score,
+                "research_assignments_completed": progress.research_assignments_completed,
                 "community_contribution_score": progress.community_contribution_score,
                 "current_streak": progress.current_streak,
                 "best_streak": progress.best_streak,
@@ -752,6 +800,63 @@ class GamifiedProgressTracker:
         progress = self._get_progress_metrics(user_id)
         progress.stage_progression_points += points
         self._store_progress_metrics(user_id, progress)
+
+    # Convenience methods for backward compatibility with tests
+    def update_pattern_recognition_progress(
+        self, user_id: str, accuracy_score: float, pattern_type: Any
+    ) -> None:
+        """Compatibility wrapper: update pattern recognition progress for a user"""
+        progress = self._get_progress_metrics(user_id)
+        progress.pattern_recognition_score = (
+            progress.pattern_recognition_score * 0.9 + accuracy_score * 0.1
+        )
+        progress.analysis_count += 1
+        # update skill competency roughly
+        key = getattr(pattern_type, "name", str(pattern_type)).lower()
+        existing = progress.skill_competencies.get(key, 0.0)
+        progress.skill_competencies[key] = min(1.0, existing + (accuracy_score * 0.1))
+        self._store_progress_metrics(user_id, progress)
+
+    def update_research_progress(
+        self, user_id: str, quality: float, assignment_type: str
+    ) -> None:
+        """Compatibility wrapper to record research progress"""
+        progress = self._get_progress_metrics(user_id)
+        # bump research engagement and completed assignments
+        progress.research_engagement_score = (
+            progress.research_engagement_score * 0.9 + quality * 0.1
+        )
+        # Count completed assignments
+        progress.research_assignments_completed = (
+            getattr(progress, "research_assignments_completed", 0) + 1
+        )
+        self._store_progress_metrics(user_id, progress)
+
+    def get_user_progress(self, user_id: str) -> Dict[str, Any]:
+        """Return a serializable snapshot of a user's progress (used by tests)."""
+        pm = self._get_progress_metrics(user_id)
+        return {
+            "analysis_count": pm.analysis_count,
+            "pattern_recognition_score": pm.pattern_recognition_score,
+            "research_engagement_score": pm.research_engagement_score,
+            "skill_competencies": pm.skill_competencies,
+            "stage_progression_points": pm.stage_progression_points,
+            "research_assignments_completed": int(
+                getattr(pm, "research_assignments_completed", 0)
+            ),
+        }
+
+    def get_user_badges(self, user_id: str) -> List[Dict[str, Any]]:
+        """Return earned badges in a lightweight dict form for tests."""
+        badges = self._get_earned_badges(user_id)
+        return [
+            {
+                "badge_type": b.badge_type.value,
+                "display_name": b.display_name,
+                "description": b.description,
+            }
+            for b in badges
+        ]
 
     def _calculate_daily_target(
         self, stage: LearningStage, recent_activity: Dict[str, Any]

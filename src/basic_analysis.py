@@ -135,6 +135,25 @@ def get_financial_ratios(ticker):
     return ratios_df
 
 
+def get_historical_data(ticker):
+    """Compatibility shim: return historical price data for a ticker.
+
+    Tests patch this function often; provide a simple wrapper around yfinance
+    that returns the same structure used by the rest of the module.
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period="max")
+        if hist.index.tz is not None:
+            hist.index = hist.index.tz_localize(None)
+        return hist
+    except Exception:
+        # Return empty DataFrame on failure
+        import pandas as pd
+
+        return pd.DataFrame()
+
+
 def calculate_quick_ratio(balance_sheet):
     try:
         current_assets = balance_sheet.loc["Current Assets"]
