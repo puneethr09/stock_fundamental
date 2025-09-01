@@ -535,8 +535,45 @@
 
         console.log('Final description to display:', fullDescription.substring(0, 100) + '...');
 
-        // Set the full description content
-        content.innerHTML = `<p>${fullDescription.replace(/\n/g, '</p><p>')}</p>`;
+        // Format the content as bullet points instead of one big paragraph
+        let formattedContent;
+        if (fullDescription && fullDescription.length > 0) {
+          // Split by periods, line breaks, or other natural delimiters
+          const sentences = fullDescription.split(/[.!?]\s+|\\n+/).filter(s => s.trim().length > 0);
+
+          if (sentences.length > 1) {
+            // Multiple sentences - format as bullet points
+            formattedContent = '<ul style="text-align: left; padding-left: 20px;">';
+            sentences.forEach(sentence => {
+              const trimmed = sentence.trim();
+              if (trimmed.length > 0) {
+                formattedContent += `<li style="margin-bottom: 8px; line-height: 1.5;">${trimmed}</li>`;
+              }
+            });
+            formattedContent += '</ul>';
+          } else {
+            // Single block of text - try to split by other delimiters or show as paragraph
+            const parts = fullDescription.split(/[,;]\s+|\\n+/).filter(p => p.trim().length > 0);
+            if (parts.length > 1) {
+              formattedContent = '<ul style="text-align: left; padding-left: 20px;">';
+              parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.length > 0) {
+                  formattedContent += `<li style="margin-bottom: 8px; line-height: 1.5;">${trimmed}</li>`;
+                }
+              });
+              formattedContent += '</ul>';
+            } else {
+              // Fallback to paragraph if no good split points found
+              formattedContent = `<p style="text-align: left; line-height: 1.6;">${fullDescription}</p>`;
+            }
+          }
+        } else {
+          formattedContent = '<p>No description available.</p>';
+        }
+
+        // Set the formatted content
+        content.innerHTML = formattedContent;
 
         // Show the popup
         popup.classList.add('show');
