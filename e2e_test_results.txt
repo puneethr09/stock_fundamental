@@ -1,0 +1,67 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.2, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/puneeth/repo/stock_fundamental
+configfile: pytest.ini
+plugins: anyio-4.10.0, cov-6.2.1
+collected 15 items
+
+tests/test_e2e_research_flow.py .                                        [  6%]
+tests/test_e2e_user_journeys.py ..............                           [100%]
+
+=============================== warnings summary ===============================
+tests/test_e2e_user_journeys.py:17
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:17: PytestUnknownMarkWarning: Unknown pytest.mark.e2e - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.e2e
+
+tests/test_e2e_user_journeys.py:18
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:18: PytestUnknownMarkWarning: Unknown pytest.mark.educational - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.educational
+
+tests/test_e2e_user_journeys.py:137
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:137: PytestUnknownMarkWarning: Unknown pytest.mark.e2e - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.e2e
+
+tests/test_e2e_user_journeys.py:138
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:138: PytestUnknownMarkWarning: Unknown pytest.mark.educational - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.educational
+
+tests/test_e2e_user_journeys.py:355
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:355: PytestUnknownMarkWarning: Unknown pytest.mark.e2e - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.e2e
+
+tests/test_e2e_user_journeys.py:356
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:356: PytestUnknownMarkWarning: Unknown pytest.mark.educational - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.educational
+
+tests/test_e2e_user_journeys.py:466
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:466: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+tests/test_e2e_user_journeys.py:510
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:510: PytestUnknownMarkWarning: Unknown pytest.mark.e2e - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.e2e
+
+tests/test_e2e_user_journeys.py:511
+  /Users/puneeth/repo/stock_fundamental/tests/test_e2e_user_journeys.py:511: PytestUnknownMarkWarning: Unknown pytest.mark.educational - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.educational
+
+tests/test_e2e_research_flow.py::TestE2EResearchFlow::test_assignment_create_and_complete_and_check_badges
+  /Users/puneeth/repo/stock_fundamental/app.py:1579: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    request.start_time = datetime.datetime.utcnow()
+
+tests/test_e2e_research_flow.py::TestE2EResearchFlow::test_assignment_create_and_complete_and_check_badges
+  /Users/puneeth/repo/stock_fundamental/app.py:1586: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    latency = (datetime.datetime.utcnow() - request.start_time).total_seconds()
+
+tests/test_e2e_user_journeys.py: 18 warnings
+  /Users/puneeth/repo/stock_fundamental/app.py:1579: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_e2e_user_journeys.py: 18 warnings
+  /Users/puneeth/repo/stock_fundamental/app.py:1586: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 15 passed, 47 warnings in 23.46s =======================

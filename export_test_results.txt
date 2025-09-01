@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.2, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/puneeth/repo/stock_fundamental
+configfile: pytest.ini
+plugins: anyio-4.10.0, cov-6.2.1
+collected 9 items
+
+tests/test_export_integration.py ...                                     [ 33%]
+tests/test_export_report.py ...                                          [ 66%]
+tests/test_export_service.py ...                                         [100%]
+
+=============================== warnings summary ===============================
+tests/test_export_integration.py::test_export_analysis_csv
+tests/test_export_integration.py::test_export_progress_csv
+tests/test_export_integration.py::test_export_portfolio_csv
+tests/test_export_report.py::test_report_csv
+tests/test_export_report.py::test_report_xlsx
+tests/test_export_report.py::test_report_pdf
+tests/test_export_service.py::test_export_endpoint_returns_csv
+  /Users/puneeth/repo/stock_fundamental/app.py:1579: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_export_integration.py::test_export_analysis_csv
+tests/test_export_integration.py::test_export_progress_csv
+tests/test_export_integration.py::test_export_portfolio_csv
+tests/test_export_report.py::test_report_csv
+tests/test_export_report.py::test_report_xlsx
+tests/test_export_report.py::test_report_pdf
+tests/test_export_service.py::test_export_endpoint_returns_csv
+  /Users/puneeth/repo/stock_fundamental/app.py:1586: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 9 passed, 14 warnings in 3.50s ========================
