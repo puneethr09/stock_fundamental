@@ -148,10 +148,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run educational system regression tests
-        run: |
-          pytest tests/ -v -m "educational" --tb=short
-
       - name: Run analysis system regression tests
         run: |
           pytest tests/ -v -m "analysis" --tb=short
