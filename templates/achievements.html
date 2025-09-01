@@ -75,7 +75,7 @@
         const notesResp = await fetch(`/user/${uid}/notifications`);
         const notesJson = await notesResp.json();
         const notesList =
-          notesJson.notifications || notesJson.notifications || notesJson || [];
+          notesJson.notifications || notesJson.items || notesJson || [];
         const notesRoot = document.getElementById("notifications");
         notesRoot.innerHTML = "";
         if (!(notesList || []).length) {
