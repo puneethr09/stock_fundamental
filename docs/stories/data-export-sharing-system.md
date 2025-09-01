@@ -4,7 +4,7 @@
 
 ## Status
 
-Draft
+Ready for Development
 
 ## Story
 
@@ -42,6 +42,12 @@ Draft
   - [ ] Regression testing for existing functionality
 
 ## Dev Notes
+
+### Next steps
+
+- Create `ExportService` scaffold under `src/` and add basic unit tests in `tests/test_export_service.py` to validate CSV output.
+- Add Flask endpoint `/export` that returns a CSV for small exports to validate end-to-end download flow.
+- Iterate on PDF/Excel generation once CSV flow is validated and CI passes.
 
 ### Architecture Context
 
