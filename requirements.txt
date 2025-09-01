@@ -8,3 +8,5 @@ pytz
 requests
 newsapi-python
 openpyxl
+selenium
+webdriver-manager

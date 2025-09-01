@@ -7,8 +7,16 @@ import pytest
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 import time
+import shutil
+
+
+# Skip all tests if Chrome is not available
+chrome_available = shutil.which("google-chrome") or shutil.which("chromium-browser") or shutil.which("chrome")
+pytestmark = pytest.mark.skipif(not chrome_available, reason="Chrome browser not available")
 
 
 class TestMobileResponsiveness:
@@ -19,6 +27,8 @@ class TestMobileResponsiveness:
         """Setup mobile Chrome driver"""
         options = Options()
         options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         options.add_experimental_option(
             "mobileEmulation",
             {
@@ -26,7 +36,8 @@ class TestMobileResponsiveness:
                 "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1",
             },
         )
-        driver = webdriver.Chrome(options=options)
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
         yield driver
         driver.quit()
 
@@ -35,6 +46,8 @@ class TestMobileResponsiveness:
         """Setup tablet Chrome driver"""
         options = Options()
         options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         options.add_experimental_option(
             "mobileEmulation",
             {
@@ -42,7 +55,8 @@ class TestMobileResponsiveness:
                 "userAgent": "Mozilla/5.0 (iPad; CPU OS 10_3 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E5239e Safari/602.1",
             },
         )
-        driver = webdriver.Chrome(options=options)
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
         yield driver
         driver.quit()
 
@@ -156,7 +170,8 @@ class TestMobileResponsiveness:
             options.add_argument(f'--window-size={config["width"]},{config["height"]}')
 
             try:
-                driver = webdriver.Chrome(options=options)
+                service = Service(ChromeDriverManager().install())
+                driver = webdriver.Chrome(service=service, options=options)
                 driver.get("http://localhost:5001")
 
                 # Basic functionality test
