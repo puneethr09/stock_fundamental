@@ -124,18 +124,8 @@ class ToolIndependenceTrainer:
 
         return self.generate_stage_appropriate_challenge(user_session_id, stage, ticker)
 
-    def track_analytical_confidence_progress(
-        self, session_id: str, evaluation_result: dict
-    ):
-        """Record evaluation results into internal confidence history"""
-        try:
-            history = self.confidence_progression.setdefault(session_id, [])
-            history.append({"timestamp": time.time(), "result": evaluation_result})
-            # Keep window reasonable
-            if len(history) > 100:
-                history.pop(0)
-        except Exception:
-            pass
+    # (detailed Flask-interface implementation of
+    # track_analytical_confidence_progress exists later in this file)
 
     def _initialize_challenge_templates(self) -> Dict[str, Dict]:
         """Initialize challenge templates for different stages and types"""

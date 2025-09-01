@@ -9,7 +9,7 @@ gamification without compromising privacy or performance.
 
 import json
 import time
-from typing import Dict, List, Optional, Set, Tuple, Any
+from typing import Dict, List, Optional, Set, Tuple, Any, cast
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
@@ -351,17 +351,18 @@ class GamifiedProgressTracker:
                 "stage": context.current_stage.value,
                 "behavioral_snapshot": context.behavioral_data,
             },
-            display_name=badge_def["display_name"],
-            description=badge_def["description"],
-            achievement_value=badge_def["achievement_value"],
+            display_name=str(badge_def.get("display_name", "")),
+            description=str(badge_def.get("description", "")),
+            achievement_value=cast(int, badge_def.get("achievement_value", 0)),
         )
 
         # Store badge in localStorage-compatible format
         self._store_badge(context.user_id, badge)
 
         # Update stage progression points
+        # badge_def values may be typed as Any; ensure we pass an int
         self._update_stage_progression_points(
-            context.user_id, badge_def["achievement_value"]
+            context.user_id, cast(int, badge_def.get("achievement_value", 0))
         )
 
         return badge
@@ -447,48 +448,7 @@ class GamifiedProgressTracker:
 
         return progress
 
-    # Compatibility helpers expected by tests
-    def update_pattern_recognition_progress(
-        self, user_id: str, accuracy_score: float, pattern_type: Any
-    ) -> None:
-        progress = self._get_progress_metrics(user_id)
-        # update pattern_recognition_score conservatively
-        progress.pattern_recognition_score = min(
-            1.0, max(progress.pattern_recognition_score, accuracy_score)
-        )
-        self._store_progress_metrics(user_id, progress)
-
-    def update_research_progress(
-        self, user_id: str, score: float, assignment_type: str
-    ) -> None:
-        progress = self._get_progress_metrics(user_id)
-        # track completed assignments count
-        current = getattr(progress, "research_assignments_completed", 0)
-        # store in skill_competencies for simplicity
-        progress.skill_competencies[assignment_type] = (
-            progress.skill_competencies.get(assignment_type, 0.0) + score
-        )
-        # persist
-        self._store_progress_metrics(user_id, progress)
-
-    def get_user_progress(self, user_id: str) -> Dict[str, Any]:
-        progress = self._get_progress_metrics(user_id)
-        return {
-            "pattern_recognition_score": progress.pattern_recognition_score,
-            "research_assignments_completed": (
-                int(progress.stage_progression_points // 100)
-                if progress.stage_progression_points
-                else 0
-            ),
-            "analysis_count": progress.analysis_count,
-        }
-
-    def get_user_badges(self, user_id: str) -> List[Dict[str, Any]]:
-        badges = self._get_earned_badges(user_id)
-        return [
-            {"badge_type": b.badge_type.value, "display_name": b.display_name}
-            for b in badges
-        ]
+    # (Duplicate compatibility helpers removed — canonical implementations remain later in the file)
 
     def calculate_learning_streak(
         self, user_id: str, session_history: List[Dict[str, Any]]
@@ -507,7 +467,7 @@ class GamifiedProgressTracker:
             return 0, 0
 
         # Group sessions by date
-        daily_sessions = {}
+        daily_sessions: Dict[str, List[Dict[str, Any]]] = {}
         for session in session_history:
             session_date = datetime.fromtimestamp(session.get("timestamp", 0)).strftime(
                 "%Y-%m-%d"
@@ -615,7 +575,7 @@ class GamifiedProgressTracker:
         progress = self._get_progress_metrics(user_id)
 
         # Organize badges by category
-        badge_categories = {
+        badge_categories: Dict[str, List[Dict[str, Any]]] = {
             "analysis_milestones": [],
             "pattern_mastery": [],
             "research_excellence": [],
@@ -696,8 +656,8 @@ class GamifiedProgressTracker:
                         badge_type=btype,
                         earned_timestamp=float(payload.get("earned_timestamp", 0)),
                         context=payload.get("context", {}),
-                        display_name=payload.get("display_name", ""),
-                        description=payload.get("description", ""),
+                        display_name=str(payload.get("display_name", "")),
+                        description=str(payload.get("description", "")),
                         achievement_value=int(payload.get("achievement_value", 0)),
                     )
                 )

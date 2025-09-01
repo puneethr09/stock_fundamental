@@ -8,7 +8,7 @@ behavioral tracking and stage-appropriate educational content delivery.
 
 import json
 import time
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import numpy as np
@@ -261,7 +261,9 @@ class EducationalMasteryFramework:
         )
 
     # Backwards-compatible alias expected by tests
-    def assess_current_learning_stage(self, *args, **kwargs) -> StageAssessmentResult:
+    def assess_current_learning_stage(
+        self, *args, **kwargs
+    ) -> Union[StageAssessmentResult, LearningStage]:
         """Compatibility wrapper: support both signatures used in tests.
 
         Allowed calls:
@@ -323,7 +325,7 @@ class EducationalMasteryFramework:
             }
 
         # Count interactions by type (with error handling)
-        interaction_counts = {}
+        interaction_counts: Dict[str, int] = {}
         valid_interactions = 0
 
         for entry in behavioral_history:

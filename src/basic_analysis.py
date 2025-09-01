@@ -3,7 +3,9 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import os, requests, pytz
+import os
+import requests  # type: ignore
+import pytz  # type: ignore
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -260,38 +262,7 @@ def calculate_roi(income_statement, balance_sheet):
         return pd.Series(np.nan, index=income_statement.columns)
 
 
-def calculate_ratio(df1, df2, numerator, denominator):
-    try:
-        num = (
-            df1.loc[numerator]
-            if numerator in df1.index
-            else pd.Series(0, index=df1.columns)
-        )
-        denom = (
-            df2.loc[denominator]
-            if denominator in df2.index
-            else pd.Series(1, index=df2.columns)
-        )
-        return num / denom
-    except KeyError:
-        return pd.Series(np.nan, index=df1.columns)
-
-
-def calculate_margin(df, numerator, denominator):
-    try:
-        num = (
-            df.loc[numerator]
-            if numerator in df.index
-            else pd.Series(0, index=df.columns)
-        )
-        denom = (
-            df.loc[denominator]
-            if denominator in df.index
-            else pd.Series(1, index=df.columns)
-        )
-        return (num / denom) * 100
-    except KeyError:
-        return pd.Series(np.nan, index=df.columns)
+# Using calculate_ratio and calculate_margin from src.utils (imported at top)
 
 
 def analyze_ratios(ratios_df, ticker=None):

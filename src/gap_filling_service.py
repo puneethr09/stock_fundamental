@@ -219,18 +219,24 @@ class EducationalGapFillingService:
             ],
         }
 
-    def _initialize_research_templates(self) -> Dict[str, ResearchGuide]:
-        """Initialize research guide templates"""
-        templates = {}
+    def _initialize_research_templates(self) -> Dict[str, Any]:
+        """Build research guide templates keyed by category"""
+        templates: Dict[str, Any] = {
+            "literature_review": {
+                "title": "Literature Review Template",
+                "sections": ["Summary", "Method", "Findings"],
+            },
+            "experiment_design": {
+                "title": "Experiment Design Template",
+                "sections": ["Hypothesis", "Procedure", "Expected Results"],
+            },
+        }
 
-        # Economic Moats Research Template
-        templates[ResearchCategory.ECONOMIC_MOATS.value] = {
-            "title": "Economic Moats Analysis for {company_name}",
-            "objective": "Identify and evaluate the competitive advantages that protect {company_name} from competition",
+        # Competitive Landscape Template
+        templates[ResearchCategory.COMPETITIVE_LANDSCAPE.value] = {
+            "title": "Competitive Landscape Research for {company_name}",
+            "objective": "Analyze competitive positioning and sources of sustainable advantage",
             "research_questions": [
-                "What unique assets or capabilities does {company_name} possess?",
-                "How sustainable are these competitive advantages over time?",
-                "What barriers to entry exist in {company_name}'s primary business segments?",
                 "How does {company_name} maintain pricing power in its markets?",
                 "What switching costs do customers face when considering alternatives?",
                 "How does {company_name}'s scale provide cost or operational advantages?",
@@ -466,7 +472,7 @@ class EducationalGapFillingService:
         Returns:
             List of research guides with step-by-step instructions
         """
-        guides = []
+        guides: List[ResearchGuide] = []
 
         # Handle None input gracefully
         if not gaps:
