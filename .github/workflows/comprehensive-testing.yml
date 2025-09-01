@@ -1,10 +1,15 @@
 name: Comprehensive Educational Testing
 
+# Trigger manually with the Actions "Run workflow" button or on PR opened only.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      trigger_label:
+        description: "Label for run (optional) - e.g. PR check start"
+        required: false
+        default: "PR check start"
   pull_request:
-    branches: [main]
+    types: [opened]
 
 jobs:
   test:
