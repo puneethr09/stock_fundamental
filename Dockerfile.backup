@@ -1,0 +1,29 @@
+# Backup service Dockerfile
+FROM alpine:latest
+
+# Install necessary tools
+RUN apk add --no-cache \
+    sqlite \
+    bash \
+    curl \
+    postgresql-client \
+    mysql-client \
+    gzip \
+    tar
+
+# Create backup directories
+RUN mkdir -p /app/backups /app/logs
+
+# Copy backup script
+COPY scripts/backup.sh /app/backup.sh
+RUN chmod +x /app/backup.sh
+
+# Set working directory
+WORKDIR /app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Default command
+CMD ["/app/backup.sh"]

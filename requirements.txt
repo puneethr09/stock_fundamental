@@ -10,3 +10,4 @@ newsapi-python
 openpyxl
 selenium
 webdriver-manager
+prometheus-client

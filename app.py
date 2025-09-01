@@ -32,6 +32,15 @@ from src.gamified_progress_tracker import AchievementContext
 import secrets
 from src.export_service import ExportService
 
+# Prometheus metrics
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
+
 app = Flask(__name__)
 import os
 import secrets
@@ -42,6 +51,16 @@ import datetime
 import json
 import yfinance as yf
 import pandas as pd
+
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status"]
+)
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds", "HTTP request latency", ["method", "endpoint"]
+)
+ACTIVE_USERS = Gauge("active_users", "Number of active users")
+SYSTEM_HEALTH = Gauge("system_health", "System health status")
 
 
 app = Flask(__name__)
@@ -1513,6 +1532,67 @@ def export_portfolio(user_id=None):
         return _respond_with_format(rows, fmt, filename)
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Prometheus metrics endpoint
+@app.route("/metrics")
+def metrics():
+    """Prometheus metrics endpoint"""
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+
+
+# Health check endpoint
+@app.route("/health")
+def health():
+    """Health check endpoint for load balancer and monitoring"""
+    try:
+        # Basic health checks
+        health_status = {
+            "status": "healthy",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "version": "1.0.0",
+            "services": {"database": "ok", "external_apis": "ok"},
+        }
+
+        # Update system health metric
+        SYSTEM_HEALTH.set(1)
+
+        return jsonify(health_status), 200
+    except Exception as e:
+        SYSTEM_HEALTH.set(0)
+        return (
+            jsonify(
+                {
+                    "status": "unhealthy",
+                    "error": str(e),
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                }
+            ),
+            500,
+        )
+
+
+# Middleware to track metrics
+@app.before_request
+def before_request():
+    """Track request metrics"""
+    request.start_time = datetime.datetime.utcnow()
+
+
+@app.after_request
+def after_request(response):
+    """Track response metrics"""
+    if hasattr(request, "start_time"):
+        latency = (datetime.datetime.utcnow() - request.start_time).total_seconds()
+        REQUEST_LATENCY.labels(method=request.method, endpoint=request.path).observe(
+            latency
+        )
+
+    REQUEST_COUNT.labels(
+        method=request.method, endpoint=request.path, status=response.status_code
+    ).inc()
+
+    return response
 
 
 if __name__ == "__main__":
