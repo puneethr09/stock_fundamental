@@ -4,7 +4,7 @@
 
 ## Status
 
-Draft
+Ready for Development
 
 ## Story
 
@@ -45,6 +45,14 @@ Draft
   - [ ] Performance testing for mobile load times
 
 ## Dev Notes
+
+### Next steps
+
+- Audit current templates in `templates/` to identify non-responsive patterns.
+- Create responsive CSS overrides in `static/styles.css` scoped to mobile breakpoints.
+- Add a small visual regression test job (snapshot) for critical pages.
+
+...existing code...
 
 ### Architecture Context
 
