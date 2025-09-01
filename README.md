@@ -2,6 +2,57 @@
 
 A comprehensive **educational stock analysis platform** that combines fundamental financial analysis with interactive learning systems. Built for investors, students, and financial enthusiasts to master stock analysis through hands-on learning, gamification, and personalized research guidance.
 
+## 🚀 Quick Start
+
+Get your stock analysis platform running in minutes!
+
+### Local Development (Recommended)
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/yourusername/stock_fundamental.git
+cd stock_fundamental
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with your API keys (optional for basic features)
+
+# 3. Deploy with Docker
+./deploy.sh local
+
+# 4. Access your app
+open http://localhost:5001
+```
+
+**That's it!** Your educational stock analysis platform is now running locally.
+
+### Production Deployment
+
+For production deployment options (DigitalOcean, AWS, Google Cloud):
+
+```bash
+# Use the automated deployment script
+./deploy.sh production
+
+# Or follow the detailed guide
+cat DEPLOYMENT_GUIDE.md
+```
+
+📖 **Full Deployment Guide**: See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for:
+
+- Production deployment options (AWS, DigitalOcean, Google Cloud)
+- SSL certificate setup
+- Monitoring and scaling
+- Troubleshooting guide
+
+## 📚 Documentation
+
+- **[🚀 Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
+- **[📋 QA Readiness Check](docs/qa-readiness-check.md)** - Quality assurance checklist
+- **[🔒 Security Checklist](docs/security-checklist.md)** - Security best practices
+- **[🏗️ Architecture](docs/brownfield-architecture.md)** - System architecture overview
+- **[📊 Product Requirements](docs/prd.md)** - Detailed product specifications
+
 ## 🎯 What This Platform Does - The Complete Picture
 
 Imagine having a **personal finance professor, investment mentor, and stock analysis laboratory** all rolled into one powerful web application. This isn't just another stock screener - it's your **complete educational journey** from financial novice to analytical expert.
