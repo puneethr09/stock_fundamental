@@ -30,6 +30,7 @@ import subprocess, os
 from src.research_guidance_system import ResearchGuidanceSystem
 from src.gamified_progress_tracker import AchievementContext
 import secrets
+from src.export_service import ExportService
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # For session management
@@ -1208,6 +1209,27 @@ def get_tool_independence_progress():
 
     except Exception as e:
         return jsonify({"success": False, "error": f"Failed to get progress: {str(e)}"})
+
+
+@app.route("/export", methods=["POST"])
+def export_csv():
+    """Simple CSV export endpoint.
+
+    Expects JSON body: {"rows": [ {..}, {...} ] }
+    Returns a CSV attachment built from the first row's keys as headers.
+    """
+    try:
+        payload = request.get_json(force=True)
+        rows = payload.get("rows", []) if isinstance(payload, dict) else []
+        csv_text = ExportService.generate_csv(rows)
+
+        return Response(
+            csv_text,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=export.csv"},
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":
