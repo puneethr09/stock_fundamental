@@ -223,12 +223,26 @@ class TestDockerServices:
 
         try:
             # Check if production environment is running
-            prod_result = subprocess.run(
-                ["docker-compose", "-f", "docker-compose.prod.yml", "ps"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            # Try newer docker compose syntax first
+            try:
+                prod_result = subprocess.run(
+                    ["docker", "compose", "-f", "docker-compose.prod.yml", "ps"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+            except (
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+                subprocess.SubprocessError,
+            ):
+                # Fall back to older docker-compose syntax
+                prod_result = subprocess.run(
+                    ["docker-compose", "-f", "docker-compose.prod.yml", "ps"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
 
             if prod_result.returncode == 0 and "nginx" in prod_result.stdout:
                 # Production environment is running
@@ -241,12 +255,24 @@ class TestDockerServices:
                 ]
             else:
                 # Check development environment
-                dev_result = subprocess.run(
-                    ["docker-compose", "ps"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
+                try:
+                    dev_result = subprocess.run(
+                        ["docker", "compose", "ps"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                except (
+                    subprocess.TimeoutExpired,
+                    FileNotFoundError,
+                    subprocess.SubprocessError,
+                ):
+                    dev_result = subprocess.run(
+                        ["docker-compose", "ps"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
 
                 if dev_result.returncode == 0:
                     output = dev_result.stdout
@@ -321,12 +347,41 @@ class TestRegressionTesting:
         assert dev_compose_file.exists(), "Development docker-compose.yml missing"
 
         # Test development config is still valid
-        result = subprocess.run(
-            ["docker-compose", "-f", str(dev_compose_file), "config", "--quiet"],
-            capture_output=True,
-            text=True,
-            cwd=project_root,
-        )
+        # Try newer docker compose syntax first, fall back to older docker-compose
+        try:
+            result = subprocess.run(
+                ["docker", "compose", "-f", str(dev_compose_file), "config", "--quiet"],
+                capture_output=True,
+                text=True,
+                cwd=project_root,
+                timeout=10,
+            )
+        except (
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+            subprocess.SubprocessError,
+        ):
+            # Fall back to older docker-compose syntax
+            try:
+                result = subprocess.run(
+                    [
+                        "docker-compose",
+                        "-f",
+                        str(dev_compose_file),
+                        "config",
+                        "--quiet",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=project_root,
+                    timeout=10,
+                )
+            except (
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+                subprocess.SubprocessError,
+            ):
+                pytest.skip("Docker Compose command failed - skipping workflow test")
 
         assert result.returncode == 0, f"Development config invalid: {result.stderr}"
 
