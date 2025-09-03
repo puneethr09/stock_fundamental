@@ -1,0 +1,37 @@
+# Backup service Dockerfile with security hardening
+FROM alpine:latest
+
+# Install necessary tools
+RUN apk add --no-cache \
+    sqlite \
+    bash \
+    curl \
+    gzip \
+    tar \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1000 backupuser && \
+    adduser -D -u 1000 -G backupuser backupuser
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/data /app/backups /app/logs /app/scripts && \
+    chown -R backupuser:backupuser /app
+
+# Copy backup script
+COPY scripts/backup.sh /app/scripts/
+RUN chmod +x /app/scripts/backup.sh && \
+    chown backupuser:backupuser /app/scripts/backup.sh
+
+# Set working directory
+WORKDIR /app
+
+# Switch to non-root user
+USER backupuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD [ -f /app/backups/.health ] || exit 1
+
+# Default command
+CMD ["/app/scripts/backup.sh"]

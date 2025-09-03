@@ -7,3 +7,14 @@ plotly
 pytz
 requests
 newsapi-python
+openpyxl
+selenium
+webdriver-manager
+prometheus-client
+pyyaml
+pytest
+pytest-mock
+pytest-cov
+pytest-xdist
+pytest-benchmark
+types-requests

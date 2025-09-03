@@ -1,0 +1,27 @@
+{{ define "email.subject" }}
+{{ .GroupLabels.alertname }} - {{ .Status | title }} - Stock Analysis Platform
+{{ end }}
+
+{{ define "email.body" }}
+{{ range .Alerts }}
+Alert: {{ .Annotations.summary }}
+Description: {{ .Annotations.description }}
+Severity: {{ .Labels.severity }}
+Status: {{ .Status | title }}
+Starts At: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+{{ if .EndsAt }}Ends At: {{ .EndsAt.Format "2006-01-02 15:04:05" }}{{ end }}
+
+Labels:
+{{ range .Labels.SortedPairs }}  {{ .Name }}: {{ .Value }}
+{{ end }}
+
+Annotations:
+{{ range .Annotations.SortedPairs }}  {{ .Name }}: {{ .Value }}
+{{ end }}
+
+{{ end }}
+
+--
+Stock Analysis Platform Monitoring
+{{ .ExternalURL }}
+{{ end }}

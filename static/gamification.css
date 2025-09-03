@@ -1,0 +1,440 @@
+/* Gamification UI Styles */
+
+/* Progress Indicators */
+.progress-section {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.progress-section h3 {
+  margin-bottom: 20px;
+  color: #343a40;
+  font-size: 1.25rem;
+}
+
+.skill-progress {
+  margin-bottom: 15px;
+}
+
+.skill-progress label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background-color: #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill.debt-analysis {
+  background: linear-gradient(90deg, #dc3545, #fd7e14);
+}
+
+.progress-fill.growth-indicators {
+  background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.progress-fill.value-assessment {
+  background: linear-gradient(90deg, #007bff, #6610f2);
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.875rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.overall-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+/* Badge Showcase */
+.badge-showcase {
+  margin: 20px 0;
+}
+
+.badge-showcase h3 {
+  margin-bottom: 20px;
+  color: #343a40;
+}
+
+.badge-category {
+  margin-bottom: 30px;
+}
+
+.badge-category h4 {
+  margin-bottom: 15px;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.badge-item.earned {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+}
+
+.badge-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.badge-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.badge-info {
+  flex: 1;
+}
+
+.badge-name {
+  font-weight: bold;
+  color: #343a40;
+  margin-bottom: 4px;
+}
+
+.badge-description {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+
+.badge-date {
+  color: #28a745;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* Streak Counter */
+.streak-display {
+  background: linear-gradient(135deg, #ff6b6b, #feca57);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.streak-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.streak-flame {
+  font-size: 3rem;
+  margin-right: 15px;
+  animation: flicker 2s infinite alternate;
+}
+
+@keyframes flicker {
+  0% {
+    transform: scale(1) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1.1) rotate(1deg);
+  }
+}
+
+.streak-info {
+  text-align: left;
+}
+
+.streak-current {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.streak-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.streak-best {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+.streak-encouragement {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* Achievement Notifications */
+.achievement-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  z-index: 1000;
+  max-width: 400px;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.achievement-notification.show {
+  transform: translateX(0);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  position: relative;
+}
+
+.notification-icon {
+  font-size: 2.5rem;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.notification-badge {
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: #ffd700;
+}
+
+.notification-description {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.notification-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .badge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overall-stats {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .streak-counter {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .streak-flame {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .streak-info {
+    text-align: center;
+  }
+
+  .achievement-notification {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .notification-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .notification-icon {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}
+
+/* Integration with existing styles */
+.gamification-sidebar {
+  background-color: #f8f9fa;
+  border-left: 1px solid #dee2e6;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.gamification-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, #007bff, #6610f2);
+  color: white;
+  border-radius: 8px;
+}
+
+.gamification-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 0.875rem;
+}
+
+.gamification-stats .stat {
+  text-align: center;
+}
+
+.gamification-stats .stat-number {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Compact badge display for headers/sidebars */
+.badge-compact {
+  display: inline-flex;
+  align-items: center;
+  background-color: #28a745;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin: 2px;
+}
+
+.badge-compact .badge-icon {
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
+/* Animation for progress updates */
+@keyframes progressUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.progress-fill.updating {
+  animation: progressUpdate 0.5s ease;
+}
+
+/* Mastery level indicators */
+.mastery-level {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.mastery-level.novice {
+  background-color: #6c757d;
+  color: white;
+}
+
+.mastery-level.developing {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.mastery-level.proficient {
+  background-color: #28a745;
+  color: white;
+}
+
+.mastery-level.expert {
+  background-color: #7c4dff;
+  color: white;
+}

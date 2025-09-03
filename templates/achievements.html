@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Achievements</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  </head>
+  <body class="achievements-page">
+    {% include '_header.html' %}
+    <div class="container">
+      <h1>Your Achievements</h1>
+      <div id="badges" class="badge-grid row"></div>
+      <h2>Notifications</h2>
+      <ul id="notifications" class="notifications-list list-unstyled"></ul>
+    </div>
+
+    <script nonce="{{ g.csp_nonce }}">
+      function badgeCard(b) {
+        const container = document.createElement("div");
+        container.className = "badge-card col-lg-4 col-md-6 col-sm-12 mb-3";
+        const title = document.createElement("h3");
+        title.innerText = b.title || b.type || "Badge";
+        const desc = document.createElement("p");
+        desc.innerText = b.description || b.summary || "";
+        const date = document.createElement("small");
+        date.innerText = b.awarded_at || b.date || "";
+        container.appendChild(title);
+        container.appendChild(desc);
+        container.appendChild(date);
+        return container;
+      }
+
+      function notificationItem(n) {
+        const li = document.createElement("li");
+        li.className = "notification-item";
+        const text = document.createElement("span");
+        text.innerText = n.message || n.summary || "Notification";
+        const when = document.createElement("small");
+        when.innerText = n.created_at || n.date || "";
+        const btn = document.createElement("button");
+        btn.className = "btn btn-sm btn-outline-primary";
+        btn.innerText = "Mark read";
+        btn.style.minHeight = "44px"; // Touch target
+        btn.onclick = async () => {
+          try {
+            const response = await fetch(`/user/${uid}/notifications/${n.id}/read`, {
+              method: "POST",
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            li.classList.add("read");
+          } catch (e) {
+            console.warn("mark read failed", e);
+          }
+        };
+        li.appendChild(text);
+        li.appendChild(when);
+        li.appendChild(btn);
+        return li;
+      }
+
+      async function loadData() {
+        const uid = '{{ user_id or "" }}';
+        try {
+          const badgesResp = await fetch(`/user/${uid}/badges`);
+          if (!badgesResp.ok) {
+            throw new Error(`Failed to load badges: ${badgesResp.status}`);
+          }
+          const badgesJson = await badgesResp.json();
+          const badgesList = badgesJson.badges || badgesJson || [];
+          const badgesRoot = document.getElementById("badges");
+          badgesRoot.innerHTML = "";
+          if (!(badgesList || []).length) {
+            badgesRoot.innerHTML =
+              '<p class="muted">No badges yet. Complete assignments to earn achievements.</p>';
+          } else {
+            (badgesList || []).forEach((b) =>
+              badgesRoot.appendChild(badgeCard(b))
+            );
+          }
+
+          const notesResp = await fetch(`/user/${uid}/notifications`);
+          if (!notesResp.ok) {
+            throw new Error(`Failed to load notifications: ${notesResp.status}`);
+          }
+          const notesJson = await notesResp.json();
+          const notesList =
+            notesJson.notifications || notesJson.items || notesJson || [];
+          const notesRoot = document.getElementById("notifications");
+          notesRoot.innerHTML = "";
+          if (!(notesList || []).length) {
+            notesRoot.innerHTML = '<li class="muted">No notifications yet.</li>';
+          } else {
+            (notesList || []).forEach((n) =>
+              notesRoot.appendChild(notificationItem(n))
+            );
+          }
+        } catch (e) {
+          console.error("Failed to load data", e);
+          // Optionally show user-friendly error message
+        }
+      }
+
+      loadData();
+    </script>
+    </div>
+    {% include '_footer.html' %}
+  </body>
+</html>

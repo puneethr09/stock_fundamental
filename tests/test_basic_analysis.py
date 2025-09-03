@@ -16,6 +16,25 @@ from basic_analysis import (
 
 
 def test_get_financial_ratios_valid():
+    """Unit test with mocked yfinance data"""
+    df = get_financial_ratios("TCS.NS")
+    assert df is not None
+    assert "ROE" in df.columns
+    assert len(df) > 0  # Should have data from mock
+
+
+@pytest.mark.integration
+def test_get_financial_ratios_valid_integration():
+    """Integration test that actually calls external APIs"""
+    df = get_financial_ratios("TCS.NS")
+    assert df is not None
+    assert "ROE" in df.columns
+
+
+def test_get_financial_ratios_invalid():
+    df = get_financial_ratios("INVALIDTICKER.NS")
+    assert df is None
+    """Integration test that actually calls external APIs"""
     df = get_financial_ratios("TCS.NS")
     assert df is not None
     assert "ROE" in df.columns
@@ -27,10 +46,17 @@ def test_get_financial_ratios_invalid():
 
 
 def test_analyze_ratios_empty():
-    warnings, explanations, plot_html = analyze_ratios(None)
+    result = analyze_ratios(None)
+    # New signature returns 6 values: warnings, explanations, plot_html, gaps, research_guides, confidence_score
+    assert len(result) == 6
+    warnings, explanations, plot_html, gaps, research_guides, confidence_score = result
     assert warnings == []
     assert explanations == []
     assert plot_html is None
+    assert isinstance(gaps, list)
+    assert isinstance(research_guides, list)
+    assert isinstance(confidence_score, float)
+    assert 0.0 <= confidence_score <= 1.0
 
 
 def test_calculate_quick_ratio():

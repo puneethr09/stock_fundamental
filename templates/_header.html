@@ -1,0 +1,192 @@
+<!-- Shared site header (responsive, CSS-first) -->
+<header class="site-header" role="banner">
+  <div class="site-header-inner container-fluid">
+    <a class="brand" href="{{ url_for('home') }}">Stock Analysis</a>
+
+    <!-- checkbox toggle for small screens (CSS only) -->
+    <input
+      id="nav-toggle"
+      class="nav-toggle"
+      type="checkbox"
+      aria-hidden="true"
+    />
+    <label
+      for="nav-toggle"
+      class="nav-toggle-label"
+      aria-label="Menu toggle"
+      aria-hidden="true"
+    >
+      <span class="hamburger" aria-hidden="true"></span>
+    </label>
+
+    <nav class="nav-links" role="navigation" aria-label="Main Navigation">
+      <ul>
+        <li>
+          <a href="{{ url_for('pattern_training_home') }}">Pattern Training</a>
+        </li>
+        <li><a href="{{ url_for('news') }}">Market News</a></li>
+        <li><a href="/achievements">Achievements</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <style nonce="{{ g.csp_nonce }}">
+    :root {
+      --brand-bg-1: #0d47a1;
+      --brand-bg-2: #1976d2;
+      --brand-contrast: #ffffff;
+      --nav-bg: rgba(13, 71, 161, 0.98);
+      --nav-ease: 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .site-header {
+      background: linear-gradient(
+        90deg,
+        var(--brand-bg-1) 0%,
+        var(--brand-bg-2) 100%
+      );
+      color: var(--brand-contrast);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      position: relative;
+      z-index: 2000;
+    }
+    .site-header .site-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.6rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .brand {
+      color: var(--brand-contrast);
+      font-weight: 800;
+      text-decoration: none;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand::before {
+      content: "";
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fff2 0%, #fff0 100%);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) inset;
+      margin-right: 0.4rem;
+    }
+
+    /* Desktop nav */
+    .site-header .nav-links {
+      display: flex;
+      align-items: center;
+    }
+    .site-header .nav-links ul {
+      display: flex;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .site-header .nav-links a {
+      color: var(--brand-contrast);
+      padding: 0.45rem 0.7rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background var(--nav-ease), transform var(--nav-ease);
+    }
+    .site-header .nav-links a:hover,
+    .site-header .nav-links a:focus {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    /* Toggle */
+    .nav-toggle {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+    }
+    .nav-toggle-label {
+      display: none;
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 6px;
+    }
+    .nav-toggle-label .hamburger {
+      width: 26px;
+      height: 2px;
+      background: var(--brand-contrast);
+      display: block;
+      position: relative;
+      border-radius: 2px;
+      box-shadow: 0 7px 0 var(--brand-contrast), 0 -7px 0 var(--brand-contrast);
+      transition: transform var(--nav-ease), box-shadow var(--nav-ease);
+    }
+
+    @media (max-width: 768px) {
+      .site-header .site-header-inner {
+        padding: 0.5rem 0.75rem;
+      }
+      .site-header .nav-links {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 56px;
+        bottom: 0;
+        background: var(--nav-bg);
+        flex-direction: column;
+        padding: 1.25rem 1rem;
+        display: none;
+        overflow: auto;
+      }
+      .site-header .nav-links ul {
+        flex-direction: column;
+        gap: 0.6rem;
+        width: 100%;
+      }
+      .site-header .nav-links a {
+        display: block;
+        padding: 0.9rem 1rem;
+        font-size: 1.05rem;
+        border-radius: 10px;
+      }
+      .nav-toggle-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-contrast);
+      }
+      /* when checked show nav */
+      #nav-toggle:checked + .nav-toggle-label + .nav-links {
+        display: flex;
+      }
+      /* animate hamburger into an X */
+      #nav-toggle:checked + .nav-toggle-label .hamburger {
+        transform: rotate(45deg);
+        box-shadow: 0 0 0 var(--brand-contrast);
+      }
+      #nav-toggle:checked + .nav-toggle-label .hamburger::after,
+      #nav-toggle:checked + .nav-toggle-label .hamburger::before {
+        display: none;
+      }
+    }
+
+    /* Accessibility */
+    .site-header a:focus {
+      outline: 3px solid rgba(255, 255, 255, 0.12);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .site-header .nav-links a,
+      .nav-toggle-label .hamburger {
+        transition: none;
+      }
+    }
+  </style>
+</header>

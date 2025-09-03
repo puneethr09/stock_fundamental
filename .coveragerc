@@ -1,0 +1,59 @@
+[run]
+source = .
+omit =
+    */__pycache__/*
+    */venv/*
+    */.venv/*
+    */tests/*
+    */test_*.py
+    setup.py
+    */migrations/*
+    */static/*
+    */templates/*
+    */docs/*
+    */scripts/*
+    */monitoring/*
+    */nginx/*
+    */logs/*
+    */backups/*
+    */data/*
+    */input/*
+    */htmlcov/*
+    */.pytest_cache/*
+    */.mypy_cache/*
+    */.vscode/*
+    */.git/*
+    */web-bundles/*
+    */intellearn/*
+    */.bmad-core/*
+    demo_*.py
+    debug_*.py
+    docker_compose_*.py
+    solution_*.py
+    test_*.py
+    export_test_results.txt
+    e2e_test_results.txt
+    integration_test_results.txt
+    mypy_results.txt
+    test_results.txt
+    coverage.xml
+    .coverage
+    .envrc
+    Dockerfile*
+    docker-compose*.yml
+    requirements*.txt
+    pytest.ini
+    mypy.ini
+    .gitignore
+    README.md
+    COMMUNITY_KNOWLEDGE_GUIDE.md
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod

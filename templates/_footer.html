@@ -1,0 +1,32 @@
+<!-- Simple site footer (client-side year to avoid template helper dependency) -->
+<footer class="site-footer">
+  <div class="container text-center py-3">
+    <small class="text-muted"
+      ><span id="footer-year"></span> © Stock Analysis</small
+    >
+  </div>
+
+  <style nonce="{{ g.csp_nonce }}">
+    .site-footer {
+      background: #f8f9fa;
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+      margin-top: 1.5rem;
+    }
+    .site-footer .text-muted {
+      color: #6c757d;
+    }
+  </style>
+</footer>
+
+<script nonce="{{ g.csp_nonce }}">
+  // Populate year client-side so template doesn't require a helper
+  (function () {
+    try {
+      var y = new Date().getFullYear();
+      var el = document.getElementById("footer-year");
+      if (el) el.textContent = y;
+    } catch (e) {
+      /* no-op */
+    }
+  })();
+</script>

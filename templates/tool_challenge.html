@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Tool Independence Challenge - Stock Analysis</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  </head>
+  <body class="tool-challenge-page">
+  {% include '_header.html' %}
+
+  <div class="container">
+        <h1 class="mb-3">🎯 Tool Independence Challenge</h1>
+        <p class="lead mb-0">
+          Test your analytical skills without automated assistance
+        </p>
+        {% if current_stage %}
+        <span class="stage-badge mt-3 d-inline-block">
+          Learning Stage: {{ current_stage.title() }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Error Display -->
+      {% if error %}
+      <div class="alert alert-danger" role="alert">
+        <h5>⚠️ Challenge Generation Failed</h5>
+        <p class="mb-0">{{ error }}</p>
+        <hr />
+        <p class="mb-0">
+          <a href="/" class="btn btn-primary">Return to Home</a>
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- No Ticker Selected -->
+      {% if not ticker and not error %}
+      <div class="challenge-card text-center">
+        <h3>🔍 Select a Stock to Challenge</h3>
+        <p class="text-muted mb-4">
+          Enter a stock symbol to begin your tool independence challenge
+        </p>
+        <form action="/tool-challenge" method="GET" class="w-100">
+          <div class="input-group mx-auto" style="max-width: 100%; min-width: 300px; position: relative;">
+            <div class="position-relative">
+              <input
+                id="ticker-input"
+                type="text"
+                name="ticker"
+                class="form-control form-control-lg"
+                placeholder="Enter stock symbol (e.g., RELIANCE)"
+                required
+                style="text-transform: uppercase; min-height: 44px;"
+                autocomplete="off"
+              />
+            </div>
+            <div class="input-group-append">
+              <button class="btn btn-primary btn-lg" type="submit" style="min-height: 44px;">
+                Start Challenge
+              </button>
+            </div>
+            <ul id="suggestions-list" class="suggestions"></ul>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Challenge Display -->
+      {% if challenge and ticker %}
+      <div class="ticker-badge text-center">📊 {{ ticker.upper() }}</div>
+
+      <div class="challenge-instructions">
+        <h4>🎯 Challenge Instructions</h4>
+        <ul>
+          <li>
+            <strong>No automated tools</strong> - Rely on your analytical skills
+          </li>
+          <li>
+            <strong>Make predictions</strong> based on the limited data provided
+          </li>
+          <li><strong>Explain your reasoning</strong> for each prediction</li>
+          <li><strong>Rate your confidence</strong> in each assessment</li>
+          <li>
+            <strong>Learn from feedback</strong> to improve your analytical
+            abilities
+          </li>
+        </ul>
+      </div>
+
+      <div class="challenge-card">
+        <h4>📈 Company Data Snapshot</h4>
+        {% if challenge.company_basic_info %}
+        <div class="row">
+          {% for key, value in challenge.company_basic_info.items() %}
+          {% if key != 'business_description_full' %}
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <h6 class="card-title text-muted text-center">
+                  {{ key.replace('_', ' ').title() }}
+                </h6>
+                {% if key == 'business_description' %}
+                <div class="business-description-container">
+                  <h5 class="card-text text-primary text-center business-description-text" style="cursor: pointer;" onclick="showBusinessDescription('{{ challenge.challenge_id if challenge else '' }}')">
+                    {{ value }}
+                    <i class="fas fa-external-link-alt ml-2" style="font-size: 0.8em;"></i>
+                  </h5>
+                  <small class="text-muted text-center d-block">Click to read full description</small>
+                </div>
+                {% elif value is iterable and value is not string %}
+                <ul class="list-unstyled">
+                  {% for item in value %}
+                  <li class="mb-2">
+                    {% if '🚨' in item or '🔴' in item or '📉' in item or '❌'
+                    in item %}
+                    <i
+                      class="fas fa-exclamation-triangle text-warning me-2"
+                    ></i>
+                    {% elif '💪' in item or '💰' in item or '🌟' in item or '💎'
+                    in item or '🚀' in item %}
+                    <i class="fas fa-star text-success me-2"></i>
+                    {% elif '⚖️' in item or '✅' in item or '📈' in item or '✨'
+                    in item %}
+                    <i class="fas fa-check-circle text-info me-2"></i>
+                    {% else %}
+                    <i class="fas fa-info-circle text-muted me-2"></i>
+                    {% endif %} {{ item }}
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <h5 class="card-text text-primary text-center">{{ value }}</h5>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %} {% if challenge.educational_context and
+        challenge.educational_context.get('context_hints') %}
+        <div class="mt-4">
+          <h5>🔍 Context Clues</h5>
+          <ul>
+            {% for clue in challenge.educational_context.context_hints %}
+            <li>{{ clue }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Prediction Form -->
+      <div class="prediction-form">
+        <h3 class="mb-4">🎯 Make Your Predictions</h3>
+
+        <form id="challenge-form">
+          <input type="hidden" name="ticker" value="{{ ticker }}" />
+          <input
+            type="hidden"
+            name="challenge_id"
+            value="{{ challenge.challenge_id if challenge else '' }}"
+          />
+
+          <!-- Financial Health Prediction -->
+          <div class="prediction-section">
+            <h5>💰 Financial Health Assessment</h5>
+            <div class="form-group">
+              <label>How would you rate this company's financial health?</label>
+              <select class="form-control" name="financial_health" required>
+                <option value="">Select assessment...</option>
+                <option value="excellent">
+                  Excellent - Very strong financials
+                </option>
+                <option value="good">Good - Solid financial position</option>
+                <option value="average">
+                  Average - Adequate financial health
+                </option>
+                <option value="poor">
+                  Poor - Concerning financial indicators
+                </option>
+                <option value="critical">
+                  Critical - Major financial issues
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Growth Potential -->
+          <div class="prediction-section">
+            <h5>📈 Growth Potential</h5>
+            <div class="form-group">
+              <label
+                >What is your assessment of the company's growth
+                potential?</label
+              >
+              <select class="form-control" name="growth_potential" required>
+                <option value="">Select assessment...</option>
+                <option value="high">High - Strong growth prospects</option>
+                <option value="moderate">
+                  Moderate - Steady growth expected
+                </option>
+                <option value="low">Low - Limited growth potential</option>
+                <option value="declining">
+                  Declining - Negative growth trends
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Risk Assessment -->
+          <div class="prediction-section">
+            <h5>⚠️ Risk Factors</h5>
+            <div class="form-group">
+              <label>How would you rate the investment risk?</label>
+              <select class="form-control" name="risk_factors" required>
+                <option value="">Select risk level...</option>
+                <option value="low">Low Risk - Stable and predictable</option>
+                <option value="moderate">
+                  Moderate Risk - Some uncertainty
+                </option>
+                <option value="high">High Risk - Significant volatility</option>
+                <option value="very_high">
+                  Very High Risk - Speculative investment
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Investment Decision -->
+          <div class="prediction-section">
+            <h5>💼 Investment Recommendation</h5>
+            <div class="form-group">
+              <label>What would be your investment recommendation?</label>
+              <select class="form-control" name="investment_decision" required>
+                <option value="">Select recommendation...</option>
+                <option value="strong_buy">
+                  Strong Buy - Excellent opportunity
+                </option>
+                <option value="buy">Buy - Good investment potential</option>
+                <option value="hold">Hold - Maintain current position</option>
+                <option value="sell">Sell - Consider reducing position</option>
+                <option value="strong_sell">
+                  Strong Sell - Exit immediately
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Reasoning -->
+          <div class="prediction-section">
+            <h5>💭 Your Reasoning</h5>
+            <div class="form-group">
+              <label>Explain the reasoning behind your predictions:</label>
+              <textarea
+                class="form-control reasoning-textarea"
+                name="reasoning"
+                placeholder="Describe your analytical approach, key factors considered, and rationale for your assessments..."
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Confidence Level -->
+          <div class="prediction-section">
+            <h5>🎚️ Confidence Level</h5>
+            <div class="form-group">
+              <label
+                >How confident are you in your overall analysis? (1 = Not
+                confident, 5 = Very confident)</label
+              >
+              <input
+                type="range"
+                class="confidence-slider"
+                name="confidence_level"
+                min="1"
+                max="5"
+                value="3"
+                oninput="updateConfidenceDisplay(this.value)"
+              />
+              <div class="confidence-display" id="confidence-display">
+                Confidence: 3/5 (Moderately Confident)
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success submit-btn btn-lg" style="min-height: 44px; min-width: 120px;">
+              🚀 Submit Analysis
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Evaluation Results (Hidden initially) -->
+      <div class="evaluation-results" id="evaluation-results">
+        <h3 class="text-center mb-4">📊 Challenge Results</h3>
+        <div id="results-content">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+
+        <div class="text-center mt-4">
+          <button class="btn btn-primary" onclick="startNewChallenge()">
+            🔄 New Challenge
+          </button>
+          <a href="/" class="btn btn-secondary ml-2"> 🏠 Home </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Business Description Popup -->
+    <div id="business-description-popup" class="business-description-popup">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3 class="popup-title">🏢 Business Description</h3>
+          <button class="close-btn" onclick="closeBusinessDescription()">&times;</button>
+        </div>
+        <div class="popup-body" id="business-description-content">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Business Description Popup -->
+    <div id="business-description-popup" class="business-description-popup">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3 class="popup-title">🏢 Business Description</h3>
+          <button class="close-btn" onclick="closeBusinessDescription()">&times;</button>
+        </div>
+        <div class="popup-body" id="business-description-content">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script nonce="{{ g.csp_nonce }}">
+      // Store full business descriptions in a JavaScript object
+      const businessDescriptions = {};
+      {% if challenge and challenge.company_basic_info %}
+      {% for key, value in challenge.company_basic_info.items() %}
+      {% if key == 'business_description_full' %}
+      businessDescriptions['{{ challenge.challenge_id }}'] = {{ value|tojson }};
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+
+      function updateConfidenceDisplay(value) {
+        const labels = {
+          1: "1/5 (Not Confident)",
+          2: "2/5 (Slightly Confident)",
+          3: "3/5 (Moderately Confident)",
+          4: "4/5 (Quite Confident)",
+          5: "5/5 (Very Confident)",
+        };
+
+        document.getElementById(
+          "confidence-display"
+        ).textContent = `Confidence: ${labels[value]}`;
+      }
+
+      function startNewChallenge() {
+        window.location.href = "/tool-challenge";
+      }
+
+      // Form submission handler
+      $("#challenge-form").on("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.html("🔄 Evaluating...").prop("disabled", true);
+
+        $.ajax({
+          url: "/tool-challenge/submit",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            if (response.success) {
+              displayResults(response.evaluation);
+              $("#evaluation-results").show();
+              $("html, body").animate(
+                {
+                  scrollTop: $("#evaluation-results").offset().top - 100,
+                },
+                800
+              );
+            } else {
+              alert("Error: " + response.error);
+            }
+          },
+          error: function () {
+            alert("Failed to submit challenge. Please try again.");
+          },
+          complete: function () {
+            submitBtn.html(originalText).prop("disabled", false);
+          },
+        });
+      });
+
+      function displayResults(evaluation) {
+        let resultsHtml = "";
+
+        // Overall accuracy score
+        const scoreClass = getScoreClass(evaluation.overall_accuracy);
+        resultsHtml += `
+          <div class="accuracy-score ${scoreClass}">
+            <h4>Overall Accuracy: ${Math.round(
+              evaluation.overall_accuracy
+            )}%</h4>
+            <p>${getAccuracyMessage(evaluation.overall_accuracy)}</p>
+          </div>
+        `;
+
+        // Individual predictions
+        if (evaluation.prediction_breakdown) {
+          resultsHtml += "<h5>📋 Prediction Breakdown:</h5>";
+          for (const [category, result] of Object.entries(
+            evaluation.prediction_breakdown
+          )) {
+            const isCorrect = result.accuracy > 0.7;
+            const icon = isCorrect ? "✅" : "❌";
+            resultsHtml += `
+              <div class="card mb-2">
+                <div class="card-body">
+                  <h6 class="card-title">${icon} ${category
+              .replace("_", " ")
+              .toUpperCase()}</h6>
+                  <p class="card-text">
+                    Your prediction: <strong>${
+                      result.user_prediction
+                    }</strong><br>
+                    Expected: <strong>${result.expected_range}</strong><br>
+                    Accuracy: ${Math.round(result.accuracy * 100)}%
+                  </p>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        // Learning insights
+        if (
+          evaluation.learning_insights &&
+          evaluation.learning_insights.length > 0
+        ) {
+          resultsHtml += "<h5>💡 Key Insights:</h5><ul>";
+          evaluation.learning_insights.forEach((insight) => {
+            resultsHtml += `<li>${insight}</li>`;
+          });
+          resultsHtml += "</ul>";
+        }
+
+        // Progress update
+        if (evaluation.confidence_progress) {
+          resultsHtml += `
+            <div class="alert alert-info">
+              <h6>📈 Your Progress:</h6>
+              <p>Analytical Confidence: ${Math.round(
+                evaluation.confidence_progress.current_confidence * 100
+              )}%</p>
+              <p>Challenges Completed: ${
+                evaluation.confidence_progress.challenges_completed
+              }</p>
+            </div>
+          `;
+        }
+
+        $("#results-content").html(resultsHtml);
+      }
+
+      function getScoreClass(accuracy) {
+        if (accuracy >= 80) return "score-excellent";
+        if (accuracy >= 60) return "score-good";
+        return "score-needs-improvement";
+      }
+
+      function getAccuracyMessage(accuracy) {
+        if (accuracy >= 90) return "Excellent analytical skills! 🌟";
+        if (accuracy >= 80) return "Great analysis! Well done! 🎉";
+        if (accuracy >= 70) return "Good work! Room for improvement 📈";
+        if (accuracy >= 60) return "Fair analysis. Keep practicing! 💪";
+        return "Keep learning and practicing! 📚";
+      }
+
+      // Business Description Popup Functions
+      function showBusinessDescription(challengeId) {
+        const popup = document.getElementById('business-description-popup');
+        const content = document.getElementById('business-description-content');
+
+        if (!popup || !content) {
+          console.error('Popup elements not found');
+          alert('Popup functionality is not available. Please refresh the page.');
+          return;
+        }
+
+        let fullDescription;
+        try {
+          // Get the full description from the JavaScript object
+          fullDescription = businessDescriptions[challengeId];
+          console.log('Retrieved description from JS object, length:', fullDescription ? fullDescription.length : 0);
+
+          if (!fullDescription || fullDescription.length < 10) {
+            console.log('Description too short, using default message');
+            fullDescription = 'Full business description is not available for this company. The displayed text is already the complete description.';
+          }
+        } catch (e) {
+          console.error('Error retrieving description:', e);
+          fullDescription = 'Unable to load full description. The displayed text contains the available business information.';
+        }
+
+        console.log('Final description to display:', fullDescription.substring(0, 100) + '...');
+
+        // Format the content as bullet points instead of one big paragraph
+        let formattedContent;
+        if (fullDescription && fullDescription.length > 0) {
+          // Split by periods, line breaks, or other natural delimiters
+          const sentences = fullDescription.split(/[.!?]\s+|\\n+/).filter(s => s.trim().length > 0);
+
+          if (sentences.length > 1) {
+            // Multiple sentences - format as bullet points
+            formattedContent = '<ul style="text-align: left; padding-left: 20px;">';
+            sentences.forEach(sentence => {
+              const trimmed = sentence.trim();
+              if (trimmed.length > 0) {
+                formattedContent += `<li style="margin-bottom: 8px; line-height: 1.5;">${trimmed}</li>`;
+              }
+            });
+            formattedContent += '</ul>';
+          } else {
+            // Single block of text - try to split by other delimiters or show as paragraph
+            const parts = fullDescription.split(/[,;]\s+|\\n+/).filter(p => p.trim().length > 0);
+            if (parts.length > 1) {
+              formattedContent = '<ul style="text-align: left; padding-left: 20px;">';
+              parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.length > 0) {
+                  formattedContent += `<li style="margin-bottom: 8px; line-height: 1.5;">${trimmed}</li>`;
+                }
+              });
+              formattedContent += '</ul>';
+            } else {
+              // Fallback to paragraph if no good split points found
+              formattedContent = `<p style="text-align: left; line-height: 1.6;">${fullDescription}</p>`;
+            }
+          }
+        } else {
+          formattedContent = '<p>No description available.</p>';
+        }
+
+        // Set the formatted content
+        content.innerHTML = formattedContent;
+
+        // Show the popup
+        popup.classList.add('show');
+
+        // Prevent body scroll when popup is open
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeBusinessDescription() {
+        const popup = document.getElementById('business-description-popup');
+
+        if (!popup) {
+          console.error('Popup element not found');
+          return;
+        }
+
+        // Hide the popup
+        popup.classList.remove('show');
+
+        // Restore body scroll
+        document.body.style.overflow = 'auto';
+      }
+
+      // Initialize popup event listeners when DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('business-description-popup');
+
+        if (popup) {
+          // Close popup when clicking outside
+          popup.addEventListener('click', function(e) {
+            if (e.target === this) {
+              closeBusinessDescription();
+            }
+          });
+        }
+
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            closeBusinessDescription();
+          }
+        });
+      });
+
+      // Auto-suggestion functionality for ticker input
+      const tickerInput = document.getElementById("ticker-input");
+      const suggestionsList = document.getElementById("suggestions-list");
+
+      let suggestionTimeout = null;
+      let activeSuggestionIndex = -1;
+
+      if (tickerInput && suggestionsList) {
+        tickerInput.addEventListener("input", (e) => {
+          clearTimeout(suggestionTimeout);
+          const query = e.target.value.trim();
+
+          if (!query || query.length < 2) {
+            suggestionsList.innerHTML = "";
+            return;
+          }
+
+          suggestionTimeout = setTimeout(async () => {
+            try {
+              const response = await fetch(`/suggest?query=${encodeURIComponent(query)}`);
+              const data = await response.json();
+
+              suggestionsList.innerHTML = "";
+
+              if (data.suggestions) {
+                const suggestions = data.suggestions;
+
+                function createSuggestionItem(text, ticker) {
+                  const li = document.createElement("li");
+                  li.textContent = text;
+                  li.dataset.ticker = ticker;
+                  li.style.padding = "10px 12px";
+                  li.style.cursor = "pointer";
+                  li.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
+
+                  li.addEventListener("click", () => {
+                    tickerInput.value = ticker;
+                    suggestionsList.innerHTML = "";
+                    tickerInput.focus();
+                  });
+
+                  li.addEventListener("mouseenter", () => {
+                    li.style.background = "rgba(255, 255, 255, 0.06)";
+                  });
+
+                  li.addEventListener("mouseleave", () => {
+                    li.style.background = "transparent";
+                  });
+
+                  return li;
+                }
+
+                if (Array.isArray(suggestions)) {
+                  suggestions.forEach((suggestion) => {
+                    const item = createSuggestionItem(
+                      `${suggestion.name} (${suggestion.ticker})`,
+                      suggestion.ticker
+                    );
+                    suggestionsList.appendChild(item);
+                  });
+                } else if (typeof suggestions === "object") {
+                  Object.keys(suggestions).forEach((name) => {
+                    const item = createSuggestionItem(
+                      `${name} (${suggestions[name]})`,
+                      suggestions[name]
+                    );
+                    suggestionsList.appendChild(item);
+                  });
+                }
+              }
+            } catch (error) {
+              console.warn("Suggestion fetch failed:", error);
+            }
+          }, 200);
+        });
+
+        // Keyboard navigation for suggestions
+        tickerInput.addEventListener("keydown", (e) => {
+          const items = Array.from(suggestionsList.children);
+
+          if (!items.length) return;
+
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            activeSuggestionIndex = Math.min(items.length - 1, activeSuggestionIndex + 1);
+            updateActiveSuggestion(items);
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            activeSuggestionIndex = Math.max(-1, activeSuggestionIndex - 1);
+            updateActiveSuggestion(items);
+          } else if (e.key === "Enter" && activeSuggestionIndex >= 0) {
+            e.preventDefault();
+            items[activeSuggestionIndex].click();
+          } else if (e.key === "Escape") {
+            suggestionsList.innerHTML = "";
+            activeSuggestionIndex = -1;
+          }
+        });
+
+        function updateActiveSuggestion(items) {
+          items.forEach((item, index) => {
+            if (index === activeSuggestionIndex) {
+              item.style.background = "rgba(108, 126, 246, 0.12)";
+              item.style.color = "#f8fafc";
+            } else {
+              item.style.background = "transparent";
+              item.style.color = "#eaf3ff";
+            }
+          });
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener("click", (e) => {
+          if (!tickerInput.contains(e.target) && !suggestionsList.contains(e.target)) {
+            suggestionsList.innerHTML = "";
+            activeSuggestionIndex = -1;
+          }
+        });
+      }
+    </script>
+  {% include '_footer.html' %}
+  </body>
+</html>
