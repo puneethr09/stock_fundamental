@@ -30,72 +30,90 @@ Primary deliverables for MVP
 3. Sensitivity analysis matrix and small chart (optional notebook).
 4. Documentation: primer, requirements, spec, and example run.
 
-10 Structured elicitation questions (please answer / pick options)
+10 Structured elicitation questions (prefilled answers - review and adjust)
 
 1. Target users: (choose one or more)
 
-   - [ ] Retail users
-   - [ ] Internal research team
-   - [ ] Automated alerts/batch processing
+   - [x] Retail users
+   - [x] Internal research team
+   - [x] Automated alerts/batch processing
    - [ ] Other: ****\_\_****
 
 2. Valuation methods at launch (pick minimum):
 
-   - [ ] DCF (recommended mandatory)
-   - [ ] Residual Income
-   - [ ] Earnings Power Value
-   - [ ] Multiples (sanity checks)
+   - [x] DCF (mandatory for MVP)
+   - [ ] Residual Income (later)
+   - [ ] Earnings Power Value (later)
+   - [x] Multiples (sanity checks / triangulation)
 
 3. Input availability: where will historical financials come from?
 
-   - [ ] Existing CSVs under `input/` (which files?)
-   - [ ] Database (which DB / table?)
-   - [ ] External API (ticker/data provider)
+   - [x] Existing CSVs under `input/` (example: `Indian_stocks_all_market.csv`, `Indian_stocks_nifty_200.csv` — need per-company financials CSVs)
+   - [ ] Database (none currently configured for valuations)
+   - [x] External API (optional: used to supplement or refresh data)
    - [ ] Manual entry/upload
+
+Notes: repo contains ticker lists but not detailed per-year income statement / cash flow CSVs for all companies; data inventory step will confirm exact files.
 
 4. Level of automation for MVP:
 
-   - [ ] Manual per-company run (CLI / notebook)
-   - [ ] Batch across a list of tickers (scheduled)
-   - [ ] Real-time API endpoint
+   - [x] Manual per-company run (CLI / notebook) — MVP
+   - [ ] Batch across a list of tickers (scheduled) — follow-up
+   - [ ] Real-time API endpoint — future
 
 5. Output expectations:
 
-   - Formats: (check) [ ] JSON [ ] CSV [ ] Markdown report [ ] HTML [ ] Charts
-   - Mandatory fields: intrinsic value (total), per-share, market price, margin of safety, assumptions summary
+   - Formats: (check) [x] JSON [ ] CSV [x] Markdown report [ ] HTML [x] Charts (png/svg)
+   - Mandatory fields: intrinsic value (total), per-share, market price, margin of safety, assumptions summary, implied terminal multiple, run-id / assumptions hash
 
 6. Sensitivity configuration:
 
-   - Which variables to expose for sensitivity matrix? (e.g., discount rate, terminal growth, margin)
-   - Default ranges/steps for each variable.
+   - Variables exposed: discount rate (r), terminal growth (g), revenue growth / margin assumptions (aggregate growth), capex intensity.
+   - Default ranges/steps (MVP):
+     - discount rate r: 8% to 12% step 0.5%
+     - terminal growth g: 0% to 4% step 0.5%
+     - revenue CAGR: baseline ± 200bps step 100bps
+     - operating margin: baseline ± 300bps step 100bps
+
+Rationale: small deltas in r/g create large swings; narrow ranges for sensible sensitivity table.
 
 7. Reproducibility & audit:
 
-   - Persist assumptions with each run? (yes/no)
-   - Version model & assumptions? (yes/no)
-   - Store input hashes for audit? (yes/no)
+   - Persist assumptions with each run? Yes
+   - Version model & assumptions? Yes (simple versioning e.g., v0.1)
+   - Store input hashes for audit? Yes
+
+Implementation note: persist a small run metadata record (run-id, timestamp, git-ref, assumptions JSON, input checksums) alongside output.
 
 8. Performance & scale:
 
-   - Expected number of symbols per run and frequency.
-   - Time target per symbol (e.g., < 1s, < 10s).
+   - Expected number of symbols per run and frequency: MVP — single-symbol interactive; later — batches of 100s nightly.
+   - Time target per symbol: goal < 2s for compute-only (no network fetch); allow longer for data ingestion.
 
 9. Acceptance criteria & tests:
 
-   - Provide 2-3 validation cases (tickers + expected approximate values or known benchmarks).
-   - Unit tests for numerical stability (small changes in inputs produce consistent output), error handling for missing data.
+   - Validation cases (example tickers in repo context; replace with canonical test fixtures):
+     1. `RELIANCE` — sanity check vs public estimates (value should be in same order-of-magnitude; terminal implied growth should be reasonable).
+     2. `TCS` / `TCS.NS` — large-cap stable earnings (EPV comparison should be plausible).
+     3. `INFY` / `INFY.NS` — consistent margins and growth checks.
+   - Unit tests:
+     - compute_dcf returns stable numeric result for fixed inputs
+     - sensitivity matrix shapes and monotonicity checks
+     - error handling for missing critical inputs (raise clear exceptions)
+   - Acceptance: all unit tests pass; example run produces report and sensitivity chart; diagnostics flags not more than 2 critical issues on canonical tickers.
 
 10. UX/Integration:
 
-- Where will the feature live? (CLI script in `scripts/`, web UI under `src/`, notebook under `notebooks/`, API `src/api/`)
-- Who approves the PR for merging to main? (names/roles)
+- Where will the feature live? MVP: CLI script in `scripts/valuation_run.py` and an exploratory notebook in `notebooks/valuation_poc.ipynb`. Integration: API and web UI later under `src/api/` and `src/ui/`.
+- Who approves the PR for merging to main? Repo owner / maintainer (Puneeth) and one reviewer from eng or data team.
 
 Extras / Notes
 
 - Suggested MVP scope: DCF implementation (baseline), CLI runner, basic report, and unit tests. Additional methods and UI can follow in subsequent sprints.
-- If you want, I can prefill answers based on repo analysis and propose a concrete MVP plan.
 
 Next steps
 
-- You: answer the 10 questions inline in this file or tell me to prefill.
-- Me: after answers, I will perform a repo data inventory and draft the `docs/valuation-spec.md` with formulas and I/O contracts.
+- You: review & adjust the prefilled answers above. Mark changes inline or tell me which items to change.
+- Me: after your confirmation, I'll perform a repo data inventory, create `docs/valuation-spec.md` with formulas and a minimal `compute_dcf` contract, then scaffold the MVP files (`scripts/valuation_run.py`, tests).
+
+Discussion kickoff: once you confirm the targets above, I'll teach the key math in Chapter 10 focused on the DCF mechanics, discount rates (WACC vs required return), terminal value choices, normalization of financials, and sensitivity interpretation. Then we map each concept to concrete code/data tasks.
