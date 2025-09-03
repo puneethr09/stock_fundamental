@@ -8,6 +8,7 @@ Enhanced with gamification integration for achievement tracking.
 
 import time
 import json
+import logging
 from typing import Dict, List, Optional, Any
 from functools import wraps
 from flask import session, request
@@ -22,6 +23,9 @@ from .gamified_progress_tracker import (
     AchievementContext,
     BadgeType,
 )
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 
 class BehavioralAnalyticsTracker:
@@ -472,7 +476,7 @@ class BehavioralAnalyticsTracker:
 
         except Exception as e:
             # Log error but don't break the main tracking flow
-            print(f"Gamification processing error: {e}")
+            logger.error(f"Gamification processing error: {e}", exc_info=True)
 
     def _get_current_learning_stage(self, session_id: str) -> LearningStage:
         """Get current learning stage for the user"""

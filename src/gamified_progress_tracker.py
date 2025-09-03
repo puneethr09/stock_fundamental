@@ -11,7 +11,7 @@ import json
 import time
 import logging
 import os
-from typing import Dict, List, Optional, Set, Tuple, Any, cast
+from typing import Dict, List, Optional, Set, Tuple, Any, TypedDict
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta, timezone
@@ -29,6 +29,15 @@ logger = logging.getLogger(__name__)
 IS_PRODUCTION = (
     os.getenv("FLASK_ENV") == "production" or os.getenv("ENV") == "production"
 )
+
+
+class BadgeDefinition(TypedDict):
+    """Type definition for badge configuration"""
+
+    display_name: str
+    description: str
+    achievement_value: int
+    criteria: Dict[str, Any]
 
 
 class BadgeType(Enum):
@@ -142,7 +151,7 @@ class GamifiedProgressTracker:
         self._cache_ttl_seconds = 300  # 5 minutes cache TTL
 
         # Badge definitions with display information
-        self.badge_definitions = {
+        self.badge_definitions: Dict[BadgeType, BadgeDefinition] = {
             BadgeType.FIRST_ANALYSIS: {
                 "display_name": "First Steps",
                 "description": "Completed your first stock analysis",
@@ -383,19 +392,22 @@ class GamifiedProgressTracker:
                 "stage": context.current_stage.value,
                 "behavioral_snapshot": context.behavioral_data,
             },
-            display_name=str(badge_def.get("display_name", "")),
-            description=str(badge_def.get("description", "")),
-            achievement_value=cast(int, badge_def.get("achievement_value", 0)),
+            display_name=badge_def["display_name"],
+            description=badge_def["description"],
+            achievement_value=badge_def["achievement_value"],
         )
 
         # Store badge in localStorage-compatible format
         self._store_badge(context.user_id, badge)
 
         # Update stage progression points
-        # badge_def values may be typed as Any; ensure we pass an int
-        self._update_stage_progression_points(
-            context.user_id, cast(int, badge_def.get("achievement_value", 0))
+        # Ensure achievement_value is properly converted to int
+        achievement_points = (
+            int(badge_def["achievement_value"])
+            if badge_def.get("achievement_value") is not None
+            else 0
         )
+        self._update_stage_progression_points(context.user_id, achievement_points)
 
         return badge
 

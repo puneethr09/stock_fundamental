@@ -17,7 +17,7 @@
     />
     <!-- Plotly.js for interactive charts -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
+    <style nonce="{{ g.csp_nonce }}">
       /* Mobile-first responsive styling */
       body {
         font-family: Arial, sans-serif;
@@ -380,7 +380,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <script>
+    <script nonce="{{ g.csp_nonce }}">
       let currentExercise = null;
       let startTime = null;
       let timerInterval = null;

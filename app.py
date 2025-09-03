@@ -8,6 +8,7 @@ from flask import (
     redirect,
     url_for,
 )
+import logging
 from src.basic_analysis import (
     get_financial_ratios,
     analyze_ratios,
@@ -42,6 +43,10 @@ from prometheus_client import (
 )
 
 app = Flask(__name__)
+
+# Set up logger
+logger = logging.getLogger(__name__)
+
 import os
 import secrets
 import subprocess
@@ -75,6 +80,39 @@ pattern_trainer = PatternRecognitionTrainer()
 
 # Initialize tool independence trainer
 tool_trainer = ToolIndependenceTrainer()
+
+
+# Content Security Policy (CSP) with nonce-based protection
+@app.before_request
+def generate_csp_nonce():
+    """Generate a random nonce for each request to enable secure inline scripts/styles"""
+    from flask import g
+
+    g.csp_nonce = secrets.token_hex(16)
+
+
+@app.after_request
+def add_csp_header(response):
+    """Add Content-Security-Policy header with nonce for maximum security"""
+    from flask import g
+
+    nonce = getattr(g, "csp_nonce", "")
+
+    # Production-ready CSP - no unsafe-inline or unsafe-eval
+    csp_policy = (
+        f"default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        f"style-src 'self' 'nonce-{nonce}'; "
+        f"img-src 'self' data: https:; "
+        f"font-src 'self' data:; "
+        f"connect-src 'self' https:; "
+        f"frame-ancestors 'none'; "
+        f"base-uri 'self'; "
+        f"form-action 'self'"
+    )
+
+    response.headers["Content-Security-Policy"] = csp_policy
+    return response
 
 
 def get_company_financial_data(ticker):
@@ -193,7 +231,7 @@ def get_company_financial_data(ticker):
         }
 
     except Exception as e:
-        print(f"Error fetching data for {ticker}: {str(e)}")
+        logger.error(f"Error fetching data for {ticker}: {str(e)}", exc_info=True)
         # Return fallback data structure
         return {
             "symbol": ticker.upper(),
@@ -330,7 +368,7 @@ def research_assignment_complete(assignment_id=None):
                 }
             )
     except Exception as e:
-        print(f"Error updating gamification on completion: {e}")
+        logger.error(f"Error updating gamification on completion: {e}", exc_info=True)
 
     return jsonify(
         {"success": True, "evaluation": evaluation, "awarded_badges": awarded_badges}
@@ -984,7 +1022,7 @@ def get_available_stocks():
                         stocks.append(stock_info)
 
     except Exception as e:
-        print(f"Error reading CSV files: {e}")
+        logger.error(f"Error reading CSV files: {e}", exc_info=True)
         # Fallback to some default stocks
         stocks = [
             {

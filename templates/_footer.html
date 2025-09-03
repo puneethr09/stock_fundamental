@@ -6,7 +6,7 @@
     >
   </div>
 
-  <style>
+  <style nonce="{{ g.csp_nonce }}">
     .site-footer {
       background: #f8f9fa;
       border-top: 1px solid rgba(0, 0, 0, 0.04);
@@ -18,7 +18,7 @@
   </style>
 </footer>
 
-<script>
+<script nonce="{{ g.csp_nonce }}">
   // Populate year client-side so template doesn't require a helper
   (function () {
     try {

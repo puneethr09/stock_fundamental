@@ -111,7 +111,7 @@
 
     {% include '_footer.html' %}
 
-    <script>
+    <script nonce="{{ g.csp_nonce }}">
       // Suggestion fetch (handles server returning either an array of objects or a mapping)
       const input = document.getElementById("ticker-input");
       const suggestions = document.getElementById("suggestions-list");

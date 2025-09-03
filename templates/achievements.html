@@ -16,7 +16,7 @@
       <ul id="notifications" class="notifications-list list-unstyled"></ul>
     </div>
 
-    <script>
+    <script nonce="{{ g.csp_nonce }}">
       function badgeCard(b) {
         const container = document.createElement("div");
         container.className = "badge-card col-lg-4 col-md-6 col-sm-12 mb-3";
