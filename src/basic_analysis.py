@@ -4,8 +4,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import requests  # type: ignore
-import pytz  # type: ignore
+import requests
+import pytz
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta

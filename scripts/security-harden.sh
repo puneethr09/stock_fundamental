@@ -90,8 +90,15 @@ add_header X-XSS-Protection "1; mode=block" always;
 # Referrer Policy
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-# Content Security Policy
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;" always;
+# Content Security Policy - Updated for better security
+# Note: Removed 'unsafe-inline' and 'unsafe-eval' for script-src to prevent XSS
+# If inline scripts are needed, implement nonce-based CSP in your application
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;" always;
+
+# For nonce-based CSP implementation in Flask:
+# 1. Generate a random nonce for each request
+# 2. Add nonce to script tags: <script nonce="{{ nonce }}">...</script>
+# 3. Set CSP header dynamically: script-src 'self' 'nonce-{nonce}'
 
 # HTTP Strict Transport Security (HSTS)
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;

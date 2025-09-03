@@ -108,6 +108,75 @@ class ToolIndependenceTrainer:
         self.confidence_boost_threshold = 0.8
         self.adaptive_difficulty_window = 5  # Last 5 challenges for adaptation
 
+        # Financial analysis configuration constants
+        # These constants centralize threshold values and visual elements for easier maintenance
+        # and testing of financial health narrative generation
+
+        # Financial health narrative configuration constants
+        self.FINANCIAL_THRESHOLDS = {
+            "debt_to_equity": {
+                "conservative": 0.3,  # Under 30% - strong balance sheet
+                "moderate": 0.7,  # 30-70% - manageable structure
+                "high": 1.2,  # Above 70% - concerning level
+            },
+            "current_ratio": {
+                "excellent": 2.0,  # Above 2.0 - excellent coverage
+                "healthy": 1.5,  # 1.5-2.0 - healthy range
+                "manageable": 1.0,  # 1.0-1.5 - requires attention
+            },
+            "roe": {
+                "exceptional": 0.18,  # Above 18% - top-tier performance
+                "good": 0.12,  # 12-18% - above-average
+                "moderate": 0.08,  # 8-12% - meets expectations
+            },
+            "net_margin": {
+                "premium": 0.15,  # Above 15% - premium pricing power
+                "healthy": 0.08,  # 8-15% - solid operational control
+                "basic": 0.03,  # 3-8% - basic profitability
+            },
+            "revenue_growth": {
+                "rapid": 0.25,  # Above 25% - exceptional growth
+                "solid": 0.15,  # 15-25% - above-average expansion
+                "modest": 0.05,  # 5-15% - steady progress
+                "flat": -0.05,  # -5% to 5% - stagnant performance
+            },
+            "market_cap": {
+                "large": 75000,  # 75000+ crores
+                "mid": 25000,  # 25000-75000 crores
+                "small": 5000,  # 5000-25000 crores
+            },
+        }
+
+        # Emoji constants for financial health indicators
+        self.FINANCIAL_EMOJIS = {
+            "conservative_debt": "💪",
+            "moderate_debt": "⚖️",
+            "high_debt": "⚠️",
+            "stressful_debt": "🚨",
+            "excellent_liquidity": "💰",
+            "healthy_liquidity": "✅",
+            "manageable_liquidity": "⚡",
+            "concerning_liquidity": "🔴",
+            "exceptional_roe": "🌟",
+            "good_roe": "📈",
+            "moderate_roe": "📊",
+            "low_roe": "📉",
+            "premium_margin": "💎",
+            "healthy_margin": "✨",
+            "basic_margin": "⭐",
+            "concerning_margin": "❌",
+            "rapid_growth": "🚀",
+            "solid_growth": "📈",
+            "modest_growth": "⚖️",
+            "flat_growth": "😐",
+            "declining_growth": "📉",
+            "turnaround_needed": "🆘",
+            "scaling_success": "📊",
+            "market_expansion": "🎯",
+            "steady_expansion": "🔄",
+            "growth_challenges": "🔧",
+        }
+
         # Initialize challenge templates
         self.challenge_templates = self._initialize_challenge_templates()
 
@@ -473,11 +542,12 @@ class ToolIndependenceTrainer:
     def _categorize_market_cap(self, market_cap: float) -> str:
         """Categorize market cap without revealing exact numbers"""
 
-        if market_cap >= 75000:  # 75000+ crores
+        market_cap_thresholds = self.FINANCIAL_THRESHOLDS["market_cap"]
+        if market_cap >= market_cap_thresholds["large"]:  # 75000+ crores
             return "Large Cap"
-        elif market_cap >= 25000:  # 25000-75000 crores
+        elif market_cap >= market_cap_thresholds["mid"]:  # 25000-75000 crores
             return "Mid Cap"
-        elif market_cap >= 5000:  # 5000-25000 crores
+        elif market_cap >= market_cap_thresholds["small"]:  # 5000-25000 crores
             return "Small Cap"
         else:
             return "Micro Cap"
@@ -490,75 +560,79 @@ class ToolIndependenceTrainer:
         indicators = []
 
         # Debt management insights with context
-        if debt_to_equity < 0.3:
+        debt_thresholds = self.FINANCIAL_THRESHOLDS["debt_to_equity"]
+        if debt_to_equity < debt_thresholds["conservative"]:
             indicators.append(
-                "💪 Company maintains conservative debt levels with strong balance sheet (debt-to-equity likely under 30%)"
+                f"{self.FINANCIAL_EMOJIS['conservative_debt']} Company maintains conservative debt levels with strong balance sheet (debt-to-equity likely under 30%)"
             )
-        elif debt_to_equity < 0.7:
+        elif debt_to_equity < debt_thresholds["moderate"]:
             indicators.append(
-                "⚖️ Company has moderate debt levels - manageable financial structure (debt-to-equity in healthy 30-70% range)"
+                f"{self.FINANCIAL_EMOJIS['moderate_debt']} Company has moderate debt levels - manageable financial structure (debt-to-equity in healthy 30-70% range)"
             )
-        elif debt_to_equity < 1.2:
+        elif debt_to_equity < debt_thresholds["high"]:
             indicators.append(
-                "⚠️ Company carries higher debt burden - requires monitoring (debt-to-equity above 70%, concerning level)"
+                f"{self.FINANCIAL_EMOJIS['high_debt']} Company carries higher debt burden - requires monitoring (debt-to-equity above 70%, concerning level)"
             )
         else:
             indicators.append(
-                "🚨 Company has significant debt obligations - potential financial stress (debt-to-equity very high, above 120%)"
+                f"{self.FINANCIAL_EMOJIS['stressful_debt']} Company has significant debt obligations - potential financial stress (debt-to-equity very high, above 120%)"
             )
 
         # Liquidity insights with context
-        if current_ratio > 2.0:
+        liquidity_thresholds = self.FINANCIAL_THRESHOLDS["current_ratio"]
+        if current_ratio > liquidity_thresholds["excellent"]:
             indicators.append(
-                "💰 Strong cash position and short-term liquidity (current ratio above 2.0, excellent coverage)"
+                f"{self.FINANCIAL_EMOJIS['excellent_liquidity']} Strong cash position and short-term liquidity (current ratio above 2.0, excellent coverage)"
             )
-        elif current_ratio > 1.5:
+        elif current_ratio > liquidity_thresholds["healthy"]:
             indicators.append(
-                "✅ Adequate liquidity to meet short-term obligations (current ratio 1.5-2.0, healthy range)"
+                f"{self.FINANCIAL_EMOJIS['healthy_liquidity']} Adequate liquidity to meet short-term obligations (current ratio 1.5-2.0, healthy range)"
             )
-        elif current_ratio > 1.0:
+        elif current_ratio > liquidity_thresholds["manageable"]:
             indicators.append(
-                "⚡ Tight but manageable liquidity position (current ratio 1.0-1.5, requires attention)"
+                f"{self.FINANCIAL_EMOJIS['manageable_liquidity']} Tight but manageable liquidity position (current ratio 1.0-1.5, requires attention)"
             )
         else:
             indicators.append(
-                "🔴 Potential liquidity concerns - may struggle with short-term payments (current ratio below 1.0, cash stress)"
+                f"{self.FINANCIAL_EMOJIS['concerning_liquidity']} Potential liquidity concerns - may struggle with short-term payments (current ratio below 1.0, cash stress)"
             )
 
         # Profitability insights with context
-        if roe > 0.18:
+        roe_thresholds = self.FINANCIAL_THRESHOLDS["roe"]
+        if roe > roe_thresholds["exceptional"]:
             indicators.append(
-                "🌟 Exceptional returns to shareholders - highly efficient operations (ROE above 18%, top-tier performance)"
+                f"{self.FINANCIAL_EMOJIS['exceptional_roe']} Exceptional returns to shareholders - highly efficient operations (ROE above 18%, top-tier performance)"
             )
-        elif roe > 0.12:
+        elif roe > roe_thresholds["good"]:
             indicators.append(
-                "📈 Good returns to shareholders - solid operational efficiency (ROE 12-18%, above-average)"
+                f"{self.FINANCIAL_EMOJIS['good_roe']} Good returns to shareholders - solid operational efficiency (ROE 12-18%, above-average)"
             )
-        elif roe > 0.08:
+        elif roe > roe_thresholds["moderate"]:
             indicators.append(
-                "📊 Moderate returns to shareholders - average efficiency (ROE 8-12%, meets expectations)"
+                f"{self.FINANCIAL_EMOJIS['moderate_roe']} Moderate returns to shareholders - average efficiency (ROE 8-12%, meets expectations)"
             )
         else:
             indicators.append(
-                "📉 Low returns to shareholders - operational efficiency concerns (ROE below 8%, underperforming)"
+                f"{self.FINANCIAL_EMOJIS['low_roe']} Low returns to shareholders - operational efficiency concerns (ROE below 8%, underperforming)"
             )
 
         # Margin insights with context
-        if net_margin > 0.15:
+        margin_thresholds = self.FINANCIAL_THRESHOLDS["net_margin"]
+        if net_margin > margin_thresholds["premium"]:
             indicators.append(
-                "💎 Strong profit margins indicate pricing power and cost control (net margin above 15%, premium)"
+                f"{self.FINANCIAL_EMOJIS['premium_margin']} Strong profit margins indicate pricing power and cost control (net margin above 15%, premium)"
             )
-        elif net_margin > 0.08:
+        elif net_margin > margin_thresholds["healthy"]:
             indicators.append(
-                "✨ Healthy profit margins showing good operational control (net margin 8-15%, solid)"
+                f"{self.FINANCIAL_EMOJIS['healthy_margin']} Healthy profit margins showing good operational control (net margin 8-15%, solid)"
             )
-        elif net_margin > 0.03:
+        elif net_margin > margin_thresholds["basic"]:
             indicators.append(
-                "⭐ Thin profit margins - competitive pressure visible (net margin 3-8%, basic profitability)"
+                f"{self.FINANCIAL_EMOJIS['basic_margin']} Thin profit margins - competitive pressure visible (net margin 3-8%, basic profitability)"
             )
         else:
             indicators.append(
-                "❌ Struggling with profitability - cost or pricing challenges (net margin below 3%, concerning)"
+                f"{self.FINANCIAL_EMOJIS['concerning_margin']} Struggling with profitability - cost or pricing challenges (net margin below 3%, concerning)"
             )
 
         return indicators
@@ -569,48 +643,49 @@ class ToolIndependenceTrainer:
         """Create growth story narrative without exact numbers"""
 
         growth_story = []
+        growth_thresholds = self.FINANCIAL_THRESHOLDS["revenue_growth"]
 
         # Revenue growth insights
-        if revenue_growth > 0.25:
+        if revenue_growth > growth_thresholds["rapid"]:
             growth_story.append(
-                "🚀 Experiencing rapid expansion with strong market demand (exceptional growth trajectory)"
+                f"{self.FINANCIAL_EMOJIS['rapid_growth']} Experiencing rapid expansion with strong market demand (exceptional growth trajectory)"
             )
             growth_story.append(
-                "📊 Successful scaling of business operations (revenue momentum is strong)"
+                f"{self.FINANCIAL_EMOJIS['scaling_success']} Successful scaling of business operations (revenue momentum is strong)"
             )
-        elif revenue_growth > 0.15:
+        elif revenue_growth > growth_thresholds["solid"]:
             growth_story.append(
-                "📈 Solid growth trajectory indicating market acceptance (above-average expansion)"
-            )
-            growth_story.append(
-                "🎯 Expanding market share in competitive landscape (gaining ground on competitors)"
-            )
-        elif revenue_growth > 0.05:
-            growth_story.append(
-                "⚖️ Modest growth in line with industry averages (steady but unspectacular progress)"
+                f"{self.FINANCIAL_EMOJIS['solid_growth']} Solid growth trajectory indicating market acceptance (above-average expansion)"
             )
             growth_story.append(
-                "🔄 Maintaining steady business expansion (consistent but limited growth)"
+                f"{self.FINANCIAL_EMOJIS['market_expansion']} Expanding market share in competitive landscape (gaining ground on competitors)"
             )
-        elif revenue_growth > -0.05:
+        elif revenue_growth > growth_thresholds["modest"]:
             growth_story.append(
-                "😐 Flat revenue suggesting market saturation or challenges (stagnant performance)"
+                f"{self.FINANCIAL_EMOJIS['modest_growth']} Modest growth in line with industry averages (steady but unspectacular progress)"
             )
             growth_story.append(
-                "🔧 Company working to reignite growth momentum (seeking turnaround strategies)"
+                f"{self.FINANCIAL_EMOJIS['steady_expansion']} Maintaining steady business expansion (consistent but limited growth)"
+            )
+        elif revenue_growth > growth_thresholds["flat"]:
+            growth_story.append(
+                f"{self.FINANCIAL_EMOJIS['flat_growth']} Flat revenue suggesting market saturation or challenges (stagnant performance)"
+            )
+            growth_story.append(
+                f"{self.FINANCIAL_EMOJIS['growth_challenges']} Company working to reignite growth momentum (seeking turnaround strategies)"
             )
         else:
             growth_story.append(
-                "📉 Declining revenues indicate significant business challenges (negative growth trend)"
+                f"{self.FINANCIAL_EMOJIS['declining_growth']} Declining revenues indicate significant business challenges (negative growth trend)"
             )
             growth_story.append(
-                "🆘 Turnaround efforts may be required (fundamental business issues)"
+                f"{self.FINANCIAL_EMOJIS['turnaround_needed']} Turnaround efforts may be required (fundamental business issues)"
             )
 
         # Add contextual growth factors
         industry = company_data.get("industry", "")
         if "technology" in industry.lower():
-            if revenue_growth > 0.15:
+            if revenue_growth > growth_thresholds["solid"]:
                 growth_story.append(
                     "💻 Strong tech sector performance with innovation-driven growth"
                 )

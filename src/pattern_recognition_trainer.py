@@ -15,7 +15,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import os
 
@@ -147,7 +147,7 @@ class PatternRecognitionTrainer:
         c = conn.cursor()
         c.execute(
             "INSERT OR REPLACE INTO exercises (exercise_id, payload, created_at) VALUES (?, ?, ?)",
-            (exercise.exercise_id, payload_json, datetime.now()),
+            (exercise.exercise_id, payload_json, datetime.now(timezone.utc)),
         )
         conn.commit()
         conn.close()
@@ -473,7 +473,7 @@ class PatternRecognitionTrainer:
         periods = 24
 
         # Calculate end_date as the end of the current quarter and start_date accordingly
-        end_date = pd.Timestamp(datetime.now()).to_period("Q").end_time
+        end_date = pd.Timestamp(datetime.now(timezone.utc)).to_period("Q").end_time
         # start_date such that the final quarter is the current quarter
         start_date = end_date - pd.offsets.QuarterEnd(periods - 1)
         quarters = pd.date_range(start=start_date, periods=periods, freq="QE")
@@ -1090,7 +1090,7 @@ class PatternRecognitionTrainer:
         )
 
         feedback = PatternFeedback(
-            attempt_id=f"{exercise_id}_{attempt.user_session_id}_{datetime.now().timestamp()}",
+            attempt_id=f"{exercise_id}_{attempt.user_session_id}_{datetime.now(timezone.utc).timestamp()}",
             accuracy_score=accuracy_score,
             correct_patterns=correct_patterns,
             missed_patterns=missed_patterns,

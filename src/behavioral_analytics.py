@@ -477,11 +477,12 @@ class BehavioralAnalyticsTracker:
     def _get_current_learning_stage(self, session_id: str) -> LearningStage:
         """Get current learning stage for the user"""
         try:
-            assessment = self.framework.assess_learning_stage(
-                {"anonymous_user_id": session_id}
-            )
+            # Pass the full session dictionary instead of minimal dict
+            # This ensures all session data is available for assessment
+            assessment = self.framework.assess_learning_stage(dict(session))
             return assessment.current_stage
-        except:
+        except Exception:
+            # Handle any KeyError or other exceptions gracefully
             return LearningStage.GUIDED_DISCOVERY
 
     def _extract_skill_improvements(self, context: Dict[str, Any]) -> Dict[str, float]:

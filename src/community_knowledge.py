@@ -10,7 +10,7 @@ Follows existing Flask patterns and integrates with the current architecture.
 import sqlite3
 import hashlib
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -163,7 +163,7 @@ class CommunityKnowledgeBase:
         - More than 5 contributions from same user in 30 minutes
         """
         content_hash = self._content_hash(content)
-        cutoff_time = datetime.now() - timedelta(hours=24)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -186,7 +186,7 @@ class CommunityKnowledgeBase:
                 SELECT COUNT(*) FROM contribution_tracking 
                 WHERE anonymous_user_id = ? AND created_at > ?
             """,
-                (anonymous_user_id, datetime.now() - timedelta(minutes=30)),
+                (anonymous_user_id, datetime.now(timezone.utc) - timedelta(minutes=30)),
             )
 
             if cursor.fetchone()[0] >= 5:  # Max 5 contributions per 30 minutes
@@ -262,7 +262,7 @@ class CommunityKnowledgeBase:
                         category.value,
                         content,
                         anonymous_user_id,
-                        datetime.now(),
+                        datetime.now(timezone.utc),
                     ),
                 )
 
@@ -274,7 +274,12 @@ class CommunityKnowledgeBase:
                     (anonymous_user_id, ticker, content_hash, created_at)
                     VALUES (?, ?, ?, ?)
                 """,
-                    (anonymous_user_id, ticker, content_hash, datetime.now()),
+                    (
+                        anonymous_user_id,
+                        ticker,
+                        content_hash,
+                        datetime.now(timezone.utc),
+                    ),
                 )
 
                 conn.commit()
@@ -379,7 +384,12 @@ class CommunityKnowledgeBase:
                             SET vote_type = ?, created_at = ?
                             WHERE insight_id = ? AND anonymous_user_id = ?
                         """,
-                            (vote_type, datetime.now(), insight_id, anonymous_user_id),
+                            (
+                                vote_type,
+                                datetime.now(timezone.utc),
+                                insight_id,
+                                anonymous_user_id,
+                            ),
                         )
 
                         # Update vote counts
@@ -396,7 +406,12 @@ class CommunityKnowledgeBase:
                         (insight_id, anonymous_user_id, vote_type, created_at)
                         VALUES (?, ?, ?, ?)
                     """,
-                        (insight_id, anonymous_user_id, vote_type, datetime.now()),
+                        (
+                            insight_id,
+                            anonymous_user_id,
+                            vote_type,
+                            datetime.now(timezone.utc),
+                        ),
                     )
 
                     # Update vote counts

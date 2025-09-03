@@ -9,15 +9,25 @@ gamification without compromising privacy or performance.
 
 import json
 import time
+import logging
+import os
 from typing import Dict, List, Optional, Set, Tuple, Any, cast
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from .educational_framework import (
     LearningStage,
     InteractionType,
     EducationalMasteryFramework,
     StageAssessmentResult,
+)
+
+# Set up logger
+logger = logging.getLogger(__name__)
+
+# Environment detection
+IS_PRODUCTION = (
+    os.getenv("FLASK_ENV") == "production" or os.getenv("ENV") == "production"
 )
 
 
@@ -106,11 +116,30 @@ class GamifiedProgressTracker:
 
     Integrates with EducationalMasteryFramework and BehavioralAnalyticsTracker
     to provide motivation through achievements without impacting performance.
+
+    Error Handling Strategy:
+    - Production: Logs errors and continues with graceful degradation
+    - Development: Re-raises exceptions to surface issues during development
+    - Persistence failures use best-effort approach in production
     """
 
     def __init__(self, educational_framework: EducationalMasteryFramework):
         """Initialize the gamified progress tracker"""
         self.educational_framework = educational_framework
+
+        # Configure logging if not already configured
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO if IS_PRODUCTION else logging.DEBUG)
+
+        # Cache for earned badges to reduce database queries
+        self._badge_cache: Dict[str, Tuple[List[Badge], float]] = {}
+        self._cache_ttl_seconds = 300  # 5 minutes cache TTL
 
         # Badge definitions with display information
         self.badge_definitions = {
@@ -253,6 +282,9 @@ class GamifiedProgressTracker:
     ) -> List[BadgeType]:
         """
         Check what badges the user has earned based on current activity
+
+        Uses cached badge data to reduce database queries. Cache is automatically
+        invalidated when new badges are awarded.
 
         Args:
             context: Achievement context with user data and session info
@@ -421,7 +453,7 @@ class GamifiedProgressTracker:
             progress.total_session_time += completion_data["session_duration"]
 
         # Update learning streak
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         if progress.last_active_date:
             last_date = datetime.strptime(progress.last_active_date, "%Y-%m-%d")
             today_date = datetime.strptime(today, "%Y-%m-%d")
@@ -483,14 +515,15 @@ class GamifiedProgressTracker:
         best_streak = 0
         temp_streak = 0
 
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         # Calculate current streak (working backwards from today/most recent)
         for i, date in enumerate(sorted_dates):
             if i == 0:
                 # Most recent session
                 days_from_today = (
-                    datetime.now() - datetime.strptime(date, "%Y-%m-%d")
+                    datetime.now(timezone.utc)
+                    - datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
                 ).days
                 if days_from_today <= 1:  # Today or yesterday
                     current_streak = 1
@@ -499,8 +532,12 @@ class GamifiedProgressTracker:
                     current_streak = 0  # Streak broken
                     break
             else:
-                prev_date = datetime.strptime(sorted_dates[i - 1], "%Y-%m-%d")
-                curr_date = datetime.strptime(date, "%Y-%m-%d")
+                prev_date = datetime.strptime(sorted_dates[i - 1], "%Y-%m-%d").replace(
+                    tzinfo=timezone.utc
+                )
+                curr_date = datetime.strptime(date, "%Y-%m-%d").replace(
+                    tzinfo=timezone.utc
+                )
                 days_diff = (prev_date - curr_date).days
 
                 if days_diff == 1:
@@ -517,8 +554,12 @@ class GamifiedProgressTracker:
             if i == 0:
                 temp_streak = 1
             else:
-                prev_date = datetime.strptime(sorted_dates_forward[i - 1], "%Y-%m-%d")
-                curr_date = datetime.strptime(date, "%Y-%m-%d")
+                prev_date = datetime.strptime(
+                    sorted_dates_forward[i - 1], "%Y-%m-%d"
+                ).replace(tzinfo=timezone.utc)
+                curr_date = datetime.strptime(date, "%Y-%m-%d").replace(
+                    tzinfo=timezone.utc
+                )
                 days_diff = (curr_date - prev_date).days
 
                 if days_diff == 1:
@@ -636,8 +677,20 @@ class GamifiedProgressTracker:
         }
 
     def _get_earned_badges(self, user_id: str) -> List[Badge]:
-        """Get list of badges earned by user from localStorage"""
-        # Load from persistence layer (server-side storage)
+        """Get list of badges earned by user from localStorage with caching
+
+        Implements TTL-based caching to reduce database load. Cache is invalidated
+        when new badges are awarded to ensure data consistency.
+        """
+        current_time = time.time()
+
+        # Check cache first
+        if user_id in self._badge_cache:
+            cached_badges, cache_timestamp = self._badge_cache[user_id]
+            if current_time - cache_timestamp < self._cache_ttl_seconds:
+                return cached_badges
+
+        # Cache miss or expired - load from persistence layer
         try:
             from .persistence import get_badges_for_user
 
@@ -649,7 +702,10 @@ class GamifiedProgressTracker:
                 badge_type_val = payload.get("badge_type") or row.get("badge_type")
                 try:
                     btype = BadgeType(badge_type_val)
-                except Exception:
+                except Exception as e:
+                    logger.warning(
+                        f"Invalid badge type '{badge_type_val}' for user {user_id}, skipping: {str(e)}"
+                    )
                     continue
                 badges.append(
                     Badge(
@@ -661,9 +717,19 @@ class GamifiedProgressTracker:
                         achievement_value=int(payload.get("achievement_value", 0)),
                     )
                 )
+
+            # Cache the result
+            self._badge_cache[user_id] = (badges, current_time)
             return badges
-        except Exception:
-            return []
+        except Exception as e:
+            error_msg = f"Failed to load badges for user {user_id}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            if IS_PRODUCTION:
+                # In production, return empty list but log the error
+                return []
+            else:
+                # In development, re-raise to surface issues
+                raise RuntimeError(error_msg) from e
 
     def _store_badge(self, user_id: str, badge: Badge) -> None:
         """Store earned badge in localStorage-compatible format"""
@@ -679,9 +745,43 @@ class GamifiedProgressTracker:
                 "achievement_value": badge.achievement_value,
             }
             save_badge(user_id, payload)
-        except Exception:
-            # Best-effort: swallow persistence errors in dev
-            return
+
+            # Invalidate cache for this user since badges have changed
+            if user_id in self._badge_cache:
+                del self._badge_cache[user_id]
+
+        except Exception as e:
+            error_msg = f"Failed to store badge for user {user_id}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            if IS_PRODUCTION:
+                # In production, log and continue (best-effort persistence)
+                return
+            else:
+                # In development, re-raise to surface issues
+                raise RuntimeError(error_msg) from e
+
+    def _clear_badge_cache(self, user_id: Optional[str] = None) -> None:
+        """Clear badge cache for a specific user or all users"""
+        if user_id:
+            self._badge_cache.pop(user_id, None)
+        else:
+            self._badge_cache.clear()
+
+    def _get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics for monitoring"""
+        current_time = time.time()
+        total_entries = len(self._badge_cache)
+        expired_entries = sum(
+            1
+            for _, (_, timestamp) in self._badge_cache.items()
+            if current_time - timestamp >= self._cache_ttl_seconds
+        )
+
+        return {
+            "total_cached_users": total_entries,
+            "expired_entries": expired_entries,
+            "cache_ttl_seconds": self._cache_ttl_seconds,
+        }
 
     def _get_progress_metrics(self, user_id: str) -> ProgressMetrics:
         """Get user progress metrics from persistence layer or return defaults"""
@@ -724,14 +824,21 @@ class GamifiedProgressTracker:
             )
             pm.skill_competencies = raw.get("skill_competencies", pm.skill_competencies)
             return pm
-        except Exception:
-            return ProgressMetrics(
-                skill_competencies={
-                    "debt_analysis": 0.0,
-                    "growth_indicators": 0.0,
-                    "value_assessment": 0.0,
-                }
-            )
+        except Exception as e:
+            error_msg = f"Failed to load progress metrics for user {user_id}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            if IS_PRODUCTION:
+                # In production, return defaults but log the error
+                return ProgressMetrics(
+                    skill_competencies={
+                        "debt_analysis": 0.0,
+                        "growth_indicators": 0.0,
+                        "value_assessment": 0.0,
+                    }
+                )
+            else:
+                # In development, re-raise to surface issues
+                raise RuntimeError(error_msg) from e
 
     def _store_progress_metrics(self, user_id: str, progress: ProgressMetrics) -> None:
         """Store progress metrics in localStorage-compatible format"""
@@ -752,8 +859,15 @@ class GamifiedProgressTracker:
                 "skill_competencies": progress.skill_competencies,
             }
             save_progress_metrics(user_id, payload)
-        except Exception:
-            return
+        except Exception as e:
+            error_msg = f"Failed to store progress metrics for user {user_id}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            if IS_PRODUCTION:
+                # In production, log and continue (best-effort persistence)
+                return
+            else:
+                # In development, re-raise to surface issues
+                raise RuntimeError(error_msg) from e
 
     def _update_stage_progression_points(self, user_id: str, points: int) -> None:
         """Update stage progression points for mastery calculation"""

@@ -291,9 +291,10 @@ class EducationalMasteryFramework:
                 if isinstance(behavioral_summary, dict):
                     analyses = behavioral_summary.get("analyses_completed", 0)
                     accuracies = behavioral_summary.get("accuracy_scores", [])
-                    mean_accuracy = (
-                        sum(accuracies) / len(accuracies) if accuracies else 0.0
-                    )
+                    if len(accuracies) == 0:
+                        mean_accuracy = 0.0
+                    else:
+                        mean_accuracy = sum(accuracies) / len(accuracies)
                     help_requests = behavioral_summary.get("help_requests", 0)
 
                     # Heuristic thresholds

@@ -45,10 +45,12 @@
         btn.style.minHeight = "44px"; // Touch target
         btn.onclick = async () => {
           try {
-            // placeholder: calls backend mark-read endpoint if available
-            await fetch(`/user/${uid}/notifications/${n.id}/read`, {
+            const response = await fetch(`/user/${uid}/notifications/${n.id}/read`, {
               method: "POST",
             });
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
             li.classList.add("read");
           } catch (e) {
             console.warn("mark read failed", e);
@@ -62,32 +64,43 @@
 
       async function loadData() {
         const uid = '{{ user_id or "" }}';
-        const badgesResp = await fetch(`/user/${uid}/badges`);
-        const badgesJson = await badgesResp.json();
-        const badgesList = badgesJson.badges || badgesJson || [];
-        const badgesRoot = document.getElementById("badges");
-        badgesRoot.innerHTML = "";
-        if (!(badgesList || []).length) {
-          badgesRoot.innerHTML =
-            '<p class="muted">No badges yet. Complete assignments to earn achievements.</p>';
-        } else {
-          (badgesList || []).forEach((b) =>
-            badgesRoot.appendChild(badgeCard(b))
-          );
-        }
+        try {
+          const badgesResp = await fetch(`/user/${uid}/badges`);
+          if (!badgesResp.ok) {
+            throw new Error(`Failed to load badges: ${badgesResp.status}`);
+          }
+          const badgesJson = await badgesResp.json();
+          const badgesList = badgesJson.badges || badgesJson || [];
+          const badgesRoot = document.getElementById("badges");
+          badgesRoot.innerHTML = "";
+          if (!(badgesList || []).length) {
+            badgesRoot.innerHTML =
+              '<p class="muted">No badges yet. Complete assignments to earn achievements.</p>';
+          } else {
+            (badgesList || []).forEach((b) =>
+              badgesRoot.appendChild(badgeCard(b))
+            );
+          }
 
-        const notesResp = await fetch(`/user/${uid}/notifications`);
-        const notesJson = await notesResp.json();
-        const notesList =
-          notesJson.notifications || notesJson.items || notesJson || [];
-        const notesRoot = document.getElementById("notifications");
-        notesRoot.innerHTML = "";
-        if (!(notesList || []).length) {
-          notesRoot.innerHTML = '<li class="muted">No notifications yet.</li>';
-        } else {
-          (notesList || []).forEach((n) =>
-            notesRoot.appendChild(notificationItem(n))
-          );
+          const notesResp = await fetch(`/user/${uid}/notifications`);
+          if (!notesResp.ok) {
+            throw new Error(`Failed to load notifications: ${notesResp.status}`);
+          }
+          const notesJson = await notesResp.json();
+          const notesList =
+            notesJson.notifications || notesJson.items || notesJson || [];
+          const notesRoot = document.getElementById("notifications");
+          notesRoot.innerHTML = "";
+          if (!(notesList || []).length) {
+            notesRoot.innerHTML = '<li class="muted">No notifications yet.</li>';
+          } else {
+            (notesList || []).forEach((n) =>
+              notesRoot.appendChild(notificationItem(n))
+            );
+          }
+        } catch (e) {
+          console.error("Failed to load data", e);
+          // Optionally show user-friendly error message
         }
       }
 
