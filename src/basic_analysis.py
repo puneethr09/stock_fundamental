@@ -8,7 +8,6 @@ import requests
 import pytz
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
-import logging
 from datetime import datetime, timedelta
 from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
 from src.gap_filling_service import EducationalGapFillingService
@@ -16,9 +15,6 @@ from plotly.subplots import make_subplots
 
 
 matplotlib.use("Agg")  # Use a non-interactive backend for plotting
-
-# Set up logger
-logger = logging.getLogger(__name__)
 
 
 def get_financial_ratios(ticker):
@@ -141,7 +137,7 @@ def get_financial_ratios(ticker):
     return ratios_df
 
 
-def get_historical_data(ticker: str) -> pd.DataFrame:
+def get_historical_data(ticker):
     """Compatibility shim: return historical price data for a ticker.
 
     Tests patch this function often; provide a simple wrapper around yfinance
@@ -212,7 +208,7 @@ def calculate_pe_ratio(historical_data, eps):
         pe_ratios = aligned_prices / eps
         return pe_ratios
     except Exception as e:
-        logger.error(f"PE Ratio calculation error: {e}", exc_info=True)
+        print(f"\nPE Ratio calculation error: {e}")
         return pd.Series(np.nan, index=eps.index)
 
 
@@ -246,7 +242,7 @@ def calculate_pb_ratio(historical_data, balance_sheet, stock):
         pb_ratios = year_end_prices.reindex(years) / book_value_per_share
         return pb_ratios
     except Exception as e:
-        logger.error(f"P/B Ratio calculation error: {e}", exc_info=True)
+        print(f"\nP/B Ratio calculation error: {e}")
         return pd.Series(np.nan, index=balance_sheet.columns)
 
 
@@ -924,7 +920,7 @@ def get_market_news():
 
                         all_news.append(news_item)
         except Exception as e:
-            logger.error(f"Error fetching feed {feed_url}: {e}", exc_info=True)
+            print(f"Error fetching feed {feed_url}: {e}")
             continue
 
     # Sort news by score in descending order and return the top 500
