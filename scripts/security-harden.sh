@@ -90,57 +90,15 @@ add_header X-XSS-Protection "1; mode=block" always;
 # Referrer Policy
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-# Content Security Policy - Production-ready configuration
-# IMPORTANT: This configuration removes 'unsafe-inline' for maximum security
-# For inline styles/scripts, implement nonce-based CSP in your Flask application
-# Example Flask implementation:
-#   from secrets import token_hex
-#   @app.before_request
-#   def generate_nonce():
-#       g.nonce = token_hex(16)
-#
-#   @app.after_request
-#   def add_csp_header(response):
-#       nonce = getattr(g, 'nonce', '')
-#       csp = f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
-#       response.headers['Content-Security-Policy'] = csp
-#       return response
-#
-# For static inline styles/scripts, use hash-based CSP:
-#   style-src 'self' 'sha256-{base64-encoded-hash}'
+# Content Security Policy - Updated for better security
+# Note: Removed 'unsafe-inline' and 'unsafe-eval' for script-src to prevent XSS
+# If inline scripts are needed, implement nonce-based CSP in your application
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;" always;
 
-# Content Security Policy is handled by Flask application with nonce-based protection
-# DO NOT enable nginx CSP when using Flask nonce-based CSP
-# add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;" always;
-
-# For nonce-based CSP implementation in Flask (RECOMMENDED):
-# 1. Generate a random nonce for each request in @app.before_request
-#    @app.before_request
-#    def generate_csp_nonce():
-#        from flask import g
-#        g.csp_nonce = secrets.token_hex(16)
-#
-# 2. Add nonce to script/style tags: <script nonce="{{ g.csp_nonce }}">...</script>
-# 3. Set CSP header dynamically in @app.after_request with 'nonce-{nonce}'
-#    @app.after_request
-#    def add_csp_header(response):
-#        from flask import g
-#        nonce = getattr(g, 'csp_nonce', '')
-#        csp_policy = f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-#        response.headers['Content-Security-Policy'] = csp_policy
-#        return response
-#
-# 4. For external scripts/styles, add their domains to the CSP
-#
-# NOTE: This Flask nonce-based CSP is ALREADY IMPLEMENTED in the current application
-# Check app.py for the actual implementation with proper error handling and security headers
-#
-# Alternative: Hash-based CSP for static inline content
-# - Calculate SHA256 hash of inline script/style content
-# - Add to CSP: script-src 'sha256-{base64-hash}'
-# - More secure but requires pre-computing hashes
-#
-# WARNING: Never use 'unsafe-inline' or 'unsafe-eval' in production!
+# For nonce-based CSP implementation in Flask:
+# 1. Generate a random nonce for each request
+# 2. Add nonce to script tags: <script nonce="{{ nonce }}">...</script>
+# 3. Set CSP header dynamically: script-src 'self' 'nonce-{nonce}'
 
 # HTTP Strict Transport Security (HSTS)
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;

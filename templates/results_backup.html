@@ -18,7 +18,7 @@
     />
     <!-- Gamification CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='gamification.css') }}" />
-    <style nonce="{{ g.csp_nonce }}">
+    <style>
       body {
         background-image: url("/static/images/wall_street_blue.avif");
         background-size: cover;
@@ -1020,7 +1020,7 @@
     <!-- jQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script nonce="{{ g.csp_nonce }}">
+    <script>
       $(document).ready(function () {
         $("#another-ticker-input").on("input", function () {
           let query = $(this).val();
@@ -1247,7 +1247,7 @@
     
     <!-- Gamification JavaScript -->
     <script src="{{ url_for('static', filename='gamification.js') }}"></script>
-    <script nonce="{{ g.csp_nonce }}">
+    <script>
       // Initialize gamification after analysis completion
       document.addEventListener('DOMContentLoaded', function() {
         // Track analysis completion for gamification
