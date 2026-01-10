@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 from src.utils import calculate_ratio, calculate_margin, normalize_financial_data
 from src.gap_filling_service import EducationalGapFillingService
 from plotly.subplots import make_subplots
+from plotly.subplots import make_subplots
+from src.algorithmic_models import calculate_piotroski_series, calculate_graham_number_series, get_valuation_status
+from src.industry_analysis import analyze_industry_context
 
 
 matplotlib.use("Agg")  # Use a non-interactive backend for plotting
@@ -132,6 +135,28 @@ def get_financial_ratios(ticker):
             "Company": [company_name] * len(available_years),
         }
     )
+
+    # Calculate Algorithmic Scores
+    try:
+        # Piotroski F-Score
+        f_scores = calculate_piotroski_series(available_years, income_statement, balance_sheet, cash_flow)
+        ratios_df["Piotroski Score"] = f_scores
+
+        # Graham Number
+        # Need BVPS (Book Value Per Share)
+        shares_outstanding = stock.info.get("sharesOutstanding", 1)
+        common_equity = balance_sheet.loc["Common Stock Equity"].reindex(available_years, fill_value=0) * 1e6
+        # EPS is already calculated but we need it aligned to years
+        eps_aligned = eps.reindex(available_years, fill_value=0)
+        
+        bvps = common_equity / shares_outstanding
+        graham_numbers = calculate_graham_number_series(eps_aligned, bvps)
+        ratios_df["Graham Number"] = graham_numbers.values
+    
+    except Exception as e:
+        print(f"Error adding algorithmic scores: {e}")
+        ratios_df["Piotroski Score"] = 0
+        ratios_df["Graham Number"] = 0
     print(ratios_df)
     ratios_df = ratios_df.dropna(how="all", subset=ratios_df.columns[1:-1])
     return ratios_df
@@ -274,13 +299,14 @@ def analyze_ratios(ratios_df, ticker=None):
         ticker: Stock ticker symbol (optional, for gap analysis)
 
     Returns:
-        Tuple of (warnings, explanations, plot_html, gaps, research_guides, confidence_score)
+        Tuple of (warnings, explanations, plot_html, gaps, research_guides, confidence_score, insights_data)
     """
     # Initialize gap filling service
     gap_service = EducationalGapFillingService()
     gaps = []
     research_guides = []
     confidence_score = 1.0
+    insights_data = {}
 
     if ratios_df is None or len(ratios_df) == 0:
         print("No financial ratios available for analysis.")
@@ -292,13 +318,44 @@ def analyze_ratios(ratios_df, ticker=None):
             research_guides = gap_service.generate_research_guides(gaps)
             confidence_score = gap_service.calculate_analysis_confidence_score(gaps)
 
-        return [], [], None, gaps, research_guides, confidence_score
+        return [], [], None, gaps, research_guides, confidence_score, {}
 
     company_name = ratios_df["Company"].unique()[0]
     warnings = []
     explanations = []
 
     latest_ratios = ratios_df.iloc[-1]
+    
+    # --- ALGORITHMIC ANALYSIS ---
+    try:
+        if "Piotroski Score" in ratios_df.columns:
+            f_score = latest_ratios["Piotroski Score"]
+            graham_num = latest_ratios["Graham Number"]
+            
+            # Valuation Status
+            curr_price = latest_ratios.get("Close", 0) 
+            
+            insights_data["f_score"] = int(f_score)
+            insights_data["graham_number"] = float(graham_num)
+            
+            # Interpretation
+            if f_score >= 8:
+                insights_data["f_score_rating"] = "Excellent"
+            elif f_score >= 5:
+                insights_data["f_score_rating"] = "Good"
+            else:
+                insights_data["f_score_rating"] = "Weak"
+                 
+        # Industry Analysis
+        if ticker:
+            t_obj = yf.Ticker(ticker)
+            industry_insights = analyze_industry_context(ratios_df, t_obj)
+            insights_data["industry_analysis"] = industry_insights
+
+    except Exception as e:
+        print(f"Algo Analysis Error: {e}")
+
+    # --- END ALGORITHMIC ANALYSIS ---
 
     # Existing warning logic (with safe access to handle missing data)
     if not pd.isna(latest_ratios.get("ROE", np.nan)) and latest_ratios["ROE"] < 10:
