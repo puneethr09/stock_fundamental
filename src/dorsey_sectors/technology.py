@@ -3,11 +3,17 @@ from src.dorsey_sectors.base import SectorStrategy
 
 class TechnologyStrategy(SectorStrategy):
     """
-    Implements Chapter 21: Software & Hardware.
+    Implements Chapter 19 (Software) & Chapter 20 (Hardware).
+    
+    Per Pat Dorsey's Five Rules:
+    - Software: High gross margins (70%+), low CapEx, strong FCF conversion
+    - Hardware: Lower margins (30-50%), inventory risk, higher CapEx
+    
     Key Metrics:
-    - Gross Margins (Pricing Power)
-    - R&D as % of Sales
+    - Gross Margins (Software vs Hardware distinction: >70% = software-like)
+    - R&D as % of Sales (Innovation investment)
     - Cash Flow vs Net Income (Earnings Quality)
+    - Deferred Revenue Growth (Recurring revenue indicator)
     """
     def __init__(self, ticker):
         super().__init__(ticker)

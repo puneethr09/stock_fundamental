@@ -3,11 +3,17 @@ from src.dorsey_sectors.base import SectorStrategy
 
 class MediaStrategy(SectorStrategy):
     """
-    Implements Chapter 20: Media.
+    Implements Chapter 21: Media (Publishing, Broadcasting, Cable, Entertainment).
+    
+    Per Pat Dorsey's Five Rules:
+    - Media can have strong moats via content libraries and distribution
+    - Cable historically had local monopolies (now facing competition)
+    - Focus on cash flow generation from content monetization
+    
     Key Metrics:
-    - Free Cash Flow Generation (Ad revenue is high margin)
-    - Content Costs (Amortization)
-    - Intangible Assets (Library Value)
+    - FCF Margin (Content monetization efficiency)
+    - Asset Turnover (Content library utilization)
+    - Advertising Revenue Stability
     """
     def __init__(self, ticker):
         super().__init__(ticker)

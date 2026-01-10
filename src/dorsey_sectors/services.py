@@ -3,12 +3,18 @@ from src.dorsey_sectors.base import SectorStrategy
 
 class BusinessServicesStrategy(SectorStrategy):
     """
-    Implements Chapter 18: Business Services.
-    (Outsourcers, Data Processors, Ad Agencies)
+    Implements Chapter 16: Business Services.
+    
+    Per Pat Dorsey's Five Rules:
+    - Business Services has high moat potential (many wide-moat firms)
+    - Three sub-sectors: Technology-based, People-based, Hard-asset-based
+    - Technology-based firms often have strongest moats
+    
     Key Metrics:
-    - Recurring Revenue (Stability)
+    - Recurring Revenue Stability (Contract stickiness)
     - Cash Flow vs Net Income (Earnings Quality)
-    - "Sticky" relationships
+    - Operating Margin (Scale benefits)
+    - Client Retention Proxy (Revenue consistency)
     """
     def __init__(self, ticker):
         super().__init__(ticker)

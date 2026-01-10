@@ -3,11 +3,16 @@ from src.dorsey_sectors.base import SectorStrategy
 
 class HealthcareStrategy(SectorStrategy):
     """
-    Implements Chapter 15: Healthcare.
+    Implements Chapter 14: Healthcare (Pharmaceuticals, Biotech, Medical Devices).
+    
+    Per Pat Dorsey's Five Rules:
+    - Healthcare has significant moat potential due to patents, R&D barriers, and regulatory approvals
+    - Key focus: R&D productivity, patent cliff risk, pipeline diversity
+    
     Key Metrics:
-    - R&D Productivity (R&D % of Sales)
-    - Patent Cliff Risk (Revenue Concentration) - Hard to get auto, will use Margins as proxy.
-    - Regulatory Risk.
+    - R&D Intensity (R&D % of Sales) - Innovation investment
+    - Operating Margin Trend - Patent protection proxy
+    - Gross Margin - Branded vs Generic indicator
     """
     def __init__(self, ticker):
         super().__init__(ticker)
