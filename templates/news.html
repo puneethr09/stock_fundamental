@@ -1,295 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Market News</title>
+    <title>Market News | Stock Fundamentals</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-      /* Mobile-first responsive news styling */
-      body {
-          background-image: url('/static/images/market_news.jpg');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-attachment: scroll; /* Better for mobile */
+      /* Dark theme news page - matching results.html */
+      .news-page {
+          min-height: 100vh;
+          padding-bottom: 2rem;
       }
       
-      /* Fixed background for larger screens */
-      @media (min-width: 768px) {
-        body {
-          background-attachment: fixed;
-        }
+      .news-page h2 {
+          color: #fff;
+          margin-bottom: 1.5rem;
+          font-weight: 700;
+          text-align: center;
       }
       
-      .card {
-          background-color: rgba(255, 255, 255, 0.95);
-          border: none;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          margin-bottom: 15px;
-          border-radius: 8px;
+      /* Dark glassmorphism cards */
+      .news-page .card {
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(108, 126, 246, 0.2);
+          border-radius: 12px;
           transition: all 0.3s ease;
+          margin-bottom: 1rem;
       }
       
-      .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      .news-page .card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(108, 126, 246, 0.4);
+          box-shadow: 0 8px 32px rgba(108, 126, 246, 0.15);
       }
       
-      .card-body {
-          padding: 15px;
+      .news-page .card-body {
+          padding: 1.25rem;
       }
       
-      /* Mobile-optimized card layout */
-      @media (max-width: 576px) {
-        .card {
-          margin-bottom: 10px;
-          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        }
-        .card-body {
-          padding: 12px;
-        }
-      }
-      
-      .card-title a {
-          color: #083b72;
+      .news-page .card-title a {
+          color: #eaf3ff;
           text-decoration: none;
-          font-size: 1.1rem;
+          font-size: 1.05rem;
           line-height: 1.4;
           font-weight: 600;
           display: block;
-          margin-bottom: 8px;
+          margin-bottom: 0.5rem;
           transition: color 0.3s ease;
       }
       
-      /* Mobile typography adjustments */
-      @media (max-width: 576px) {
-        .card-title a {
-          font-size: 1rem;
-          line-height: 1.3;
-        }
-      }
-      
-      .card-title a:hover {
-          text-decoration: underline;
-          color: #0056b3;
-      }
-      
-      .card-text {
-          color: #333;
-          font-size: 0.9rem;
-      }
-      
-      .card-text a {
-          color: #007bff;
+      .news-page .card-title a:hover {
+          color: var(--accent-blue, #38bdf8);
           text-decoration: none;
       }
       
-      .card-text a:hover {
-          text-decoration: underline;
-          color: #0056b3;
-      }
-      
-      /* Mobile-responsive navigation tabs */
-      .nav-tabs {
-          background-color: rgba(240, 240, 240, 0.9);
-          padding: 8px;
-          border-radius: 8px 8px 0 0;
-          flex-wrap: wrap;
-      }
-
-      .nav-pills {
-          background-color: rgba(230, 240, 255, 0.9);
-          padding: 8px;
-          border-radius: 5px;
-          margin-bottom: 15px;
-          flex-wrap: wrap;
-      }
-      
-      .nav-link {
-          color: #083b72;
+      .news-page .card-text {
+          color: rgba(255, 255, 255, 0.7);
           font-size: 0.9rem;
-          padding: 8px 12px;
-          margin: 2px;
-          min-height: 44px; /* Touch target */
-          display: flex;
-          align-items: center;
-          border-radius: 6px;
-          transition: all 0.3s ease;
+          line-height: 1.5;
       }
       
-      .nav-link.active {
-          background-color: #083b72;
-          color: white;
+      /* Dark tabs */
+      .news-page .nav-tabs {
+          background: rgba(15, 23, 42, 0.6);
+          border-radius: 12px 12px 0 0;
+          padding: 0.75rem;
+          border: 1px solid rgba(108, 126, 246, 0.2);
+          border-bottom: none;
+          flex-wrap: wrap;
       }
-
-      .nav-link:hover {
-        background-color: #0056b3;
-        color: white;
+      
+      .news-page .nav-pills {
+          background: rgba(15, 23, 42, 0.4);
+          padding: 0.75rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
       }
-
-      .tab-content {
-          background-color: rgba(255, 255, 255, 0.3);
-          padding: 20px;
-          border-radius: 0 0 8px 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      .news-page .nav-link {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 0.9rem;
+          padding: 0.5rem 1rem;
+          margin: 0.25rem;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          border: 1px solid transparent;
       }
-      .navbar-datetime {
-          font-weight: 500;
-          margin-right: 15px;
-          padding: 8px 15px;
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
+      
+      .news-page .nav-link:hover {
+          background: rgba(108, 126, 246, 0.2);
+          color: #fff;
       }
-      h2 {
-          color: #000000;
-          background-color: rgba(255, 255, 255, 0.5);
-          margin-bottom: 20px;
-          background-position: center;
-          position: center;
-          padding: 1rem;
-          border-radius: 12px;
-          animation: fadeInUp 1s ease-out;
+      
+      .news-page .nav-link.active {
+          background: linear-gradient(135deg, rgba(108, 126, 246, 0.3), rgba(0, 212, 255, 0.2));
+          color: #fff;
+          border-color: rgba(108, 126, 246, 0.4);
       }
-      .nav-link {
-          color: #083b72;
+      
+      .news-page .tab-content {
+          background: rgba(15, 23, 42, 0.4);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          padding: 1.5rem;
+          border-radius: 0 0 12px 12px;
+          border: 1px solid rgba(108, 126, 246, 0.2);
+          border-top: none;
       }
-      .nav-link.active {
-          background-color: #083b72;
-          color: white;
+      
+      .news-page .badge {
+          font-size: 0.75rem;
       }
-      .nav-link:hover {
-          background-color: #0056b3;
-          color: white;
+      
+      /* Empty state */
+      .news-page .text-muted {
+          color: rgba(255, 255, 255, 0.5) !important;
       }
-      .tab-content {
-          background-color: rgba(255, 255, 255, 0.3);
-          padding: 20px;
-          border-radius: 0 0 8px 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      /* Mobile adjustments */
+      @media (max-width: 576px) {
+          .news-page .card-body {
+              padding: 1rem;
+          }
+          .news-page .card-title a {
+              font-size: 0.95rem;
+          }
       }
-      .navbar-datetime {
-          font-weight: 500;
-          margin-right: 15px;
-          padding: 8px 15px;
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-  </style>
+    </style>
 </head>
 <body>
-        {% include '_header.html' %}
+    {% include '_header.html' %}
 
-            <main class="container-fluid mt-4 news-page px-2">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-10">
-        <h2 class="text-center mb-4">Latest Market News</h2>
-    <!-- Publisher Tabs -->
-    <ul class="nav nav-tabs" id="publisherTab" role="tablist">
-        {% for publisher in publishers %}
-        <li class="nav-item">
-            <a class="nav-link {% if loop.first %}active{% endif %}" 
-               id="{{ publisher }}-tab" 
-               data-toggle="tab" 
-               href="#{{ publisher }}" 
-               role="tab">{{ publisher }}</a>
-        </li>
-        {% endfor %}
-    </ul>
+    <main class="container-fluid mt-4 news-page px-3">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <h2><i class="fas fa-newspaper text-info mr-2"></i>Latest Market News</h2>
+                
+                <!-- Publisher Tabs -->
+                <ul class="nav nav-tabs" id="publisherTab" role="tablist">
+                    {% for publisher in publishers %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if loop.first %}active{% endif %}" 
+                           id="{{ publisher }}-tab" 
+                           data-toggle="tab" 
+                           href="#{{ publisher }}" 
+                           role="tab">{{ publisher }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
 
-    <!-- Publisher Content -->
-    <div class="tab-content" id="publisherTabContent">
-        {% for publisher in publishers %}
-        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
-             id="{{ publisher }}" 
-             role="tabpanel">
-            
-            <!-- Category Tabs -->
-            <ul class="nav nav-pills mt-3" id="categoryTab-{{ publisher }}" role="tablist">
-                {% for category in categories %}
-                <li class="nav-item">
-                    <a class="nav-link {% if loop.first %}active{% endif %}"
-                       id="{{ publisher }}-{{ category }}-tab"
-                       data-toggle="pill"
-                       href="#{{ publisher }}-{{ category }}"
-                       role="tab">
-                       {{ category }}
-                       {% if not organized_news.get(publisher, {}).get(category, []) %}
-                           <span class="badge badge-secondary ml-1">0</span>
-                       {% else %}
-                           <span class="badge badge-primary ml-1">{{ organized_news[publisher][category]|length }}</span>
-                       {% endif %}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
+                <!-- Publisher Content -->
+                <div class="tab-content" id="publisherTabContent">
+                    {% for publisher in publishers %}
+                    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                         id="{{ publisher }}" 
+                         role="tabpanel">
+                        
+                        <!-- Category Tabs -->
+                        <ul class="nav nav-pills mt-3" id="categoryTab-{{ publisher }}" role="tablist">
+                            {% for category in categories %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if loop.first %}active{% endif %}"
+                                   id="{{ publisher }}-{{ category }}-tab"
+                                   data-toggle="pill"
+                                   href="#{{ publisher }}-{{ category }}"
+                                   role="tab">
+                                   {{ category }}
+                                   {% if not organized_news.get(publisher, {}).get(category, []) %}
+                                       <span class="badge badge-secondary ml-1">0</span>
+                                   {% else %}
+                                       <span class="badge badge-primary ml-1">{{ organized_news[publisher][category]|length }}</span>
+                                   {% endif %}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
 
-            <!-- Category Content -->
-            <div class="tab-content" id="categoryTabContent-{{ publisher }}">
-                {% for category in categories %}
-                <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
-                     id="{{ publisher }}-{{ category }}"
-                     role="tabpanel">
-                    {% if organized_news.get(publisher, {}).get(category, []) %}
-                        <div class="row mt-3">
-                            {% for item in organized_news[publisher][category] %}
-                            <div class="col-2-4 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <a href="{{ item.link }}" target="_blank">{{ item.title }}</a>
-                                        </h5>
-                                        <p class="card-text">
-                                            <small class="text-muted">{{ item.published_at }}</small>
-                                        </p>
-                                        <p class="card-text">{{ item.description }}</p>
+                        <!-- Category Content -->
+                        <div class="tab-content mt-3" id="categoryTabContent-{{ publisher }}">
+                            {% for category in categories %}
+                            <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
+                                 id="{{ publisher }}-{{ category }}"
+                                 role="tabpanel">
+                                {% if organized_news.get(publisher, {}).get(category, []) %}
+                                    <div class="row">
+                                        {% for item in organized_news[publisher][category] %}
+                                        <div class="col-md-4 col-sm-6 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">
+                                                        <a href="{{ item.link }}" target="_blank">{{ item.title }}</a>
+                                                    </h5>
+                                                    <p class="card-text">
+                                                        <small class="text-muted"><i class="fas fa-clock mr-1"></i>{{ item.published_at }}</small>
+                                                    </p>
+                                                    <p class="card-text">{{ item.description[:150] }}{% if item.description|length > 150 %}...{% endif %}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
                                     </div>
-                                </div>
+                                {% else %}
+                                    <div class="d-flex justify-content-center align-items-center py-5">
+                                        <div class="text-center">
+                                            <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">No news available in {{ category }}</h5>
+                                            <p class="text-muted small">Check back later for updates</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
-                    {% else %}
-                        <div class="d-flex justify-content-center align-items-center mt-5">
-                            <div class="text-center">
-                                <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
-                                <h4 class="text-muted">No news available in {{ category }}</h4>
-                            </div>
-                        </div>
-                    {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    </div>
-</div>
+    </main>
 
-      </div>
-    </div>
-</main>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-{% include '_footer.html' %}
+    {% include '_footer.html' %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<script>
-function updateDateTime() {
-    const now = new Date();
-    const options = { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit',
-    };
-    document.getElementById('datetime').innerHTML = now.toLocaleString('en-US', options);
-}
-
-// Update immediately and then every second
-updateDateTime();
-setInterval(updateDateTime, 1000);
-</script>

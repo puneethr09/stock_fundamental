@@ -591,12 +591,15 @@ body,
   border-radius: 12px;
   flex: 1;
   min-width: 250px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(108, 126, 246, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 .feature:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(108, 126, 246, 0.15), 0 0 20px rgba(0, 212, 255, 0.1);
+  border-color: rgba(108, 126, 246, 0.4);
 }
 .feature h4 {
   margin: 0 0 0.5rem;
@@ -650,6 +653,28 @@ body,
   .feature {
     min-width: auto;
   }
+}
+
+/* Quick-start ticker chips */
+.ticker-chip {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: rgba(108, 126, 246, 0.15);
+  border: 1px solid rgba(108, 126, 246, 0.3);
+  border-radius: 20px;
+  color: #eaf3ff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+.ticker-chip:hover {
+  background: rgba(108, 126, 246, 0.3);
+  border-color: rgba(108, 126, 246, 0.5);
+  box-shadow: 0 0 15px rgba(108, 126, 246, 0.3);
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
 }
 
 /* Results page specific styles */

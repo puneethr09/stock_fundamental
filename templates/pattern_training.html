@@ -15,38 +15,59 @@
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}" />
     <!-- Plotly.js for interactive charts -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-      /* Mobile-first responsive styling */
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f8f9fa;
-        margin: 0;
-        padding: 0;
+      /* Dark theme pattern training */
+      .pattern-page .container {
+        padding-top: 20px;
+      }
+      
+      .pattern-page h3 {
+        color: #fff;
+        margin-bottom: 1.5rem;
       }
 
       .header-section {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: linear-gradient(135deg, rgba(108, 126, 246, 0.3), rgba(0, 212, 255, 0.2));
         color: white;
         padding: 20px 0;
-        border-radius: 10px;
+        border-radius: 12px;
         margin-bottom: 20px;
+        border: 1px solid rgba(108, 126, 246, 0.3);
+        backdrop-filter: blur(10px);
       }
 
       .pattern-card {
-        border: none;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(108, 126, 246, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         margin-bottom: 20px;
         cursor: pointer;
-        min-height: 44px; /* Touch target */
+        min-height: 44px;
+        backdrop-filter: blur(10px);
       }
 
       .pattern-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(108, 126, 246, 0.2);
+        border-color: rgba(108, 126, 246, 0.5);
+      }
+      
+      .pattern-card .card-body {
+        color: #eaf3ff;
+      }
+      
+      .pattern-card .card-title {
+        color: var(--accent-blue, #38bdf8);
+      }
+      
+      .pattern-card .card-text {
+        color: rgba(255, 255, 255, 0.7);
       }
 
       /* Responsive breakpoints */
@@ -146,7 +167,7 @@
       }
     </style>
   </head>
-  <body class="light-page">
+  <body class="pattern-page">
     {% include '_header.html' %}
 
     <div class="container" style="padding-top: 20px">

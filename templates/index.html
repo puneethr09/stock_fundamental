@@ -107,6 +107,17 @@
         <div class="cards" id="recent-cards">
           <!-- placeholder cards populated by JS if available -->
         </div>
+        <div class="quick-start" id="quick-start-section" style="display: none;">
+          <p style="color: var(--muted); margin-bottom: 1rem;">Quick start with popular tickers:</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <a href="/analyze/TCS.NS" class="ticker-chip">TCS</a>
+            <a href="/analyze/INFY.NS" class="ticker-chip">INFY</a>
+            <a href="/analyze/RELIANCE.NS" class="ticker-chip">RELIANCE</a>
+            <a href="/analyze/HDFCBANK.NS" class="ticker-chip">HDFC Bank</a>
+            <a href="/analyze/ITC.NS" class="ticker-chip">ITC</a>
+            <a href="/analyze/WIPRO.NS" class="ticker-chip">WIPRO</a>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -279,10 +290,22 @@
       (async function loadRecent() {
         try {
           const r = await fetch("/recent-analyses");
-          if (!r.ok) return;
-          const list = await r.json();
+          const quickStart = document.getElementById("quick-start-section");
           const root = document.getElementById("recent-cards");
+          
+          if (!r.ok) {
+            if (quickStart) quickStart.style.display = "block";
+            return;
+          }
+          
+          const list = await r.json();
           root.innerHTML = "";
+          
+          if (!list || list.length === 0) {
+            if (quickStart) quickStart.style.display = "block";
+            return;
+          }
+          
           (list || []).slice(0, 6).forEach((it) => {
             const c = document.createElement("div");
             c.className = "card";
@@ -291,7 +314,10 @@
             }</small><p>${it.summary || ""}</p>`;
             root.appendChild(c);
           });
-        } catch (e) {}
+        } catch (e) {
+          const quickStart = document.getElementById("quick-start-section");
+          if (quickStart) quickStart.style.display = "block";
+        }
       })();
     </script>
   </body>
