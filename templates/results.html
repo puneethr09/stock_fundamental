@@ -1,1461 +1,312 @@
+
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Financial Ratios Analysis</title>
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <!-- Font Awesome for icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM5M8Q4gZQ1S5r5l5g5r5g5r5g5r5g5r5g5r5g5"
-      crossorigin="anonymous"
-    />
-    <!-- Gamification CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='gamification.css') }}" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ticker }} - Dorsey Analysis</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
     <style>
-      /* Mobile-first responsive enhancements */
-      body {
-        background-image: url("/static/images/wall_street_blue.avif");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: scroll; /* Better for mobile */
-      }
-      
-      /* Mobile-responsive background attachment */
-      @media (min-width: 768px) {
-        body {
-          background-attachment: fixed;
-        }
-      }
-      
-      h1.text-center {
-        color: rgb(255, 255, 255);
-        font-size: 1.75rem;
-        margin-bottom: 1rem;
-      }
-      
-      /* Mobile-first table styling */
-      .data {
-        background: rgba(255, 255, 255, 0.95);
-        width: 100%;
-        margin: 10px auto;
-        border-collapse: collapse;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        font-size: 0.75rem;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      
-      /* Mobile table container */
-      .table-responsive {
-        border-radius: 8px;
-        max-height: 400px;
-        overflow-y: auto;
-      }
-      
-      /* Mobile-specific table behavior */
-      @media (max-width: 576px) {
-        .data {
-          font-size: 0.7rem;
-        }
-        .data th, .data td {
-          padding: 4px 6px;
-          text-align: left;
-        }
-        .data th {
-          position: sticky;
-          top: 0;
-          z-index: 10;
-        }
-      }
-      
-      .data thead, .data tbody, .data tr {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-      }
-      
-      .data th {
-        background-color: rgba(0, 123, 255, 0.5);
-        color: white;
-        font-weight: bold;
-        padding: 8px;
-        text-align: center;
-        font-size: 0.8rem;
-      }
-      
-      .data td {
-        padding: 6px 8px;
-        text-align: right;
-        border: 1px solid rgba(221, 221, 221, 0.5);
-        background-color: rgba(255, 255, 255, 0.5);
-        font-size: 0.8rem;
-      }
-      
-      /* Tablet and desktop responsive breakpoints */
-      @media (min-width: 576px) {
-        .data {
-          font-size: 0.9rem;
-          width: 95%;
-        }
-        .data th {
-          padding: 10px;
-          font-size: 0.85rem;
-        }
-        .data td {
-          padding: 8px 10px;
-          font-size: 0.85rem;
-        }
-        h1.text-center {
-          font-size: 2rem;
-        }
-      }
-      
-      @media (min-width: 768px) {
-        .data {
-          font-size: 1rem;
-          width: 90%;
-          display: table;
-          white-space: normal;
-          overflow-x: visible;
-        }
-        .data th {
-          padding: 12px;
-          font-size: 1rem;
-        }
-        .data td {
-          padding: 10px;
-          font-size: 1rem;
-        }
-        h1.text-center {
-          font-size: 2.25rem;
-        }
-      }
-      
-      @media (min-width: 992px) {
-        .data {
-          margin: 20px auto;
-        }
-        h1.text-center {
-          font-size: 2.5rem;
-        }
-      }
-      }
-      .data tr:nth-child(even) td {
-        background-color: rgba(
-          240,
-          247,
-          255,
-          0.5
-        ); /* Light blue with 80% opacity */
-      }
-      .data tr:hover td {
-        background-color: rgba(
-          245,
-          245,
-          245,
-          0.5
-        ) !important; /* Light grey with 80% opacity */
-      }
-      .plot {
-        text-align: center;
-        margin: 10px auto;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        width: 95%;
-        overflow-x: auto;
-      }
-      
-      /* Mobile-first responsive chart container */
-      .plot > div {
-        min-width: 300px;
-        width: 100%;
-      }
-      
-      @media (min-width: 576px) {
-        .plot {
-          padding: 20px;
-          margin: 20px auto;
-          width: 90%;
-        }
-      }
-      .positive {
-        color: #067320;
-      }
-      .negative {
-        color: #dc3545;
-      }
-      .warning {
-        color: #ff6b6b;
-        font-weight: 500;
-        text-align: center;
-        padding: 10px;
-        line-height: 1.5;
-      }
-      .explanation {
-        color: #2c3e50;
-        text-align: center;
-      }
-      /* .plot {
-        text-align: center;
-        margin: 20px;
-      } */
-      .navbar-search {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: auto;
-      }
-      #another-ticker-input {
-        width: 250px;
-        height: 35px;
-        font-size: 14px;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        border-color: #007bff;
-        border-width: 3px;
-        background-color: #f0f8ff;
-        color: #333;
-      }
-      #suggestions-list {
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 250px;
-        max-height: 300px;
-        overflow-y: auto;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 0 0 4px 4px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-      }
-      #suggestions-list li {
-        padding: 8px 10px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
-      }
-      #suggestions-list li:last-child {
-        border-bottom: none;
-      }
-      #suggestions-list li:hover {
-        background-color: #f5f5f5;
-      }
-      .search-box input[type="submit"] {
-        font-size: 1.5rem;
-        padding: 0.8rem 2rem;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .search-box input[type="submit"]:hover {
-        background-color: #0056b3;
-      }
-
-      /* Learning Stage Progress Styles */
-      .learning-stage-progress {
-        background: rgba(25, 135, 84, 0.1);
-        border-left: 4px solid #198754;
-        margin: 20px auto;
-        width: 90%;
-        padding: 15px;
-        border-radius: 0 8px 8px 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .stage-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-      }
-
-      .stage-name {
-        font-weight: bold;
-        color: #198754;
-        font-size: 1.1em;
-      }
-
-      .stage-confidence {
-        background: #6c757d;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 0.8em;
-      }
-
-      .progress-bars {
-        margin: 10px 0;
-      }
-
-      .progress-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 8px 0;
-      }
-
-      .progress-label {
-        font-size: 0.9em;
-        color: #495057;
-        min-width: 140px;
-      }
-
-      .progress {
-        flex-grow: 1;
-        margin: 0 10px;
-        height: 8px;
-      }
-
-      .progress-value {
-        font-size: 0.8em;
-        color: #6c757d;
-        min-width: 35px;
-        text-align: right;
-      }
-
-      .learning-recommendations {
-        background: rgba(13, 110, 253, 0.1);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-      }
-
-      .learning-prompts {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .learning-prompt {
-        background: rgba(13, 110, 253, 0.1);
-        color: #0d6efd;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.8em;
-        border: 1px solid rgba(13, 110, 253, 0.2);
-      }
-
-      /* Enhanced tooltip styles for learning stages */
-      .learning-tooltip {
-        position: relative;
-        display: inline-block;
-        cursor: help;
-      }
-
-      .learning-tooltip:hover .learning-tooltiptext {
-        visibility: visible;
-        opacity: 1;
-      }
-
-      .learning-tooltiptext {
-        visibility: hidden;
-        opacity: 0;
-        width: 300px;
-        background-color: #333;
-        color: #fff;
-        text-align: left;
-        border-radius: 6px;
-        padding: 10px;
-        position: absolute;
-        z-index: 1;
-        bottom: 125%;
-        left: 50%;
-        margin-left: -150px;
-        transition: opacity 0.3s;
-        font-size: 0.9em;
-        line-height: 1.4;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      }
-
-      .learning-tooltiptext::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        margin-left: -5px;
-        border-width: 5px;
-        border-style: solid;
-        border-color: #333 transparent transparent transparent;
-      }
-
-      /* Educational Gaps Styles */
-      .educational-gaps-section {
-        background: rgba(255, 252, 240, 0.95);
-        margin: 30px auto;
-        width: 90%;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border: 2px solid #ffc107;
-      }
-
-      .gaps-header {
-        text-align: center;
-        color: #dc6c00;
-        margin-bottom: 25px;
-        border-bottom: 2px solid #ffc107;
-        padding-bottom: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 15px;
-      }
-
-      .confidence-badge {
-        background: #28a745;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: normal;
-      }
-
-      .gaps-summary {
-        margin-bottom: 25px;
-      }
-
-      .gap-item {
-        background: rgba(255, 255, 255, 0.8);
-        border-left: 4px solid #ffc107;
-        margin: 15px 0;
-        padding: 15px;
-        border-radius: 0 8px 8px 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .gap-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .gap-type {
-        background: #ffc107;
-        color: #333;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-
-      .gap-impact {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-
-      .gap-impact-low {
-        background: #d4edda;
-        color: #155724;
-      }
-
-      .gap-impact-medium {
-        background: #fff3cd;
-        color: #856404;
-      }
-
-      .gap-impact-high {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      .gap-description {
-        margin: 10px 0;
-        color: #555;
-        font-style: italic;
-      }
-
-      .gap-actions ul {
-        margin: 5px 0 0 20px;
-      }
-
-      .research-guides {
-        margin-top: 25px;
-      }
-
-      .research-guide {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ffc107;
-        margin: 20px 0;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .guide-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .guide-header h5 {
-        color: #dc6c00;
-        margin: 0;
-      }
-
-      .guide-priority {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-
-      .guide-priority-low {
-        background: #d4edda;
-        color: #155724;
-      }
-
-      .guide-priority-medium {
-        background: #fff3cd;
-        color: #856404;
-      }
-
-      .guide-priority-high {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      .guide-description {
-        color: #555;
-        margin-bottom: 15px;
-        font-style: italic;
-      }
-
-      .research-questions, .information-sources, .expected-outcomes {
-        margin: 15px 0;
-      }
-
-      .research-questions h6, .information-sources h6, .expected-outcomes h6 {
-        color: #dc6c00;
-        margin-bottom: 8px;
-      }
-
-      .sources-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 15px;
-        margin: 10px 0;
-      }
-
-      .source-item {
-        background: rgba(248, 249, 250, 0.8);
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #dee2e6;
-      }
-
-      .source-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 5px;
-      }
-
-      .source-type {
-        background: #6c757d;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.7em;
-        text-transform: uppercase;
-      }
-
-      .source-description {
-        margin: 8px 0;
-        font-size: 0.9em;
-        color: #666;
-      }
-
-      .source-link {
-        display: inline-block;
-        background: #007bff;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-size: 0.85em;
-        margin: 5px 0;
-      }
-
-      .source-link:hover {
-        background: #0056b3;
-        text-decoration: none;
-        color: white;
-      }
-
-      .search-tips {
-        margin-top: 8px;
-        padding: 5px;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 3px;
-      }
-
-      /* Community Insights Styles */
-      .community-section {
-        background: rgba(255, 255, 255, 0.9);
-        margin: 30px auto;
-        width: 90%;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      .community-header {
-        text-align: center;
-        color: #007bff;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 10px;
-      }
-
-      .insight-card {
-        background: rgba(248, 249, 250, 0.9);
-        border-left: 4px solid #007bff;
-        margin: 15px 0;
-        padding: 15px;
-        border-radius: 0 8px 8px 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .insight-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .insight-category {
-        background: #007bff;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        text-transform: uppercase;
-      }
-
-      .insight-date {
-        color: #666;
-        font-size: 0.85em;
-      }
-
-      .insight-content {
-        margin: 10px 0;
-        line-height: 1.5;
-        color: #333;
-      }
-
-      .insight-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px solid #dee2e6;
-      }
-
-      .vote-buttons {
-        display: flex;
-        gap: 10px;
-      }
-
-      .vote-btn {
-        background: none;
-        border: 1px solid #ccc;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9em;
-        transition: all 0.2s;
-      }
-
-      .vote-btn:hover {
-        background: #f8f9fa;
-      }
-
-      .vote-btn.up:hover {
-        background: #d4edda;
-        border-color: #28a745;
-        color: #155724;
-      }
-
-      .vote-btn.down:hover {
-        background: #f8d7da;
-        border-color: #dc3545;
-        color: #721c24;
-      }
-
-      .flag-btn {
-        background: none;
-        border: none;
-        color: #dc3545;
-        cursor: pointer;
-        font-size: 0.8em;
-        text-decoration: underline;
-      }
-
-      .flag-btn:hover {
-        color: #a71d2a;
-      }
-
-      .contribute-form {
-        background: rgba(240, 248, 255, 0.9);
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 2px dashed #007bff;
-      }
-
-      .contribute-form h4 {
-        color: #007bff;
-        margin-bottom: 15px;
-      }
-
-      .form-group {
-        margin-bottom: 15px;
-      }
-
-      .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #333;
-      }
-
-      .form-group select,
-      .form-group textarea {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-family: inherit;
-      }
-
-      .form-group textarea {
-        height: 100px;
-        resize: vertical;
-      }
-
-      .submit-btn {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 1em;
-        transition: background-color 0.2s;
-      }
-
-      .submit-btn:hover {
-        background: #0056b3;
-      }
-
-      .no-insights {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        padding: 20px;
-      }
-      .home-button {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-      }
-      .home-button button {
-        font-size: 1.5rem;
-        padding: 0.8rem 2rem;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .home-button button:hover {
-        background-color: #0056b3;
-      }
-      .info-button {
-        cursor: pointer;
-        margin-left: 2px;
-        color: #007bff;
-        font-size: 0.6em;
-        position: relative;
-        vertical-align: middle;
-        padding: 0;
-        line-height: 1;
-        display: inline-block;
-      }
-
-      .info-button:hover::after,
-      .info-button:focus::after {
-        content: attr(data-explanation);
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #333;
-        color: #fff;
-        padding: 10px 15px;
-        border-radius: 5px;
-        white-space: normal !important;
-        width: 450px !important;
-        max-width: 450px !important;
-        min-width: 450px !important;
-        text-align: left;
-        z-index: 1000;
-        font-size: 1.5em;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      }
+        /* Custom Overrides for Dorsey Theme */
+        .verdict-pass { color: #28a745; font-weight: bold; }
+        .verdict-fail { color: #dc3545; font-weight: bold; }
+        .verdict-neutral { color: #ffc107; font-weight: bold; }
+        .card-header-dorsey { background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .section-title { margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #007bff; padding-left: 10px; color: #fff; }
     </style>
-  </head>
-  <body class="results-page">
-  {% include '_header.html' %}
-    
-    <!-- Gamification Header -->
-    <div class="gamification-header">
-      <div class="gamification-stats">
-        <div class="stat">
-          <span id="total-badges" class="stat-number">0</span>
-          <span class="stat-label">Badges</span>
-        </div>
-        <div class="stat">
-          <span id="achievement-points" class="stat-number">0</span>
-          <span class="stat-label">Points</span>
-        </div>
-        <div class="stat">
-          <span id="current-streak" class="stat-number">0</span>
-          <span class="stat-label">Day Streak</span>
-        </div>
-      </div>
-    </div>
-    
-    <h1 class="text-center"><u>{{ company_name }}</u></h1>
-    
-    <!-- Learning Stage Progress Display -->
-    {% if show_stage_progress and stage_progress %}
-    <div class="learning-stage-progress">
-      <div class="stage-header">
-        <div class="stage-name">
-          🎓 {{ stage_progress.stage_name }}
-          <span class="learning-tooltip">
-            ℹ️
-            <span class="learning-tooltiptext">
-              You're currently in the {{ stage_progress.stage_name }} stage of learning.
-              {% if learning_stage.educational_content.focus %}
-              Focus: {{ learning_stage.educational_content.focus }}
-              {% endif %}
-            </span>
-          </span>
-        </div>
-        <div class="stage-confidence">{{ stage_progress.confidence_score }}% confidence</div>
-      </div>
-      
-      <div class="progress-bars">
-        <div class="progress-item">
-          <div class="progress-label">Stage Progress</div>
-          <div class="progress">
-            <div class="progress-bar bg-success" style="width: {{ stage_progress.progress_within_stage }}%"></div>
-          </div>
-          <div class="progress-value">{{ stage_progress.progress_within_stage }}%</div>
-        </div>
-        <div class="progress-item">
-          <div class="progress-label">Next Stage Ready</div>
-          <div class="progress">
-            <div class="progress-bar bg-info" style="width: {{ stage_progress.next_stage_readiness }}%"></div>
-          </div>
-          <div class="progress-value">{{ stage_progress.next_stage_readiness }}%</div>
-        </div>
-      </div>
-      
-      {% if stage_progress.recommendations %}
-      <div class="learning-recommendations">
-        <strong>💡 Learning Recommendations:</strong>
-        <ul class="mb-0 mt-1">
-        {% for recommendation in stage_progress.recommendations %}
-          <li>{{ recommendation }}</li>
-        {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-      
-      {% if learning_stage.learning_prompts %}
-      <div class="learning-prompts">
-        {% for prompt in learning_stage.learning_prompts %}
-          <span class="learning-prompt">{{ prompt }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
+</head>
+<body class="bg-dark text-light">
+
+<div class="container mt-4">
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error:</strong> {{ error }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
     {% endif %}
-    
-    <div class="container-fluid">
-      {% for table in tables %}
-      <div class="card mb-3">
-        <div class="card-header">
-          <h5 class="mb-0">Financial Data</h5>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">{{ table|safe }}</div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="container-fluid">
-      {% if warnings %}
-      <div class="card mb-3">
-        <div class="card-header">
-          <h5 class="mb-0 text-warning">⚠️ Important Notes</h5>
-        </div>
-        <div class="card-body">
-          {% for warning, explanation in zip(warnings, explanations) %}
-          <div class="alert alert-warning d-flex justify-content-between align-items-start">
-            <span class="flex-grow-1">{{ warning }}</span>
-            <span class="info-button ml-2" data-explanation="{{ explanation }}" style="cursor: pointer;">ℹ️</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="container-fluid">
-      <div class="card mb-3">
-        <div class="card-header">
-          <h5 class="mb-0">Price Chart</h5>
-        </div>
-        <div class="card-body p-2">
-          <div class="plot">{{ plot_html | safe }}</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Educational Gap-Filling Section -->
-    {% if gaps or research_guides %}
-    <div class="educational-gaps-section">
-      <h2 class="gaps-header">
-        <i class="fas fa-graduation-cap"></i> 📚 Learning Opportunities
-        {% if confidence_score %}
-        <span class="confidence-badge" title="Analysis Confidence: {{ "%.0f"|format(confidence_score * 100) }}%">
-          Confidence: {{ "%.0f"|format(confidence_score * 100) }}%
-        </span>
-        {% endif %}
-      </h2>
-
-      {% if gaps %}
-      <div class="gaps-summary">
-        <h4><i class="fas fa-search"></i> Analysis Gaps Detected ({{ gaps|length }})</h4>
-        <div class="gaps-list">
-          {% for gap in gaps %}
-          <div class="gap-item">
-            <div class="gap-header">
-              <span class="gap-type">{{ gap.category.value.title() }}</span>
-              <span class="gap-impact gap-impact-{{ gap.severity.value }}">
-                {{ gap.severity.value.title() }} Impact
-              </span>
-            </div>
-            <p class="gap-description">{{ gap.description }}</p>
-            <div class="gap-details">
-              <small><strong>Missing Metrics:</strong> {{ gap.missing_metrics|join(', ') }}</small>
-            </div>
-          </div>
-          {% endfor %}
+    <!-- Header with Embedded Search -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-4">{{ company_name }} <small class="text-muted" style="font-size: 0.5em;">{{ ticker }}</small></h1>
+            <p class="lead text-muted">{{ sector_analysis.sector }} Strategy (Chapter 21)</p>
         </div>
-      </div>
-      {% endif %}
-
-      {% if research_guides %}
-      <div class="research-guides">
-        <h4><i class="fas fa-book"></i> Research Guides for {{ company_name }}</h4>
-        {% for guide in research_guides %}
-        <div class="research-guide">
-          <div class="guide-header">
-            <h5>{{ guide.title }}</h5>
-            <span class="guide-priority guide-priority-{{ guide.difficulty_level }}">
-              {{ guide.difficulty_level.title() }} Level
-            </span>
-          </div>
-          <p class="guide-description">{{ guide.objective }}</p>
-          
-          {% if guide.research_questions %}
-          <div class="research-questions">
-            <h6><i class="fas fa-question-circle"></i> Key Research Questions:</h6>
-            <ul>
-              {% for question in guide.research_questions %}
-              <li>{{ question }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-          
-          {% if guide.indian_market_sources %}
-          <div class="information-sources">
-            <h6><i class="fas fa-link"></i> Recommended Sources:</h6>
-            <div class="sources-grid">
-              {% for source in guide.indian_market_sources %}
-              <div class="source-item">
-                <div class="source-header">
-                  <strong>{{ source.name or source.source_name or 'Financial Source' }}</strong>
-                  <span class="source-type">{{ source.type or source.source_type or 'Website' }}</span>
+        <div class="text-right">
+            <form action="/analyze" method="POST" class="form-inline position-relative" autocomplete="off">
+                <div class="input-group">
+                    <input id="ticker-input" type="text" name="ticker" class="form-control bg-dark text-light border-secondary" placeholder="Ticker (e.g. TCS)" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
                 </div>
-                <p class="source-description">{{ source.description or 'Financial information source' }}</p>
-                {% if source.url %}
-                <a href="{{ source.url }}" target="_blank" class="source-link">
-                  <i class="fas fa-external-link-alt"></i> Visit Source
-                </a>
-                {% endif %}
-              </div>
-              {% endfor %}
+                <ul id="suggestions-list" class="list-group position-absolute w-100" style="top: 100%; z-index: 2000; max-height: 300px; overflow-y: auto;"></ul>
+            </form>
+        </div>
+    </div>
+
+    <!-- 1. The 10-Minute Test Verdict (Ch 12) -->
+    <div class="card shadow-lg mb-4" style="border: 2px solid {% if ten_minute_test.passed %}#28a745{% else %}#dc3545{% endif %};">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">The 10-Minute Test (Filters)</h4>
+            <span class="badge badge-pill {% if ten_minute_test.passed %}badge-success{% else %}badge-danger{% endif %} p-2" style="font-size: 1.2em;">
+                VERDICT: {{ ten_minute_test.overall_verdict }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for item in ten_minute_test.checklist %}
+                <div class="col-md-3 mb-2">
+                    <div class="p-2 rounded" style="background: rgba(255,255,255,0.05);">
+                        <small class="text-muted d-block">{{ item.name }}</small>
+                        <strong class="{% if item.status == 'PASS' %}text-success{% elif item.status == 'FAIL' %}text-danger{% else %}text-warning{% endif %}" style="font-size: 1.2em;">
+                            {{ item.value }}
+                        </strong>
+                        <div class="badge badge-secondary float-right">{{ item.status }}</div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-          </div>
-          {% endif %}
-          
-          {% if guide.expected_outcomes %}
-          <div class="expected-outcomes">
-            <h6><i class="fas fa-bullseye"></i> Expected Learning Outcomes:</h6>
-            <ul>
-              {% for outcome in guide.expected_outcomes %}
-              <li>{{ outcome }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
     </div>
-    {% endif %}
 
-    <!-- Community Insights Section -->
-    {% if not error %}
-    <div class="community-section">
-      <h2 class="community-header">
-        <i class="fas fa-users"></i> Community Insights for {{ company_name }}
-      </h2>
-
-      <!-- Contribution Form -->
-      <div class="contribute-form">
-        <h4><i class="fas fa-plus-circle"></i> Share Your Analysis</h4>
-        <form id="contribute-form">
-          <div class="form-group">
-            <label for="insight-category">Analysis Type:</label>
-            <select id="insight-category" required>
-              <option value="">Select category...</option>
-              <option value="moat_analysis">Moat Analysis</option>
-              <option value="management">Management Assessment</option>
-              <option value="competitive_analysis">Competitive Analysis</option>
-              <option value="industry_analysis">Industry Analysis</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="insight-content">Your Analysis:</label>
-            <textarea
-              id="insight-content"
-              placeholder="Share your insights about {{ company_name }}. What makes this company unique? How is the management? What competitive advantages do they have?"
-              required
-              minlength="10"
-              maxlength="2000"
-            >
-            </textarea>
-            <small
-              >10-2000 characters. Be specific and helpful to other
-              investors.</small
-            >
-          </div>
-          <button type="submit" class="submit-btn">
-            <i class="fas fa-share"></i> Share Insight
-          </button>
-        </form>
-      </div>
-
-      <!-- Existing Insights -->
-      <div id="insights-container">
-        {% if community_insights %} {% for insight in community_insights %}
-        <div class="insight-card" data-insight-id="{{ insight.id }}">
-          <div class="insight-header">
-            <span class="insight-category"
-              >{{ insight.category.value.replace('_', ' ').title() }}</span
-            >
-            <span class="insight-date"
-              >{{ insight.created_at.strftime('%Y-%m-%d') }}</span
-            >
-          </div>
-          <div class="insight-content">{{ insight.content }}</div>
-          <div class="insight-actions">
-            <div class="vote-buttons">
-              <button
-                class="vote-btn up"
-                data-insight-id="{{ insight.id }}"
-                data-vote-type="up"
-              >
-                <i class="fas fa-thumbs-up"></i> {{ insight.votes_up }}
-              </button>
-              <button
-                class="vote-btn down"
-                data-insight-id="{{ insight.id }}"
-                data-vote-type="down"
-              >
-                <i class="fas fa-thumbs-down"></i> {{ insight.votes_down }}
-              </button>
+    <!-- 2. Core Analysis (Part I) -->
+    <div class="row">
+        <!-- MOAT (Ch 3) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header card-header-dorsey">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt text-primary"></i> Economic Moat</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="text-center mb-3">{{ moat_analysis.moat_rating }}</h3>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        {% for d in moat_analysis.details %}
+                        <li class="list-group-item bg-transparent text-light border-secondary">
+                            <div class="d-flex justify-content-between">
+                                <span>{{ d.metric }}</span>
+                                <span class="font-weight-bold">{{ d.value }}</span>
+                            </div>
+                            <small class="text-muted">{{ d.comment }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
-            <button class="flag-btn" data-insight-id="{{ insight.id }}">
-              <i class="fas fa-flag"></i> Flag
-            </button>
-          </div>
         </div>
-        {% endfor %} {% else %}
-        <div class="no-insights">
-          <i class="fas fa-lightbulb"></i>
-          <p>No community insights yet for {{ company_name }}.</p>
-          <p>Be the first to share your analysis!</p>
+
+        <!-- VALUATION (Ch 9 & 10) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header card-header-dorsey">
+                    <h5 class="mb-0"><i class="fas fa-tags text-success"></i> Valuation (DCF)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 text-center">
+                        <small class="text-uppercase text-muted">{{ valuation.model_type }} Model</small>
+                    </div>
+
+                    <div class="row text-center mb-3">
+                        <!-- Conservative -->
+                        <div class="col-4 border-right border-secondary">
+                            <small class="text-muted">Conservative</small>
+                            <h4 class="text-warning">₹{{ "%.0f"|format(valuation.scenarios.Conservative.value) }}</h4>
+                            <small style="font-size: 0.6em;">Gr: {{ "%.1f"|format(valuation.scenarios.Conservative.growth_used) }}%</small>
+                        </div>
+                        <!-- Base -->
+                        <div class="col-4 border-right border-secondary">
+                            <small class="text-info font-weight-bold">Base Case</small>
+                            <h2 class="{% if valuation.intrinsic_value > 0 %}text-success{% else %}text-danger{% endif %} text-nowrap">
+                                ₹{{ "%.0f"|format(valuation.intrinsic_value) }}
+                            </h2>
+                            {% if valuation.intrinsic_value < 0 %}
+                                <small class="d-block text-danger">(Value Destruction)</small>
+                            {% endif %}
+                        </div>
+                        <!-- Optimistic -->
+                        <div class="col-4">
+                            <small class="text-muted">Optimistic</small>
+                            <h4 class="text-success">₹{{ "%.0f"|format(valuation.scenarios.Optimistic.value) }}</h4>
+                            <small style="font-size: 0.6em;">Gr: {{ "%.1f"|format(valuation.scenarios.Optimistic.growth_used) }}%</small>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <small>Current Price: ₹{{ valuation.current_price }}</small>
+                        <br>
+                        {% if valuation.margin_of_safety > 0 %}
+                            <span class="badge badge-success mt-2">Margin of Safety: {{ "%.1f"|format(valuation.margin_of_safety) }}%</span>
+                        {% else %}
+                             <span class="badge badge-warning mt-2">Premium: {{ "%.1f"|format(valuation.margin_of_safety * -1) if valuation.margin_of_safety else "N/A" }}%</span>
+                        {% endif %}
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="alert {% if 'BUY' in valuation.verdict %}alert-success{% elif 'SELL' in valuation.verdict %}alert-danger{% else %}alert-warning{% endif %} text-center mb-0">
+                        <strong>{{ valuation.verdict }}</strong>
+                    </div>
+                    <p class="mt-2 text-center small text-muted">
+                        Margin of Safety: {{ "%.1f"|format(valuation.margin_of_safety) }}%
+                    </p>
+                </div>
+            </div>
         </div>
-        {% endif %}
-      </div>
+
+        <!-- FINANCIALS (Ch 5-8) -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header card-header-dorsey">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat text-danger"></i> Financial Health</h5>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-center {{ 'text-success' if financial_health.health_rating == 'Robust' else 'text-warning' }}">{{ financial_health.health_rating }}</h4>
+                    
+                    {% if financial_health.red_flags %}
+                    <div class="alert alert-danger mt-3">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Red Flags:</strong>
+                        <ul class="mb-0 pl-3">
+                            {% for flag in financial_health.red_flags %}
+                            <li>{{ flag }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle"></i> No accounting red flags detected.
+                    </div>
+                    {% endif %}
+                    
+                     <ul class="list-group list-group-flush bg-transparent mt-2">
+                        {% for c in financial_health.checks %}
+                        <li class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                            <span>{{ c.metric }}</span>
+                            <span>{{ c.value }} ({{ c.status }})</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
-    
-    <!-- Gamification Progress Section -->
-    <div class="gamification-section">
-      <div class="row">
-        <div class="col-md-6">
-          <div id="progress-indicators">
-            <!-- Progress indicators will be populated by JavaScript -->
-          </div>
+
+    <!-- 3. Sector Deep Dive (Part II) -->
+    <h3 class="section-title">Sector Guide: {{ sector_analysis.sector }}</h3>
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <div class="row">
+                {% for insight in sector_analysis.insights %}
+                <div class="col-md-4 mb-3">
+                     <div class="p-3 border border-secondary rounded h-100">
+                        <h5 class="text-info">{{ insight.metric }}</h5>
+                        <h2 class="mb-2">{{ insight.value }}</h2>
+                        <span class="badge badge-light mb-2">{{ insight.judgment }}</span>
+                        <p class="text-muted small mb-0">{{ insight.context }}</p>
+                     </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        <div class="col-md-6">
-          <div id="streak-counter">
-            <!-- Streak counter will be populated by JavaScript -->
-          </div>
-        </div>
-      </div>
-      <div class="row mt-4">
-        <div class="col-12">
-          <div id="badge-showcase">
-            <!-- Badge showcase will be populated by JavaScript -->
-          </div>
-        </div>
-      </div>
     </div>
-    
-    <!-- jQuery and Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-      $(document).ready(function () {
-        $("#another-ticker-input").on("input", function () {
-          let query = $(this).val();
-          if (query.length > 1) {
-            $.get("/suggest", { query: query }, function (data) {
-              $("#suggestions-list").empty();
-              $.each(data.suggestions, function (name, ticker) {
-                $("#suggestions-list").append(
-                  `<li data-ticker="${ticker}">${name} (${ticker})</li>`
-                );
-              });
-            });
-          } else {
-            $("#suggestions-list").empty();
-          }
-        });
 
-        $(document).on("click", "#suggestions-list li", function () {
-          $("#another-ticker-input").val($(this).data("ticker"));
-          $("#suggestions-list").empty();
-          $("form").submit();
-        });
+    <!-- 4. The Dorsey Theory (Educational Footnote) -->
+    <div class="accordion mb-5" id="dorseyTheory">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header" id="headingOne">
+                <h2 class="mb-0">
+                    <button class="btn btn-link btn-block text-left text-light" type="button" data-toggle="collapse" data-target="#collapseOne">
+                        <i class="fas fa-book"></i> Read the Theory: Why do these checks matter?
+                    </button>
+                </h2>
+            </div>
+            <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#dorseyTheory">
+                <div class="card-body text-muted">
+                    <h5>1. The 10-Minute Test (Chapter 12)</h5>
+                    <p>Designed to filter out "No-Go" stocks immediately. 
+                       <strong>Free Cash Flow</strong> is the lifeblood; without it, a company relies on debt. 
+                       <strong>ROE > 15%</strong> shows management skill in compounding capital. 
+                       <strong>Debt/Equity</strong> checks prevent bankruptcy risk during downturns.</p>
+                    
+                    <h5>2. The Moat (Chapter 3)</h5>
+                    <p>A "Moat" is a structural advantage protecting profits. 
+                       <strong>ROIC (Return on Invested Capital)</strong> is the gold standard. 
+                       If ROIC > Cost of Capital (approx 10%) for 10+ years, the company has a moat. 
+                       Wide Moats are rare and valuable.</p>
+                       
+                    <h5>3. Valuation (Chapters 9-10)</h5>
+                    <p>We use a <strong>Discounted Cash Flow (DCF)</strong> model. 
+                       It projects future cash flows, discounts them back to today using a 11% rate (conservative for India), and sums them up. 
+                       <strong>Margin of Safety:</strong> We only buy if Price is 30% <em>below</em> Intrinsic Value to protect against errors.</p>
+                       
+                    <h5>4. Red Flags (Financial Fakery)</h5>
+                    <p><strong>Inventory Bloat:</strong> If inventory grows faster than sales, products are piling up (unsold). 
+                       <strong>Receivables Bloat:</strong> If receivables surge, the company might be "stuffing the channel" to fake sales.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        $(".data td").each(function () {
-          let value = parseFloat($(this).text());
-          if (!isNaN(value)) {
-            if ($(this).index() === 0) {
-              $(this).text(Math.round(value));
-            } else {
-              if (value > 0) {
-                $(this).addClass("positive");
-              } else if (value < 0) {
-                $(this).addClass("negative");
-              }
-              $(this).text(value.toFixed(2));
-            }
-          }
-        });
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
-        // Learning Stage Behavioral Analytics Tracking
-        
-        // Track tooltip interactions (fire-and-forget)
-        $('.learning-tooltip').on('mouseenter', function() {
-          const tooltipId = $(this).attr('data-tooltip-id') || 'generic';
-          const content = $(this).find('.learning-tooltiptext').text();
+<!-- Search Auto-Complete Script -->
+<script>
+    const input = document.getElementById("ticker-input");
+    const suggestions = document.getElementById("suggestions-list");
+    let timeout = null;
 
-          // Prepare payload
-          const payload = JSON.stringify({ tooltip_id: tooltipId, content: content });
-
-          // Prefer sendBeacon for non-blocking analytics
-          if (navigator && navigator.sendBeacon) {
-            try {
-              navigator.sendBeacon('/track/tooltip', new Blob([payload], { type: 'application/json' }));
-              return;
-            } catch (e) {
-              // fall through to fetch fallback
-              console.debug('sendBeacon failed for tooltip tracking:', e);
-            }
-          }
-
-          // Use fetch with keepalive if available
-          if (window.fetch) {
-            try {
-              fetch('/track/tooltip', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: payload,
-                keepalive: true,
-              }).catch((err) => {
-                // don't disturb the user; log for debugging
-                console.debug('tooltip tracking failed (fetch):', err);
-              });
-              return;
-            } catch (e) {
-              console.debug('fetch failed for tooltip tracking:', e);
-            }
-          }
-
-          // Last-resort: jQuery post with a silent failure handler
-          $.post('/track/tooltip', { tooltip_id: tooltipId, content: content }).fail(function (err) {
-            console.debug('tooltip tracking failed (jquery):', err);
-          });
-        });
-        
-        // Track warning engagement (when user hovers over warnings for more than 2 seconds)
-        let warningHoverTimeout = {};
-        $('.warning, .explanation').on('mouseenter', function() {
-          const element = $(this);
-          const warningType = element.hasClass('warning') ? 'warning' : 'explanation';
-          
-          warningHoverTimeout[warningType] = setTimeout(function() {
-            $.post('/track/warning', {
-              warning_type: warningType,
-              duration: 2.0
-            });
-          }, 2000);
-        }).on('mouseleave', function() {
-          const warningType = $(this).hasClass('warning') ? 'warning' : 'explanation';
-          if (warningHoverTimeout[warningType]) {
-            clearTimeout(warningHoverTimeout[warningType]);
-          }
-        });
-        
-        // Track research guide access
-        $('.research-guides-section a, .gap-item a').on('click', function() {
-          const guideType = $(this).closest('.guide-item').find('.guide-type').text() || 'general';
-          const complexity = $(this).hasClass('advanced') ? 'advanced' : 'basic';
-          
-          $.post('/track/research_guide', {
-            guide_type: guideType,
-            complexity: complexity
-          });
-        });
-        
-        // Track prediction attempts (can be extended with prediction interface)
-        function trackPredictionAttempt(predictionType, confidence) {
-          $.post('/track/prediction', {
-            prediction_type: predictionType,
-            confidence: confidence
-          });
-        }
-        
-        // Track stock comparisons (can be extended when comparison feature is added)
-        function trackStockComparison(stocks) {
-          $.post('/track/comparison', {
-            stocks: stocks
-          });
-        }
-        
-        // Add stage-appropriate tooltip behavior
-        {% if learning_stage.ui_adaptations.show_tooltips %}
-        // Show detailed tooltips for guided discovery and assisted analysis stages
-        $('[title]').tooltip({
-          html: true,
-          placement: 'top',
-          trigger: 'hover'
-        });
-        {% else %}
-        // Minimal tooltips for independent thinking and analytical mastery stages
-        $('[title]').tooltip({
-          placement: 'top',
-          trigger: 'hover'
-        });
-        {% endif %}
-
-        // Community Features JavaScript
-
-        // Handle insight contribution
-        $("#contribute-form").on("submit", function (e) {
-          e.preventDefault();
-
-          const category = $("#insight-category").val();
-          const content = $("#insight-content").val().trim();
-          const ticker = "{{ ticker }}";
-
-          if (!category || !content) {
-            alert("Please fill in all fields");
+    input.addEventListener("input", (e) => {
+        clearTimeout(timeout);
+        const q = e.target.value.trim();
+        if (!q || q.length < 2) {
+            suggestions.innerHTML = "";
             return;
-          }
-
-          $.ajax({
-            url: "/community/contribute",
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-              ticker: ticker,
-              category: category,
-              content: content,
-            }),
-            success: function (response) {
-              if (response.success) {
-                alert("Thank you for your contribution!");
-                location.reload(); // Reload to show new insight
-              } else {
-                alert("Error: " + response.message);
-              }
-            },
-            error: function () {
-              alert("Error submitting insight. Please try again.");
-            },
-          });
-        });
-
-        // Handle voting
-        $(".vote-btn").on("click", function () {
-          const insightId = $(this).data("insight-id");
-          const voteType = $(this).data("vote-type");
-          const button = $(this);
-
-          $.ajax({
-            url: "/community/vote",
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-              insight_id: insightId,
-              vote_type: voteType,
-            }),
-            success: function (response) {
-              if (response.success) {
-                // Reload to show updated vote counts
-                location.reload();
-              } else {
-                alert("Error: " + response.message);
-              }
-            },
-            error: function () {
-              alert("Error recording vote. Please try again.");
-            },
-          });
-        });
-
-        // Handle flagging
-        $(".flag-btn").on("click", function () {
-          if (
-            !confirm(
-              "Are you sure you want to flag this insight as inappropriate?"
-            )
-          ) {
-            return;
-          }
-
-          const insightId = $(this).data("insight-id");
-
-          $.ajax({
-            url: "/community/flag",
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-              insight_id: insightId,
-            }),
-            success: function (response) {
-              if (response.success) {
-                alert("Insight flagged for review.");
-                location.reload();
-              } else {
-                alert("Error: " + response.message);
-              }
-            },
-            error: function () {
-              alert("Error flagging insight. Please try again.");
-            },
-          });
-        });
-      });
-      document.addEventListener("DOMContentLoaded", function () {
-        const infoButtons = document.querySelectorAll(".info-button");
-
-        infoButtons.forEach((button) => {
-          button.addEventListener("click", function () {
-            const explanation = this.getAttribute("data-explanation");
-            alert(explanation); // Show explanation in an alert box
-          });
-        });
-      });
-    </script>
-    
-    <!-- Gamification JavaScript -->
-    <script src="{{ url_for('static', filename='gamification.js') }}"></script>
-    <script>
-      // Initialize gamification after analysis completion
-      document.addEventListener('DOMContentLoaded', function() {
-        // Track analysis completion for gamification
-        if (window.gamificationUI) {
-          window.gamificationUI.updateProgress({
-            analysis_completed: true,
-            skill_improvements: {
-              debt_analysis: 0.05,
-              growth_indicators: 0.05,
-              value_assessment: 0.05
-            }
-          });
         }
-      });
-    </script>
-    <script>
-      // Normalize backend tables: add Bootstrap table classes for better mobile rendering
-      document.addEventListener('DOMContentLoaded', function(){
-        // Ensure tables inside .table-responsive have Bootstrap classes
-        document.querySelectorAll('.table-responsive table').forEach(function(t){
-          if (!t.classList.contains('data')) t.classList.add('data');
-          if (!t.classList.contains('table')) t.classList.add('table','table-sm');
-          t.style.width = '100%';
-        });
+        timeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`/suggest?query=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                suggestions.innerHTML = "";
+                const raw = data.suggestions;
 
-        // For any standalone tables (legacy), wrap them in .table-responsive
-        document.querySelectorAll('body > table, .container-fluid > table').forEach(function(raw){
-          if (raw.closest('.table-responsive')) return;
-          const wrapper = document.createElement('div');
-          wrapper.className = 'table-responsive';
-          raw.parentNode.insertBefore(wrapper, raw);
-          wrapper.appendChild(raw);
-          raw.classList.add('table','table-sm','data');
-        });
-      });
-    </script>
-  {% include '_footer.html' %}
-  </body>
+                if (raw) {
+                    // Helper to create list item
+                    const makeLi = (text, ticker) => {
+                        const li = document.createElement("li");
+                        li.className = "list-group-item list-group-item-action bg-dark text-light border-secondary";
+                        li.style.cursor = "pointer";
+                        li.textContent = text;
+                        li.addEventListener("click", () => {
+                            input.value = ticker;
+                            suggestions.innerHTML = "";
+                            // Auto-submit on selection for better UX
+                             input.closest('form').submit(); 
+                        });
+                        return li;
+                    };
+
+                    if (Array.isArray(raw)) {
+                        raw.forEach(s => suggestions.appendChild(makeLi(`${s.name} (${s.ticker})`, s.ticker)));
+                    } else if (typeof raw === "object") {
+                        Object.keys(raw).forEach(name => suggestions.appendChild(makeLi(`${name} (${raw[name]})`, raw[name])));
+                    }
+                }
+            } catch (err) {
+                console.warn("Suggestion fetch failed", err);
+            }
+        }, 300);
+    });
+
+    // Close suggestions on click outside
+    document.addEventListener("click", (e) => {
+        if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+            suggestions.innerHTML = "";
+        }
+    });
+</script>
+
+</body>
 </html>

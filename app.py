@@ -48,6 +48,8 @@ import subprocess
 import glob
 import csv
 import datetime
+import difflib
+import pandas as pd
 import json
 import yfinance as yf
 import pandas as pd
@@ -425,181 +427,87 @@ def achievements():
 
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
-    # Initialize session for anonymous user tracking
-    anonymous_user_id = get_anonymous_user_id()
-
-    news_items = get_market_news()
+    # Handle both POST (from search bar) and GET params
     if request.method == "POST":
-        ticker = request.form["ticker"].upper() + ".NS"
-        challenge_mode = request.form.get("challenge_mode", "normal")
+        ticker = request.form.get("ticker", "").upper()
     else:
-        ticker = request.args.get("ticker", "").upper() + ".NS"
-        challenge_mode = request.args.get("challenge_mode", "normal")
-
-    # Track analysis start
-    behavioral_tracker.track_interaction_start(
-        anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
-    )
-
-    # Check if this is a tool independence challenge
-    if challenge_mode == "tool_independence":
-        return redirect(url_for("tool_challenge", ticker=ticker.replace(".NS", "")))
-
-    ratios_df = get_financial_ratios(ticker)
-    if ratios_df is not None and not ratios_df.empty:
-        # Pass ticker for gap analysis (remove .NS suffix)
-        ticker_for_analysis = ticker.replace(".NS", "")
-        warnings, explanations, plot_html, gaps, research_guides, confidence_score = (
-            analyze_ratios(ratios_df, ticker_for_analysis)
-        )
-        company_name = ratios_df["Company"].iloc[0]
-        display_df = ratios_df.drop(columns=["Company"])
-
-        # Get community insights for this ticker
-        community_insights = community_kb.get_insights_for_ticker(ticker_for_analysis)
-
-        # Track successful analysis completion
-        behavioral_tracker.track_analysis_completion(
-            ticker_for_analysis, "comprehensive" if gaps else "basic"
-        )
-
-        # Get learning stage context for UI adaptation
-        analysis_context = {
-            "company_name": company_name,
-            "ticker": ticker_for_analysis,
-            "has_gaps": bool(gaps),
-            "confidence_score": confidence_score,
-        }
-        learning_context = get_learning_stage_context()
-
-        # Adapt content based on learning stage
-        content_data = {
-            "warnings": warnings,
-            "explanations": explanations,
-            "gaps": gaps,
-            "research_guides": research_guides,
-            "community_insights": community_insights,
-        }
-        adapted_content = adapt_content_for_stage(content_data, analysis_context)
-
-        # Use adapted content instead of original to avoid keyword conflicts
-        return render_template(
-            "results.html",
-            tables=[display_df.to_html(classes="data table-hover", index=False)],
-            titles=display_df.columns.values,
-            plot_html=plot_html,
-            company_name=company_name,
-            news=news_items,
-            insight_categories=InsightCategory,
-            ticker=ticker_for_analysis,
-            confidence_score=confidence_score,
-            zip=zip,
-            **learning_context,
-            **adapted_content,
-        )
-    else:
-        return render_template(
-            "results.html",
-            error="No data available for the provided ticker.",
-            plot_html=None,
-            zip=zip,
-            **get_learning_stage_context(),
-        )
+        ticker = request.args.get("ticker", "").upper()
+        
+    ticker = ticker.strip()
+    if not ticker.endswith(".NS") and not ticker.endswith(".BO") and ticker:
+        ticker += ".NS"
+        
+    # Redirect to the dedicated Dorsey Analysis Route
+    return redirect(url_for('analyze_ticker', ticker=ticker))
 
 
 @app.route("/analyze/<ticker>")
 def analyze_ticker(ticker=None):
-    """Compatibility route: allow direct path /analyze/<ticker> used by tests."""
+    """
+    Analyzes a specific ticker using the Dorsey Protocol.
+    """
     try:
         # Normalize ticker
         t = (ticker or "").upper()
-        if not t.endswith(".NS"):
-            t = f"{t}.NS"
+        if not t.endswith(".NS") and not t.endswith(".BO"):
+             # Simple heuristic for NSE default
+             t = f"{t}.NS"
+        
+        # Run Full Dorsey Analysis
+        from src.dorsey_runner import run_dorsey_analysis
+        dorsey_data = run_dorsey_analysis(t)
+        
+        # Also fetch generic company info for header (Name, Sector for display)
+        import yfinance as yf
+        t_obj = yf.Ticker(t)
+        company_name = t_obj.info.get("longName", t)
 
-        # Reuse existing analyze logic but operate locally
-        anonymous_user_id = get_anonymous_user_id()
-
-        behavioral_tracker.track_interaction_start(
-            anonymous_user_id, InteractionType.ANALYSIS_COMPLETION
+        return render_template(
+            "results.html",
+            ticker=t,
+            company_name=company_name,
+            **dorsey_data
         )
 
-        ratios_df = get_financial_ratios(t)
-        if ratios_df is not None and not ratios_df.empty:
-            ticker_for_analysis = t.replace(".NS", "")
-            (
-                warnings,
-                explanations,
-                plot_html,
-                gaps,
-                research_guides,
-                confidence_score,
-            ) = analyze_ratios(ratios_df, ticker_for_analysis)
-            company_name = ratios_df["Company"].iloc[0]
-            display_df = (
-                ratios_df.drop(columns=["Company"])
-                if "Company" in ratios_df.columns
-                else ratios_df
-            )
-
-            community_insights = community_kb.get_insights_for_ticker(
-                ticker_for_analysis
-            )
-
-            behavioral_tracker.track_analysis_completion(
-                ticker_for_analysis, "comprehensive" if gaps else "basic"
-            )
-
-            analysis_context = {
-                "company_name": company_name,
-                "ticker": ticker_for_analysis,
-                "has_gaps": bool(gaps),
-                "confidence_score": confidence_score,
-            }
-
-            adapted_content = adapt_content_for_stage(
-                {
-                    "warnings": warnings,
-                    "explanations": explanations,
-                    "gaps": gaps,
-                    "research_guides": research_guides,
-                    "community_insights": community_insights,
-                },
-                analysis_context,
-            )
-
-            return render_template(
-                "results.html",
-                tables=[display_df.to_html(classes="data table-hover", index=False)],
-                titles=display_df.columns.values,
-                plot_html=plot_html,
-                company_name=company_name,
-                news=get_market_news(),
-                insight_categories=InsightCategory,
-                ticker=ticker_for_analysis,
-                confidence_score=confidence_score,
-                zip=zip,
-                **get_learning_stage_context(),
-                **adapted_content,
-            )
-        else:
-            return render_template(
-                "results.html",
-                error="No data available for the provided ticker.",
-                plot_html=None,
-                zip=zip,
-                **get_learning_stage_context(),
-            )
     except Exception as e:
-        return render_template("results.html", error=f"Server error: {e}")
+        return render_template(
+            "results.html", 
+            error=f"Server error: {e}",
+            ticker=ticker,
+            company_name=ticker,
+            ten_minute_test={"passed": False, "overall_verdict": "ERROR", "checklist": []}, # Safety mocks
+            moat_analysis={"moat_rating": "Error", "details": []},
+            financial_health={"health_rating": "Error", "red_flags": [], "checks": []},
+            valuation={"intrinsic_value": 0, "current_price": 0, "margin_of_safety": 0, "verdict": "Error"},
+            sector_analysis={"sector": "Error", "insights": []}
+        )
 
 
 @app.route("/suggest", methods=["GET"])
 def suggest():
     query = request.args.get("query", "").strip()
+    if not query:
+        return {"suggestions": {}}
+        
     company_data = load_company_data()
-    suggestions = company_data[
-        company_data["Company Name"].str.contains(query, case=False, na=False)
-    ]
+    
+    # 1. Exact/Substring Match (High Priority)
+    mask = company_data["Company Name"].str.contains(query, case=False, na=False) | \
+           company_data["Ticker"].str.contains(query, case=False, na=False)
+    matches = company_data[mask]
+    
+    # 2. Fuzzy Match (If few results)
+    if len(matches) < 5 and len(query) > 2:
+        all_names = company_data["Company Name"].dropna().unique().tolist()
+        # Get close matches
+        fuzzy_names = difflib.get_close_matches(query, all_names, n=5, cutoff=0.5)
+        if fuzzy_names:
+            fuzzy_matches = company_data[company_data["Company Name"].isin(fuzzy_names)]
+            matches = pd.concat([matches, fuzzy_matches]).drop_duplicates(subset=["Ticker"])
+            
+    # Limit results
+    suggestions = matches.head(10)
+    
     result = {
         row["Company Name"]: row["Ticker"] for index, row in suggestions.iterrows()
     }
@@ -1549,7 +1457,7 @@ def health():
         # Basic health checks
         health_status = {
             "status": "healthy",
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "version": "1.0.0",
             "services": {"database": "ok", "external_apis": "ok"},
         }
@@ -1565,7 +1473,7 @@ def health():
                 {
                     "status": "unhealthy",
                     "error": str(e),
-                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 }
             ),
             500,
@@ -1576,14 +1484,14 @@ def health():
 @app.before_request
 def before_request():
     """Track request metrics"""
-    request.start_time = datetime.datetime.utcnow()
+    request.start_time = datetime.datetime.now(datetime.timezone.utc)
 
 
 @app.after_request
 def after_request(response):
     """Track response metrics"""
     if hasattr(request, "start_time"):
-        latency = (datetime.datetime.utcnow() - request.start_time).total_seconds()
+        latency = (datetime.datetime.now(datetime.timezone.utc) - request.start_time).total_seconds()
         REQUEST_LATENCY.labels(method=request.method, endpoint=request.path).observe(
             latency
         )
