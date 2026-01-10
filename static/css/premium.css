@@ -143,6 +143,17 @@ h5 { font-size: 1.1rem; }
     display: inline-flex;
     align-items: center;
     cursor: help;
+    z-index: 1;
+}
+
+.info-tooltip:hover {
+    z-index: 10000;
+}
+
+/* Elevate the entire parent card when tooltip is hovered */
+.card:has(.info-tooltip:hover) {
+    z-index: 100;
+    position: relative;
 }
 
 .info-tooltip .tooltip-icon {
