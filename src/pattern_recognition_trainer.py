@@ -538,6 +538,36 @@ class PatternRecognitionTrainer:
                 }
             )
 
+        elif pattern_type == PatternType.TREND_REVERSAL:
+            # Generate trend reversal pattern data (momentum-based)
+            price_momentum = self._generate_momentum_pattern(periods)
+            rsi = self._generate_rsi_pattern(periods, price_momentum)
+            volume_trend = self._generate_volume_trend_pattern(periods, price_momentum)
+
+            base_data.update(
+                {
+                    "price_momentum": price_momentum,
+                    "rsi": rsi,
+                    "volume_trend": volume_trend,
+                    "metrics": ["Price Momentum (%)", "RSI", "Volume Trend"],
+                }
+            )
+
+        elif pattern_type == PatternType.QUALITY_DETERIORATION:
+            # Generate quality deterioration pattern data
+            gross_margin = self._generate_declining_margin_pattern(periods)
+            roic = self._generate_declining_roic_pattern(periods)
+            asset_turnover = self._generate_asset_turnover_pattern(periods)
+
+            base_data.update(
+                {
+                    "gross_margin": gross_margin,
+                    "roic": roic,
+                    "asset_turnover": asset_turnover,
+                    "metrics": ["Gross Margin (%)", "ROIC (%)", "Asset Turnover"],
+                }
+            )
+
         return base_data
 
     def _generate_debt_pattern(self, periods: int, description: str) -> List[float]:
@@ -668,6 +698,80 @@ class PatternRecognitionTrainer:
         pattern = np.maximum(trend + noise, 2.0)
 
         return [round(val, 1) for val in pattern]
+
+    # === TREND_REVERSAL Pattern Generators ===
+    
+    def _generate_momentum_pattern(self, periods: int) -> List[float]:
+        """Generate price momentum pattern with reversal"""
+        # Create a pattern that shows decline then recovery (V-shape or U-shape)
+        mid = periods // 2
+        # First half: declining momentum
+        first_half = np.linspace(15.0, -20.0, mid)
+        # Second half: recovering momentum
+        second_half = np.linspace(-18.0, 12.0, periods - mid)
+        trend = np.concatenate([first_half, second_half])
+        noise = np.random.normal(0, 3.0, periods)
+        pattern = trend + noise
+
+        return [round(val, 1) for val in pattern]
+
+    def _generate_rsi_pattern(self, periods: int, momentum: List[float]) -> List[float]:
+        """Generate RSI pattern correlated with momentum"""
+        # RSI ranges from 0-100, with <30 oversold, >70 overbought
+        base_rsi = 50.0
+        rsi_pattern = []
+        for m in momentum:
+            # Map momentum to RSI (momentum ~-30 to +30 maps to RSI ~20 to 80)
+            rsi = base_rsi + (m * 1.5)
+            rsi = max(15, min(85, rsi + np.random.normal(0, 3)))
+            rsi_pattern.append(rsi)
+
+        return [round(val, 1) for val in rsi_pattern]
+
+    def _generate_volume_trend_pattern(self, periods: int, momentum: List[float]) -> List[float]:
+        """Generate volume trend - typically spikes at reversals"""
+        volume_pattern = []
+        for i, m in enumerate(momentum):
+            # Base volume around 1.0 (normalized)
+            # Volume spikes when momentum is extreme (either direction)
+            base_vol = 1.0
+            momentum_effect = abs(m) / 30.0  # Normalize momentum
+            # Add spike near the middle (reversal point)
+            mid = len(momentum) // 2
+            reversal_spike = 0.8 if abs(i - mid) < 3 else 0
+            vol = base_vol + momentum_effect * 0.5 + reversal_spike + np.random.normal(0, 0.1)
+            volume_pattern.append(max(0.5, vol))
+
+        return [round(val, 2) for val in volume_pattern]
+
+    # === QUALITY_DETERIORATION Pattern Generators ===
+    
+    def _generate_declining_margin_pattern(self, periods: int) -> List[float]:
+        """Generate declining gross margin pattern"""
+        # Start healthy, decline over time
+        trend = np.linspace(42.0, 28.0, periods)
+        noise = np.random.normal(0, 1.5, periods)
+        pattern = np.maximum(trend + noise, 15.0)
+
+        return [round(val, 1) for val in pattern]
+
+    def _generate_declining_roic_pattern(self, periods: int) -> List[float]:
+        """Generate declining ROIC pattern"""
+        # Start above cost of capital, decline below
+        trend = np.linspace(18.0, 8.0, periods)
+        noise = np.random.normal(0, 1.0, periods)
+        pattern = np.maximum(trend + noise, 3.0)
+
+        return [round(val, 1) for val in pattern]
+
+    def _generate_asset_turnover_pattern(self, periods: int) -> List[float]:
+        """Generate declining asset turnover pattern"""
+        # Declining efficiency
+        trend = np.linspace(1.2, 0.7, periods)
+        noise = np.random.normal(0, 0.05, periods)
+        pattern = np.maximum(trend + noise, 0.3)
+
+        return [round(val, 2) for val in pattern]
 
     def _create_interactive_zones(
         self,
@@ -893,6 +997,70 @@ class PatternRecognitionTrainer:
             if not expected:
                 # Default to low_valuation as it's the most broadly applicable
                 expected.append("low_valuation")
+
+        elif pattern_type == PatternType.TREND_REVERSAL:
+            # Analyze trend reversal patterns
+            momentum = chart_data.get("price_momentum", [])
+            rsi = chart_data.get("rsi", [])
+            volume = chart_data.get("volume_trend", [])
+            n = len(momentum) if momentum else 0
+
+            if n > 0:
+                # Check for momentum reversal (bottomed and recovering)
+                mid = n // 2
+                first_half_mom = sum(momentum[:mid]) / max(mid, 1)
+                second_half_mom = sum(momentum[mid:]) / max(n - mid, 1)
+                if first_half_mom < -5 and second_half_mom > 0:
+                    expected.append("momentum_reversal")
+
+                # Check for oversold recovery (RSI went below 30 and recovered)
+                min_rsi = min(rsi) if rsi else 50
+                recent_rsi = sum(rsi[-4:]) / 4 if len(rsi) >= 4 else 50
+                if min_rsi < 35 and recent_rsi > 45:
+                    expected.append("oversold_recovery")
+
+                # Check for volume spike at reversal
+                if volume:
+                    max_volume = max(volume)
+                    avg_volume = sum(volume) / len(volume)
+                    if max_volume > avg_volume * 1.5:
+                        expected.append("volume_spike")
+
+            # Fallback
+            if not expected:
+                expected.append("momentum_reversal")
+
+        elif pattern_type == PatternType.QUALITY_DETERIORATION:
+            # Analyze quality deterioration patterns
+            gross_margin = chart_data.get("gross_margin", [])
+            roic = chart_data.get("roic", [])
+            asset_turnover = chart_data.get("asset_turnover", [])
+            n = len(gross_margin) if gross_margin else 0
+
+            if n > 0:
+                # Check for margin compression
+                first_third_margin = sum(gross_margin[:n//3]) / max(n//3, 1)
+                last_third_margin = sum(gross_margin[-(n//3):]) / max(n//3, 1)
+                if last_third_margin < first_third_margin - 5.0:
+                    expected.append("margin_compression")
+
+                # Check for ROIC decline (falling below cost of capital ~12%)
+                if roic:
+                    first_third_roic = sum(roic[:n//3]) / max(n//3, 1)
+                    last_third_roic = sum(roic[-(n//3):]) / max(n//3, 1)
+                    if first_third_roic > 12 and last_third_roic < 10:
+                        expected.append("roic_decline")
+
+                # Check for efficiency deterioration
+                if asset_turnover:
+                    first_turn = sum(asset_turnover[:n//3]) / max(n//3, 1)
+                    last_turn = sum(asset_turnover[-(n//3):]) / max(n//3, 1)
+                    if last_turn < first_turn - 0.2:
+                        expected.append("efficiency_deterioration")
+
+            # Fallback
+            if not expected:
+                expected.append("margin_compression")
 
         return expected
 

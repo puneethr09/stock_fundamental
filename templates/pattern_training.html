@@ -1181,6 +1181,18 @@
             },
             { id: "potential_value_trap", label: "Potential Value Trap" },
           ];
+        } else if (patternType === "trend_reversal") {
+          patterns = [
+            { id: "momentum_reversal", label: "Momentum Reversal" },
+            { id: "oversold_recovery", label: "Oversold Recovery" },
+            { id: "volume_spike", label: "Volume Spike" },
+          ];
+        } else if (patternType === "quality_deterioration") {
+          patterns = [
+            { id: "margin_compression", label: "Margin Compression" },
+            { id: "roic_decline", label: "ROIC Decline" },
+            { id: "efficiency_deterioration", label: "Efficiency Drop" },
+          ];
         }
 
         patterns.forEach((pattern) => {

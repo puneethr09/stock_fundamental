@@ -840,6 +840,16 @@ def pattern_training_home():
             "name": "Value Trap Detection",
             "description": "Identify potential value traps and distinguish from genuine opportunities",
         },
+        {
+            "type": "TREND_REVERSAL",
+            "name": "Trend Reversal Patterns",
+            "description": "Spot key turning points in momentum, margin expansion, and recovery signals",
+        },
+        {
+            "type": "QUALITY_DETERIORATION",
+            "name": "Quality Deterioration",
+            "description": "Detect early warning signs of declining business quality and moat erosion",
+        },
     ]
 
     return render_template(
@@ -947,6 +957,8 @@ def get_pattern_exercise():
             "DEBT_ANALYSIS": PatternType.DEBT_ANALYSIS,
             "GROWTH_INDICATORS": PatternType.GROWTH_INDICATORS,
             "VALUE_TRAPS": PatternType.VALUE_TRAPS,
+            "TREND_REVERSAL": PatternType.TREND_REVERSAL,
+            "QUALITY_DETERIORATION": PatternType.QUALITY_DETERIORATION,
         }
 
         user_stage = stage_mapping.get(current_stage, LearningStage.GUIDED_DISCOVERY)
