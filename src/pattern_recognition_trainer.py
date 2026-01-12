@@ -786,74 +786,113 @@ class PatternRecognitionTrainer:
             # Analyze debt patterns
             debt_ratios = chart_data["debt_to_equity"]
             coverage_ratios = chart_data["interest_coverage"]
+            n = len(debt_ratios)
 
             # Check for deleveraging or increasing debt trends
-            debt_change = debt_ratios[-1] - debt_ratios[0]
-            if abs(debt_change) > 0.3:  # Significant change
+            first_third_debt = sum(debt_ratios[:n//3]) / max(n//3, 1)
+            last_third_debt = sum(debt_ratios[-(n//3):]) / max(n//3, 1)
+            debt_change = last_third_debt - first_third_debt
+            
+            if abs(debt_change) > 0.15:  # Lower threshold for more sensitivity
                 if debt_change < 0:
                     expected.append("deleveraging_trend")
                 else:
                     expected.append("increasing_debt_trend")
 
-            # Check for high debt periods
-            if any(ratio > 1.2 for ratio in debt_ratios):
+            # Check for high debt periods (any period > 1.0 D/E is notable)
+            high_debt_count = sum(1 for ratio in debt_ratios if ratio > 1.0)
+            if high_debt_count >= 2:
                 expected.append("high_debt_periods")
 
             # Check for interest coverage concerns
-            if any(cov < 4.0 for cov in coverage_ratios):
+            low_coverage_count = sum(1 for cov in coverage_ratios if cov < 5.0)
+            if low_coverage_count >= 2:
                 expected.append("interest_coverage_concern")
 
-            # Ensure at least one pattern is identifiable
+            # Fallback: ensure at least one selectable pattern
             if not expected:
-                expected.append("debt_analysis_required")
+                # Default to deleveraging_trend as most common scenario
+                expected.append("deleveraging_trend")
 
         elif pattern_type == PatternType.GROWTH_INDICATORS:
             # Analyze growth patterns
             roe_values = chart_data["roe"]
             revenue_growth = chart_data["revenue_growth"]
+            n = len(roe_values)
 
             # Check for consistent strong ROE
-            recent_roe = roe_values[-4:]  # Last 4 quarters
-            if sum(roe > 15.0 for roe in recent_roe) >= 3:
+            # Average of recent ROE should be above 15% (some volatility is OK)
+            recent_roe = roe_values[-4:]
+            avg_recent_roe = sum(recent_roe) / len(recent_roe)
+            
+            # Check if ROE is in SEVERE decline (>5% drop from first to second half)
+            first_half_roe = sum(roe_values[:n//2]) / max(n//2, 1)
+            second_half_roe = sum(roe_values[n//2:]) / max(n - n//2, 1)
+            roe_severely_declining = second_half_roe < first_half_roe - 5.0
+            
+            # Strong ROE: recent avg > 14% AND not in severe decline
+            if avg_recent_roe > 14.0 and not roe_severely_declining:
                 expected.append("consistent_strong_roe")
 
-            # Check for ROE improvement trend
-            roe_change = roe_values[-1] - roe_values[0]
-            if roe_change > 2.0:
+            # Check for ROE improvement trend (sustained improvement)
+            first_third_roe = sum(roe_values[:n//3]) / max(n//3, 1)
+            last_third_roe = sum(roe_values[-(n//3):]) / max(n//3, 1)
+            if last_third_roe > first_third_roe + 2.0:
                 expected.append("roe_improvement_trend")
 
             # Check for healthy revenue growth
             recent_growth = revenue_growth[-4:]
             avg_growth = sum(recent_growth) / len(recent_growth)
-            if avg_growth > 8.0:
+            
+            # Check if growth is in SEVERE decline (>5% drop)
+            first_half_growth = sum(revenue_growth[:n//2]) / max(n//2, 1)
+            second_half_growth = sum(revenue_growth[n//2:]) / max(n - n//2, 1)
+            growth_severely_declining = second_half_growth < first_half_growth - 5.0
+            
+            # Healthy revenue growth: avg >8% AND not in severe decline
+            if avg_growth > 8.0 and not growth_severely_declining:
                 expected.append("healthy_revenue_growth")
 
-            # Ensure at least one pattern is identifiable
+            # Fallback: if detection is strict and no patterns found,
+            # default to consistent_strong_roe if avg ROE > 12% (still decent)
             if not expected:
-                expected.append("growth_analysis_required")
+                if avg_recent_roe > 12.0:
+                    expected.append("consistent_strong_roe")
+                else:
+                    # True fallback - at least one pattern must be selectable
+                    expected.append("consistent_strong_roe")
 
         elif pattern_type == PatternType.VALUE_TRAPS:
             # Analyze value trap patterns
             pe_ratios = chart_data["pe_ratio"]
             roe_values = chart_data["roe"]
+            n = len(pe_ratios)
 
-            # Check for consistently low valuation
+            # Check for low valuation (P/E < 15 is reasonable for value assessment)
             avg_pe = sum(pe_ratios) / len(pe_ratios)
-            if avg_pe < 12.0:
+            recent_avg_pe = sum(pe_ratios[-4:]) / 4
+            # Low valuation: avg P/E < 15 OR recent < 12
+            if avg_pe < 15.0 or recent_avg_pe < 12.0:
                 expected.append("low_valuation")
 
             # Check for deteriorating fundamentals
-            roe_change = roe_values[-1] - roe_values[0]
-            if roe_change < -2.0:
+            first_third_roe = sum(roe_values[:n//3]) / max(n//3, 1)
+            last_third_roe = sum(roe_values[-(n//3):]) / max(n//3, 1)
+            peak_roe = max(roe_values)
+            recent_avg_roe = sum(roe_values[-4:]) / 4
+            
+            if (last_third_roe < first_third_roe - 3.0 or  # Sustained decline
+                (peak_roe > 15.0 and recent_avg_roe < 10.0)):  # Peak-to-trough collapse
                 expected.append("deteriorating_fundamentals")
 
-            # Check for potential value trap (low PE + poor fundamentals)
-            if avg_pe < 10.0 and sum(roe_values[-4:]) / 4 < 10.0:
+            # Check for potential value trap (low PE + weak fundamentals)
+            if avg_pe < 12.0 and recent_avg_roe < 12.0:
                 expected.append("potential_value_trap")
 
-            # Ensure at least one pattern is identifiable
+            # Fallback: ensure at least one pattern is always a selectable button
             if not expected:
-                expected.append("valuation_analysis_required")
+                # Default to low_valuation as it's the most broadly applicable
+                expected.append("low_valuation")
 
         return expected
 

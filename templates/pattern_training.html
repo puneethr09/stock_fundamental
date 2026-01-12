@@ -165,6 +165,186 @@
       .exercise-container .card-body {
         padding: 20px;
       }
+      
+      /* Toast notifications for chart markers */
+      .marker-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: rgba(40, 167, 69, 0.95);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        z-index: 9999;
+        opacity: 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }
+      .marker-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      
+      /* Marker count badge */
+      #marker-count {
+        background: linear-gradient(135deg, #ff6b6b, #dc3545);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: none;
+      }
+      
+      /* Clear markers button */
+      #clear-markers-btn {
+        display: none;
+        font-size: 0.8rem;
+      }
+      
+      /* Master Tips Panel */
+      .master-tips-panel {
+        background: linear-gradient(135deg, rgba(108, 126, 246, 0.1), rgba(0, 212, 255, 0.1));
+        border: 1px solid rgba(108, 126, 246, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 15px;
+      }
+      .master-tips-panel h6 {
+        color: #6c7ee6;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+      .master-tips-content {
+        font-size: 0.85rem;
+        color: #555;
+        line-height: 1.5;
+      }
+      .master-tips-content.highlight {
+        background: rgba(255, 193, 7, 0.15);
+        border-left: 3px solid #ffc107;
+        padding: 8px 12px;
+        border-radius: 0 6px 6px 0;
+      }
+      
+      /* Gamification: Streak Counter */
+      .streak-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #ff9800, #ff5722);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 3px 10px rgba(255, 87, 34, 0.3);
+        animation: pulse-glow 2s infinite;
+      }
+      .streak-counter.frozen {
+        background: linear-gradient(135deg, #78909c, #546e7a);
+        animation: none;
+      }
+      .streak-counter .streak-fire {
+        font-size: 1.1rem;
+      }
+      @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 3px 10px rgba(255, 87, 34, 0.3); }
+        50% { box-shadow: 0 3px 20px rgba(255, 87, 34, 0.5); }
+      }
+      
+      /* Gamification: Session Progress */
+      .session-progress-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px 15px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .session-progress-bar {
+        width: 120px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .session-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00d4ff, #6c7ee6);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+      .session-progress-text {
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      
+      /* Gamification: Achievement Badge */
+      .achievement-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 30px 40px;
+        border-radius: 16px;
+        text-align: center;
+        z-index: 10000;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .achievement-popup.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      .achievement-popup .trophy {
+        font-size: 3rem;
+        margin-bottom: 10px;
+      }
+      .achievement-popup h4 {
+        margin: 0 0 5px 0;
+        font-size: 1.3rem;
+      }
+      .achievement-popup p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+      }
+      
+      /* Confetti animation for achievements */
+      .confetti {
+        position: fixed;
+        top: -10px;
+        z-index: 9999;
+        pointer-events: none;
+      }
+      @keyframes confetti-fall {
+        0% {
+          transform: translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+      
+      /* Chart marking instruction */
+      .chart-marking-hint {
+        background: rgba(0, 123, 255, 0.1);
+        border: 1px dashed rgba(0, 123, 255, 0.4);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        color: #0056b3;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body class="pattern-page">
@@ -177,13 +357,34 @@
         <p class="lead mb-0">
           Master financial pattern recognition through interactive exercises
         </p>
-        <div class="mt-3">
+        <div class="mt-3 d-flex justify-content-center align-items-center flex-wrap gap-3">
           <span
             class="learning-stage-badge stage-{{ user_stage.replace('_', '-') }}"
           >
             Learning Stage: {{ user_stage.replace('_', ' ').title() }}
           </span>
+          
+          <!-- Streak Counter -->
+          <span class="streak-counter" id="streak-counter" title="Your current streak of correct answers (≥50% accuracy)">
+            <span class="streak-fire">🔥</span>
+            <span id="streak-value">0</span> streak
+          </span>
+          
+          <!-- Session Progress -->
+          <div class="session-progress-container" id="session-progress">
+            <span class="session-progress-text">Session: <span id="exercises-completed">0</span>/5</span>
+            <div class="session-progress-bar">
+              <div class="session-progress-fill" id="session-progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
         </div>
+      </div>
+      
+      <!-- Achievement Popup (hidden by default) -->
+      <div class="achievement-popup" id="achievement-popup">
+        <div class="trophy">🏆</div>
+        <h4 id="achievement-title">Achievement Unlocked!</h4>
+        <p id="achievement-text">Great job!</p>
       </div>
 
       <!-- Pattern Selection -->
@@ -338,6 +539,17 @@
                       <!-- Dynamic pattern buttons will be inserted here -->
                     </div>
                   </div>
+                  
+                  <!-- Chart Marking Feature -->
+                  <div class="chart-marking-hint mt-3">
+                    💡 <strong>Tip:</strong> Click directly on the chart to mark key points you've identified.
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between mt-2">
+                    <span id="marker-count" class="badge">0 points</span>
+                    <button id="clear-markers-btn" class="btn btn-outline-danger btn-sm" onclick="clearChartMarkers()">
+                      Clear Markings
+                    </button>
+                  </div>
 
                   <!-- Submit Section -->
                   <div class="mt-4">
@@ -348,6 +560,14 @@
                     >
                       Submit Analysis
                     </button>
+                  </div>
+                  
+                  <!-- Master Tips Panel -->
+                  <div class="master-tips-panel mt-3">
+                    <h6>💡 Master Tips</h6>
+                    <div id="master-tips-content" class="master-tips-content">
+                      Hover over the chart to see context-specific insights about the financial metrics.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -406,10 +626,154 @@
       let selectedPatterns = new Set();
       let selectedPatternType = null;
       let availableStocks = [];
+      
+      // Gamification state
+      let sessionExercisesCompleted = 0;
+      const SESSION_TARGET = 5;
+      
+      // Streak tracking with localStorage
+      function getStreak() {
+        const data = localStorage.getItem('patternTrainingStreak');
+        if (!data) return { count: 0, lastDate: null };
+        try {
+          return JSON.parse(data);
+        } catch {
+          return { count: 0, lastDate: null };
+        }
+      }
+      
+      function setStreak(count) {
+        const today = new Date().toDateString();
+        localStorage.setItem('patternTrainingStreak', JSON.stringify({
+          count: count,
+          lastDate: today
+        }));
+        updateStreakDisplay(count);
+      }
+      
+      function updateStreakDisplay(count) {
+        $('#streak-value').text(count);
+        const counter = $('#streak-counter');
+        if (count > 0) {
+          counter.removeClass('frozen');
+        } else {
+          counter.addClass('frozen');
+        }
+        
+        // Animate on update
+        counter.css('transform', 'scale(1.2)');
+        setTimeout(() => counter.css('transform', 'scale(1)'), 200);
+      }
+      
+      function checkStreakContinuity() {
+        const streak = getStreak();
+        const today = new Date().toDateString();
+        const lastDate = streak.lastDate;
+        
+        if (!lastDate) {
+          return 0;
+        }
+        
+        const lastDateObj = new Date(lastDate);
+        const todayObj = new Date(today);
+        const diffDays = Math.floor((todayObj - lastDateObj) / (1000 * 60 * 60 * 24));
+        
+        // If more than 1 day has passed, reset streak
+        if (diffDays > 1) {
+          return 0;
+        }
+        
+        return streak.count;
+      }
+      
+      function handleExerciseResult(accuracy) {
+        sessionExercisesCompleted++;
+        updateSessionProgress();
+        
+        // Streak logic: 50%+ accuracy maintains/increases streak
+        let currentStreak = checkStreakContinuity();
+        
+        if (accuracy >= 0.5) {
+          currentStreak++;
+          setStreak(currentStreak);
+          
+          // Check for achievements
+          checkAchievements(accuracy, currentStreak);
+        } else {
+          // Failed - reset streak
+          setStreak(0);
+        }
+      }
+      
+      function updateSessionProgress() {
+        const percent = Math.min((sessionExercisesCompleted / SESSION_TARGET) * 100, 100);
+        $('#exercises-completed').text(sessionExercisesCompleted);
+        $('#session-progress-fill').css('width', percent + '%');
+        
+        // Session completed achievement
+        if (sessionExercisesCompleted === SESSION_TARGET) {
+          showAchievement('🎯', 'Session Complete!', 'You completed 5 exercises this session!');
+        }
+      }
+      
+      function checkAchievements(accuracy, streak) {
+        // Perfect score
+        if (accuracy === 1.0) {
+          showAchievement('⭐', 'Perfect Score!', 'You identified all patterns correctly!');
+        }
+        // Streak milestones
+        else if (streak === 3) {
+          showAchievement('🔥', 'On Fire!', '3 correct answers in a row!');
+        }
+        else if (streak === 5) {
+          showAchievement('🌟', 'Streak Master!', '5 correct answers in a row!');
+        }
+        else if (streak === 10) {
+          showAchievement('👑', 'Pattern Pro!', '10 correct answers in a row!');
+        }
+      }
+      
+      function showAchievement(emoji, title, text) {
+        const popup = $('#achievement-popup');
+        popup.find('.trophy').text(emoji);
+        $('#achievement-title').text(title);
+        $('#achievement-text').text(text);
+        
+        popup.addClass('show');
+        
+        // Create confetti effect
+        createConfetti();
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+          popup.removeClass('show');
+        }, 3000);
+      }
+      
+      function createConfetti() {
+        const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#6c7ee6', '#ff9800'];
+        for (let i = 0; i < 50; i++) {
+          const confetti = $('<div class="confetti"></div>');
+          confetti.css({
+            left: Math.random() * 100 + 'vw',
+            background: colors[Math.floor(Math.random() * colors.length)],
+            width: Math.random() * 10 + 5 + 'px',
+            height: Math.random() * 10 + 5 + 'px',
+            borderRadius: Math.random() > 0.5 ? '50%' : '0',
+            animation: `confetti-fall ${Math.random() * 2 + 2}s ease-out forwards`
+          });
+          $('body').append(confetti);
+          setTimeout(() => confetti.remove(), 4000);
+        }
+      }
 
       // Load available stocks when page loads
       $(document).ready(function () {
         loadAvailableStocks();
+        
+        // Initialize streak display
+        const streak = checkStreakContinuity();
+        updateStreakDisplay(streak);
       });
 
       function loadAvailableStocks() {
@@ -563,6 +927,24 @@
           // Create the Plotly chart
           Plotly.newPlot("chart-container", chartData.data, layout, config);
           console.log("Chart rendered successfully");
+          
+          // Setup click-on-chart pattern marking
+          const chartDiv = document.getElementById("chart-container");
+          chartDiv.on("plotly_click", function(data) {
+            if (data.points.length > 0) {
+              const point = data.points[0];
+              addChartMarker(point.x, point.y, point.curveNumber);
+            }
+          });
+          
+          // Setup hover tooltips for Master Tips
+          chartDiv.on("plotly_hover", function(data) {
+            if (data.points.length > 0) {
+              const point = data.points[0];
+              updateMasterTips(point.x, point.y, point.data.name);
+            }
+          });
+          
         } catch (e) {
           console.error("Failed to parse chart data:", e);
           $("#chart-container").html(
@@ -572,10 +954,204 @@
 
         // Create pattern buttons based on pattern type
         createPatternButtons(exercise.pattern_type);
+        
+        // Clear any previous chart markers
+        chartMarkers = [];
+        updateMarkerCount();
 
         // Record start time for analytics (no countdown)
         startTime = Date.now();
       }
+      
+      // Chart marker storage
+      let chartMarkers = [];
+      
+      function addChartMarker(x, y, curveNumber) {
+        // Add a marker to track clicked points
+        const marker = { x, y, curveNumber, id: Date.now() };
+        chartMarkers.push(marker);
+        
+        // Add visual marker to chart
+        const chartDiv = document.getElementById("chart-container");
+        const currentData = chartDiv.data;
+        
+        // Create a new marker trace
+        const markerTrace = {
+          x: chartMarkers.map(m => m.x),
+          y: chartMarkers.map(m => m.y),
+          mode: "markers",
+          type: "scatter",
+          name: "Your Markings",
+          marker: {
+            size: 18,
+            symbol: "circle",
+            color: "rgba(255, 107, 107, 0.8)",
+            line: { color: "#dc3545", width: 3 }
+          },
+          hovertemplate: "📍 Marked Point<br>%{x}<br>Value: %{y}<extra></extra>",
+          showlegend: true
+        };
+        
+        // Check if marker trace already exists
+        const markerTraceIndex = currentData.findIndex(t => t.name === "Your Markings");
+        if (markerTraceIndex >= 0) {
+          // Update existing trace
+          Plotly.restyle(chartDiv, {
+            x: [chartMarkers.map(m => m.x)],
+            y: [chartMarkers.map(m => m.y)]
+          }, [markerTraceIndex]);
+        } else {
+          // Add new trace
+          Plotly.addTraces(chartDiv, markerTrace);
+        }
+        
+        updateMarkerCount();
+        
+        // Show feedback toast
+        showMarkerToast(`Point marked at ${x}`);
+      }
+      
+      function clearChartMarkers() {
+        chartMarkers = [];
+        const chartDiv = document.getElementById("chart-container");
+        if (!chartDiv || !chartDiv.data) return;
+        
+        // Remove marker trace
+        const markerTraceIndex = chartDiv.data.findIndex(t => t.name === "Your Markings");
+        if (markerTraceIndex >= 0) {
+          Plotly.deleteTraces(chartDiv, markerTraceIndex);
+        }
+        
+        updateMarkerCount();
+      }
+      
+      function updateMarkerCount() {
+        const count = chartMarkers.length;
+        const badge = $("#marker-count");
+        if (count > 0) {
+          badge.text(`${count} point${count > 1 ? 's' : ''} marked`).show();
+          $("#clear-markers-btn").show();
+        } else {
+          badge.hide();
+          $("#clear-markers-btn").hide();
+        }
+      }
+      
+      function showMarkerToast(message) {
+        // Simple toast notification
+        const toast = $(`<div class="marker-toast">${message}</div>`);
+        $("body").append(toast);
+        setTimeout(() => toast.addClass("show"), 10);
+        setTimeout(() => {
+          toast.removeClass("show");
+          setTimeout(() => toast.remove(), 300);
+        }, 1500);
+      }
+      
+      // Master Tips - context-specific educational content
+      const masterTipsLibrary = {
+        debt_analysis: {
+          "Debt-to-Equity": {
+            high: "⚠️ <strong>High D/E Warning:</strong> A D/E ratio above 1.5 often indicates aggressive leveraging. Check if the industry norm justifies this level.",
+            low: "✅ <strong>Conservative Leverage:</strong> Low D/E suggests financial prudence. However, ensure the company isn't missing growth opportunities.",
+            trend_up: "📈 <strong>Rising Debt:</strong> Increasing D/E could signal expansion or distress. Look at revenue growth to differentiate.",
+            trend_down: "📉 <strong>Deleveraging:</strong> Decreasing D/E is positive - indicates debt repayment or equity growth."
+          },
+          "Interest Coverage": {
+            high: "✅ <strong>Strong Coverage:</strong> High interest coverage (>5x) means comfortable debt servicing ability.",
+            low: "⚠️ <strong>Coverage Concern:</strong> Interest coverage below 2x is a red flag - the company may struggle to meet interest payments.",
+            default: "💡 <strong>Interest Coverage:</strong> This ratio shows how many times EBIT covers interest expenses. Higher is better."
+          },
+          "Current Ratio": {
+            default: "💡 <strong>Liquidity Check:</strong> Current ratio >1.5 indicates healthy short-term liquidity. Watch for seasonal patterns."
+          }
+        },
+        growth_indicators: {
+          "Return on Equity (%)": {
+            high: "🌟 <strong>Excellent ROE:</strong> ROE above 18% indicates efficient use of shareholder capital. Verify it's sustainable.",
+            low: "⚠️ <strong>Low ROE:</strong> ROE below 10% suggests poor capital efficiency. Compare with sector peers.",
+            default: "💡 <strong>ROE Insight:</strong> Strong, consistent ROE (15%+) is a hallmark of quality businesses."
+          },
+          "Revenue Growth (%)": {
+            high: "📈 <strong>Strong Growth:</strong> Double-digit revenue growth is excellent. Confirm it's organic, not acquisition-driven.",
+            low: "📉 <strong>Stagnation:</strong> Low/negative growth may indicate market saturation or competitive pressures.",
+            default: "💡 <strong>Growth Tip:</strong> Look for sustainable 10-15% revenue growth in quality companies."
+          },
+          "Operating Margin (%)": {
+            default: "💡 <strong>Margin Focus:</strong> Expanding operating margins suggest pricing power and cost control."
+          }
+        },
+        value_traps: {
+          "P/E Ratio": {
+            low: "⚠️ <strong>Value Trap Alert:</strong> Low P/E alone isn't enough. Check if earnings quality is declining!",
+            high: "💰 <strong>Growth Premium:</strong> High P/E may be justified if growth prospects are strong.",
+            default: "💡 <strong>Valuation Check:</strong> Compare P/E with historical average and sector peers."
+          },
+          "P/B Ratio": {
+            low: "⚠️ <strong>Scrutinize Assets:</strong> Low P/B may hide hidden liabilities or impaired assets.",
+            default: "💡 <strong>Book Value:</strong> P/B below 1 warrants investigation - could be value or value trap."
+          },
+          "ROE (%)": {
+            trend_down: "🚨 <strong>Deteriorating Quality:</strong> Declining ROE alongside low valuation = classic value trap signal!",
+            default: "💡 <strong>Quality Check:</strong> Ensure ROE is stable or improving before buying low-valuation stocks."
+          }
+        }
+      };
+      
+      let lastTipUpdate = 0;
+      
+      function updateMasterTips(x, y, metricName) {
+        // Throttle updates to avoid excessive re-renders
+        const now = Date.now();
+        if (now - lastTipUpdate < 300) return;
+        lastTipUpdate = now;
+        
+        if (!currentExercise || !selectedPatternType) return;
+        
+        const patternType = selectedPatternType;
+        const tipsForPattern = masterTipsLibrary[patternType];
+        if (!tipsForPattern) return;
+        
+        // Find applicable tip based on metric name
+        let tip = null;
+        
+        // Try to match the metric
+        for (const [metric, tips] of Object.entries(tipsForPattern)) {
+          if (metricName && metricName.includes(metric.replace(' (%)', ''))) {
+            // Determine which tip variant to show
+            if (typeof y === 'number') {
+              if (metric.includes('ROE') || metric.includes('Coverage')) {
+                tip = y > 18 ? tips.high : y < 10 ? tips.low : tips.default;
+              } else if (metric.includes('Debt-to-Equity')) {
+                tip = y > 1.5 ? tips.high : y < 0.5 ? tips.low : tips.default;
+              } else if (metric.includes('P/E') || metric.includes('P/B')) {
+                tip = y < 10 ? tips.low : y > 25 ? tips.high : tips.default;
+              } else {
+                tip = tips.default || tips.high || tips.low;
+              }
+            } else {
+              tip = tips.default || Object.values(tips)[0];
+            }
+            break;
+          }
+        }
+        
+        // Show the tip if found
+        if (tip) {
+          $("#master-tips-content")
+            .html(tip)
+            .addClass("highlight");
+        }
+      }
+      
+      // Reset Master Tips when mouse leaves chart
+      $(document).ready(function() {
+        $("#chart-container").on("mouseleave", function() {
+          $("#master-tips-content")
+            .html("Hover over the chart to see context-specific insights about the financial metrics.")
+            .removeClass("highlight");
+        });
+      });
 
       function createPatternButtons(patternType) {
         const buttonGroup = $("#pattern-button-group");
@@ -639,6 +1215,7 @@
             exercise_id: currentExercise.id,
             identified_patterns: Array.from(selectedPatterns),
             time_taken_seconds: timeTaken,
+            chart_markers: chartMarkers.map(m => ({ x: m.x, y: m.y }))
           }),
         })
           .done(function (response) {
@@ -658,6 +1235,9 @@
         const accuracy = Math.round(result.accuracy * 100);
         $("#accuracy-score").text(accuracy + "%");
         $("#score-progress").css("width", accuracy + "%");
+        
+        // Update gamification (streak, session progress, achievements)
+        handleExerciseResult(result.accuracy);
 
         // Show time taken
         const minutes = Math.floor(timeTaken / 60);
