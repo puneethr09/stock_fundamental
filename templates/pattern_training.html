@@ -287,7 +287,6 @@
         >
           <h4 class="mb-0" id="exercise-title">Pattern Recognition Exercise</h4>
           <div>
-            <span class="badge badge-light" id="time-remaining">--:--</span>
             <button
               class="btn btn-sm btn-outline-light ml-2"
               onclick="returnToSelection()"
@@ -404,7 +403,6 @@
     <script>
       let currentExercise = null;
       let startTime = null;
-      let timerInterval = null;
       let selectedPatterns = new Set();
       let selectedPatternType = null;
       let availableStocks = [];
@@ -575,8 +573,8 @@
         // Create pattern buttons based on pattern type
         createPatternButtons(exercise.pattern_type);
 
-        // Start timer
-        startTimer(exercise.time_limit); // time_limit is already in seconds
+        // Record start time for analytics (no countdown)
+        startTime = Date.now();
       }
 
       function createPatternButtons(patternType) {
@@ -649,9 +647,6 @@
       }
 
       function submitAttempt() {
-        if (timerInterval) {
-          clearInterval(timerInterval);
-        }
 
         const timeTaken = Math.round((Date.now() - startTime) / 1000);
 
@@ -708,12 +703,63 @@
           });
           feedbackHtml += "</ul></div>";
         }
+        
+        // Add "Walk Me Through It" button for low accuracy (< 50%)
+        if (accuracy < 50) {
+          feedbackHtml += `
+            <div class="mt-3 text-center">
+              <button class="btn btn-warning btn-lg" onclick="showCorrectPatterns()">
+                🎓 Walk Me Through It
+              </button>
+              <p class="small text-muted mt-2">See where the patterns were hiding</p>
+            </div>
+          `;
+        }
 
         $("#feedback-content").html(feedbackHtml);
         $("#feedback-section").show();
         
         // Auto-scroll to feedback section for immediate visibility
         $("#feedback-section")[0].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      
+      function showCorrectPatterns() {
+        // Highlight all expected patterns on the chart
+        if (!currentExercise || !currentExercise.expected_patterns) {
+          alert("Pattern data not available");
+          return;
+        }
+        
+        // Scroll back to chart
+        $("#chart-container")[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        
+        // Show educational message
+        let walkthruHtml = `
+          <div class="alert alert-info mb-3">
+            <h5>🎓 Learning Mode</h5>
+            <p>The correct patterns for this exercise were:</p>
+            <ul>
+        `;
+        
+        currentExercise.expected_patterns.forEach((pattern) => {
+          // Highlight the pattern button
+          const btn = $(`button[data-pattern="${pattern}"]`);
+          if (btn.length) {
+            btn.removeClass("btn-outline-primary btn-primary")
+               .addClass("btn-success")
+               .append(' ✓');
+          }
+          walkthruHtml += `<li><strong>${pattern}</strong></li>`;
+        });
+        
+        walkthruHtml += `
+            </ul>
+            <p class="mb-0"><em>Look for the highlighted zones on the chart - these indicate where the patterns appear.</em></p>
+          </div>
+        `;
+        
+        // Prepend learning content to feedback
+        $("#feedback-content").prepend(walkthruHtml);
       }
 
       function startNewExercise() {
@@ -726,9 +772,6 @@
       }
 
       function returnToSelection() {
-        if (timerInterval) {
-          clearInterval(timerInterval);
-        }
 
         $("#exercise-container").hide();
         $("#stock-selection").hide();
