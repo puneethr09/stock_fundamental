@@ -1557,21 +1557,41 @@ class PatternRecognitionTrainer:
         pattern_zones: List[Dict[str, Any]],
         chart_data: Dict[str, Any],
     ):
-        """Add overlays for guided difficulty level"""
+        """Add overlays for guided difficulty level with enhanced visual cues"""
+        
+        # Color map for different pattern types
+        pattern_colors = {
+            "debt_concern": "rgba(255, 99, 71, 0.15)",      # Tomato red
+            "strong_performance": "rgba(50, 205, 50, 0.15)", # Lime green
+            "value_trap_signal": "rgba(255, 165, 0, 0.15)", # Orange
+            "default": "rgba(100, 149, 237, 0.15)"          # Cornflower blue
+        }
 
         for zone in pattern_zones:
             if zone.get("pattern_strength") == "strong":
                 # Add highlighting for obvious patterns
                 if "period_index" in zone:
                     period_idx = zone["period_index"]
+                    zone_type = zone.get("type", "default")
+                    fill_color = pattern_colors.get(zone_type, pattern_colors["default"])
+                    
+                    # Add shaded region around the pattern period (±1 period)
+                    fig.add_vrect(
+                        x0=max(0, period_idx - 1),
+                        x1=min(len(chart_data.get("quarters", [])) - 1, period_idx + 1),
+                        fillcolor=fill_color,
+                        layer="below",
+                        line_width=0,
+                        annotation_text="📍",
+                        annotation_position="top",
+                    )
 
                     # Highlight specific point with bright color and hover text
                     fig.add_vline(
                         x=period_idx,
                         line_dash="dot",
-                        line_color="rgba(255, 165, 0, 0.8)",  # Bright orange, more visible than yellow
-                        line_width=4,
-                        # Remove immediate annotation text to prevent overlap
+                        line_color="rgba(255, 165, 0, 0.8)",  # Bright orange
+                        line_width=3,
                     )
 
                     # Calculate proper y position based on first available data series
@@ -1589,7 +1609,7 @@ class PatternRecognitionTrainer:
                             min(period_idx, len(chart_data["pe_ratio"]) - 1)
                         ]
 
-                    # Add an hover indicator for the hint
+                    # Add a pulsing marker for the hint (stylized as target)
                     fig.add_trace(
                         go.Scatter(
                             x=[
@@ -1600,13 +1620,14 @@ class PatternRecognitionTrainer:
                             y=[y_position],
                             mode="markers",
                             marker=dict(
-                                size=15,
-                                color="rgba(255, 165, 0, 0.3)",
-                                symbol="diamond",
+                                size=20,
+                                color="rgba(255, 165, 0, 0.6)",
+                                symbol="circle",
+                                line=dict(width=2, color="orange")
                             ),
-                            name="💡 Hint",
-                            hovertemplate=f"<b>Pattern Hint:</b><br>{zone.get('hint', 'Important pattern area')}<extra></extra>",
-                            showlegend=False,
+                            name="💡 Pattern Zone",
+                            hovertemplate=f"<b>🎯 Pattern Hint:</b><br>{zone.get('hint', 'Important pattern area')}<extra></extra>",
+                            showlegend=True,
                         )
                     )
 

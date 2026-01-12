@@ -323,8 +323,8 @@
                   <h6 class="mb-0">📋 Instructions</h6>
                 </div>
                 <div class="card-body">
-                  <p id="exercise-description" class="small">
-                    Loading exercise...
+                  <p id="instructions-text" class="small">
+                    Analyze the chart and identify the patterns present.
                   </p>
 
                   <!-- Pattern Selection Buttons -->
@@ -507,6 +507,13 @@
         // Set title and description
         $("#exercise-title").text(exercise.title);
         $("#exercise-description").text(exercise.description);
+        
+        // Update instructions panel with educational context
+        if (exercise.educational_context) {
+          $("#instructions-text").html(exercise.educational_context);
+        } else {
+          $("#instructions-text").text(exercise.description);
+        }
 
         // Parse and render chart with Plotly
         console.log("Received chart data:", exercise.chart_html);
@@ -704,6 +711,9 @@
 
         $("#feedback-content").html(feedbackHtml);
         $("#feedback-section").show();
+        
+        // Auto-scroll to feedback section for immediate visibility
+        $("#feedback-section")[0].scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
       function startNewExercise() {
