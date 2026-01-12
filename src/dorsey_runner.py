@@ -63,6 +63,11 @@ def run_dorsey_analysis(ticker):
     v = ValuationAnalyzer(ticker)
     results["valuation"] = v.get_valuation_verdict()
     
+    # Combined Valuation (AlphaSpread-like: DCF + Relative)
+    combined_val = v.get_combined_intrinsic_value()
+    if combined_val:
+        results["valuation"]["combined"] = combined_val
+    
     # Mistake Detection (Chapter 2)
     md = MistakeDetector(ticker)
     results["mistake_warnings"] = md.detect_mistakes()

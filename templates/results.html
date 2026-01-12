@@ -379,22 +379,78 @@
         <div class="col-lg-4 mb-4">
             <div class="card h-100 animate-fade-in" style="animation-delay: 0.3s;">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-tags text-success mr-2"></i>Valuation (DCF)
+                    <h5 class="mb-0"><i class="fas fa-tags text-success mr-2"></i>Intrinsic Value
                         <span class="info-tooltip">
                             <span class="tooltip-icon">?</span>
                             <span class="tooltip-content">
-                                <span class="tooltip-title"><i class="fas fa-calculator"></i> Chapters 9-10: Valuation</span>
-                                <span class="tooltip-text">Discounted Cash Flow model projects future cash flows and discounts to present value. Margin of Safety protects against estimation errors.</span>
-                                <div class="tooltip-formula">Value = Σ(FCF / (1+r)^n) + Terminal</div>
+                                <span class="tooltip-title"><i class="fas fa-calculator"></i> AlphaSpread Method</span>
+                                <span class="tooltip-text">Combines DCF (40%) + Relative Valuation (60%) for a balanced, market-realistic intrinsic value estimate.</span>
                             </span>
                         </span>
                     </h5>
                 </div>
                 <div class="card-body">
+                    {% if valuation.combined %}
+                    <!-- Combined Intrinsic Value (AlphaSpread-like) -->
+                    <div class="text-center mb-3">
+                        <small class="text-muted d-block">Combined Intrinsic Value</small>
+                        <h2 class="text-info mb-1">₹{{ "%.0f"|format(valuation.combined.combined_value) }}</h2>
+                        <span class="badge {% if valuation.combined.verdict == 'UNDERVALUED' %}badge-success{% elif valuation.combined.verdict == 'OVERVALUED' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ valuation.combined.verdict }}
+                        </span>
+                    </div>
+                    
+                    <!-- DCF vs Relative breakdown -->
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="metric-card py-2">
+                                <small class="text-muted d-block">DCF Value</small>
+                                <h5 class="text-warning mb-0">
+                                    {% if valuation.combined.dcf_value %}₹{{ "%.0f"|format(valuation.combined.dcf_value) }}{% else %}N/A{% endif %}
+                                </h5>
+                                <small class="text-muted" style="font-size:0.7rem;">40% weight</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-card py-2">
+                                <small class="text-muted d-block">Relative Value</small>
+                                <h5 class="text-success mb-0">
+                                    {% if valuation.combined.relative_value %}₹{{ "%.0f"|format(valuation.combined.relative_value) }}{% else %}N/A{% endif %}
+                                </h5>
+                                <small class="text-muted" style="font-size:0.7rem;">60% weight</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Relative methods used -->
+                    {% if valuation.combined.relative_methods %}
+                    <div class="text-center mb-2" style="font-size:0.75rem;">
+                        {% for method in valuation.combined.relative_methods %}
+                        <span class="badge badge-secondary mr-1 mb-1">{{ method }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Current Price & Margin -->
+                    <div class="text-center py-2" style="background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <small class="text-muted d-block">Current Price</small>
+                        <h5 class="mb-1">₹{{ valuation.current_price }}</h5>
+                        {% if valuation.combined.margin_of_safety > 0 %}
+                        <span class="badge badge-success">
+                            <i class="fas fa-arrow-down mr-1"></i>{{ "%.0f"|format(valuation.combined.margin_of_safety) }}% Undervalued
+                        </span>
+                        {% else %}
+                        <span class="badge badge-danger">
+                            <i class="fas fa-arrow-up mr-1"></i>{{ "%.0f"|format(valuation.combined.margin_of_safety * -1) }}% Premium
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% else %}
+                    <!-- Fallback: Old DCF-only display -->
                     <div class="text-center mb-3">
                         <small class="text-muted text-uppercase">{{ valuation.model_type }} Model</small>
                     </div>
-                    
                     <div class="row text-center mb-3">
                         <div class="col-4">
                             <small class="text-muted d-block">Conservative</small>
@@ -409,11 +465,9 @@
                             <h5 class="text-success mb-0">₹{{ "%.0f"|format(valuation.scenarios.Optimistic.value) }}</h5>
                         </div>
                     </div>
-                    
                     <div class="text-center py-3" style="background: rgba(255,255,255,0.03); border-radius: 8px;">
                         <small class="text-muted d-block">Current Price</small>
                         <h5 class="mb-2">₹{{ valuation.current_price }}</h5>
-                        
                         {% if valuation.margin_of_safety > 0 %}
                         <span class="badge badge-success">
                             <i class="fas fa-arrow-down mr-1"></i>{{ "%.0f"|format(valuation.margin_of_safety) }}% Margin of Safety
@@ -424,12 +478,12 @@
                         </span>
                         {% endif %}
                     </div>
-                    
                     <div class="mt-3 text-center">
                         <span class="badge {% if 'BUY' in valuation.verdict %}badge-success{% elif 'SELL' in valuation.verdict %}badge-danger{% else %}badge-warning{% endif %} p-2">
                             {{ valuation.verdict }}
                         </span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
