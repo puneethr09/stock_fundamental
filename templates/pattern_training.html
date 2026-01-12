@@ -627,25 +627,6 @@
         }
       }
 
-      function startTimer(seconds) {
-        startTime = Date.now();
-        let remaining = seconds;
-
-        timerInterval = setInterval(() => {
-          const minutes = Math.floor(remaining / 60);
-          const secs = remaining % 60;
-          $("#time-remaining").text(
-            `${minutes}:${secs.toString().padStart(2, "0")}`
-          );
-
-          if (remaining <= 0) {
-            clearInterval(timerInterval);
-            submitAttempt();
-          }
-          remaining--;
-        }, 1000);
-      }
-
       function submitAttempt() {
 
         const timeTaken = Math.round((Date.now() - startTime) / 1000);
@@ -733,23 +714,32 @@
         // Scroll back to chart
         $("#chart-container")[0].scrollIntoView({ behavior: "smooth", block: "center" });
         
+        // Helper to convert snake_case to Title Case
+        function formatPatternName(pattern) {
+          return pattern.replace(/_/g, ' ')
+                        .replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
         // Show educational message
         let walkthruHtml = `
-          <div class="alert alert-info mb-3">
+          <div class="alert alert-info mb-3" id="learning-mode-box">
             <h5>🎓 Learning Mode</h5>
             <p>The correct patterns for this exercise were:</p>
             <ul>
         `;
         
         currentExercise.expected_patterns.forEach((pattern) => {
-          // Highlight the pattern button
+          // Highlight the pattern button using data-pattern attribute
           const btn = $(`button[data-pattern="${pattern}"]`);
           if (btn.length) {
             btn.removeClass("btn-outline-primary btn-primary")
-               .addClass("btn-success")
-               .append(' ✓');
+               .addClass("btn-success");
+            // Only add checkmark if not already there
+            if (!btn.text().includes('✓')) {
+              btn.append(' ✓');
+            }
           }
-          walkthruHtml += `<li><strong>${pattern}</strong></li>`;
+          walkthruHtml += `<li><strong>${formatPatternName(pattern)}</strong></li>`;
         });
         
         walkthruHtml += `
@@ -758,8 +748,14 @@
           </div>
         `;
         
+        // Remove existing learning mode box if present
+        $("#learning-mode-box").remove();
+        
         // Prepend learning content to feedback
         $("#feedback-content").prepend(walkthruHtml);
+        
+        // Disable the Walk Me Through It button after use
+        $("button:contains('Walk Me Through It')").prop("disabled", true).text("✓ Patterns Revealed");
       }
 
       function startNewExercise() {

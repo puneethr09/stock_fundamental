@@ -995,6 +995,7 @@ def get_pattern_exercise():
                     "pattern_zones": exercise.pattern_zones,  # Fixed: using pattern_zones instead of interactive_zones
                     "difficulty": exercise.difficulty.value,
                     "pattern_type": pattern_type.value,
+                    "expected_patterns": exercise.expected_patterns,  # For Walk Me Through It feature
                 },
             }
         )
