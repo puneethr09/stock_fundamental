@@ -1359,15 +1359,48 @@ class PatternRecognitionTrainer:
         elif exercise.difficulty == ExerciseDifficulty.ASSISTED:
             self._add_assisted_overlays(fig, exercise.pattern_zones, chart_data)
 
-        # Configure layout
+        # Configure layout with clean light theme for readability
         fig.update_layout(
-            title=f"{exercise.title} - Click to Identify Patterns",
-            xaxis_title="Time Period",
-            yaxis_title="Metric Value",
+            title=dict(
+                text=f"<b>{exercise.title}</b>",
+                font=dict(size=14, color="#1a365d"),
+                x=0.5,
+                xanchor="center"
+            ),
+            xaxis=dict(
+                title=dict(text="Time Period", font=dict(color="#4a5568", size=11)),
+                tickangle=-45,
+                tickfont=dict(size=9, color="#4a5568"),
+                showgrid=True,
+                gridcolor="rgba(0,0,0,0.1)",
+                showline=True,
+                linecolor="#CBD5E0",
+                nticks=15,  # Show more ticks for clarity
+            ),
+            yaxis=dict(
+                title=dict(text="Metric Value", font=dict(color="#4a5568", size=11)),
+                tickfont=dict(size=9, color="#4a5568"),
+                showgrid=True,
+                gridcolor="rgba(0,0,0,0.1)",
+                showline=True,
+                linecolor="#CBD5E0",
+                zeroline=False,
+            ),
             hovermode="x unified",
             showlegend=True,
-            height=500,
-            margin=dict(t=60, b=40, l=60, r=40),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.25,  # Below chart
+                xanchor="center",
+                x=0.5,
+                font=dict(color="#2d3748", size=10),
+            ),
+            height=420,
+            margin=dict(t=60, b=100, l=60, r=60),  # More bottom margin for legend
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            font=dict(family="Inter, sans-serif"),
         )
 
         # Convert to JSON for frontend
@@ -1383,29 +1416,38 @@ class PatternRecognitionTrainer:
         }
 
     def _add_debt_analysis_traces(self, fig: go.Figure, chart_data: Dict[str, Any]):
-        """Add debt analysis traces to the figure"""
+        """Add debt analysis traces with premium styling"""
+        
+        # Premium color palette matching dark theme
+        colors = {
+            "debt": "#FF6B6B",      # Coral red
+            "coverage": "#4ECDC4",  # Teal
+            "current": "#45B7D1",   # Sky blue
+        }
 
-        # Debt-to-Equity ratio
+        # Debt-to-Equity ratio (primary metric)
         fig.add_trace(
             go.Scatter(
                 x=chart_data["quarters"],
                 y=chart_data["debt_to_equity"],
                 mode="lines+markers",
-                name="Debt-to-Equity Ratio",
-                line=dict(color="red", width=3),
-                marker=dict(size=8),
+                name="D/E Ratio",
+                line=dict(color=colors["debt"], width=2.5),
+                marker=dict(size=6, symbol="circle"),
+                fill="tozeroy",
+                fillcolor="rgba(255,107,107,0.1)",
             )
         )
 
-        # Interest Coverage
+        # Interest Coverage (secondary y-axis for scale)
         fig.add_trace(
             go.Scatter(
                 x=chart_data["quarters"],
                 y=chart_data["interest_coverage"],
                 mode="lines+markers",
                 name="Interest Coverage",
-                line=dict(color="blue", width=3),
-                marker=dict(size=8),
+                line=dict(color=colors["coverage"], width=2.5, dash="dot"),
+                marker=dict(size=6, symbol="diamond"),
                 yaxis="y2",
             )
         )
@@ -1417,28 +1459,31 @@ class PatternRecognitionTrainer:
                 y=chart_data["current_ratio"],
                 mode="lines+markers",
                 name="Current Ratio",
-                line=dict(color="green", width=3),
-                marker=dict(size=8),
-                yaxis="y3",
+                line=dict(color=colors["current"], width=2.5),
+                marker=dict(size=6, symbol="square"),
             )
         )
 
-        # Add reference lines
+        # Reference line with subtle styling
         fig.add_hline(
             y=1.5,
             line_dash="dash",
-            line_color="red",
-            annotation_text="Debt-to-Equity: 1.5 (Concern Level)",
+            line_color="rgba(255,107,107,0.5)",
+            annotation_text="⚠️ High Debt",
+            annotation_font=dict(size=10, color="#FF6B6B"),
+            annotation_position="right",
         )
 
-        # Configure multiple y-axes
+        # Simplified dual y-axis (just one secondary)
         fig.update_layout(
-            yaxis=dict(title="Debt-to-Equity Ratio", side="left"),
-            yaxis2=dict(
-                title="Interest Coverage", side="right", overlaying="y", position=0.95
+            yaxis=dict(
+                title=dict(text="D/E & Current Ratio", font=dict(color="#A0A0A0", size=11)),
             ),
-            yaxis3=dict(
-                title="Current Ratio", side="right", overlaying="y", position=1.0
+            yaxis2=dict(
+                title=dict(text="Interest Coverage", font=dict(color="#4ECDC4", size=11)),
+                side="right",
+                overlaying="y",
+                showgrid=False,
             ),
         )
 
@@ -1496,59 +1541,75 @@ class PatternRecognitionTrainer:
         )
 
     def _add_value_trap_traces(self, fig: go.Figure, chart_data: Dict[str, Any]):
-        """Add value trap analysis traces to the figure"""
+        """Add value trap analysis traces with premium styling"""
+        
+        # Premium color palette
+        colors = {
+            "pe": "#FFB347",        # Pastel orange
+            "pb": "#FF6B6B",        # Coral red  
+            "roe": "#77DD77",       # Pastel green
+        }
 
-        # P/E Ratio
+        # P/E Ratio (primary valuation metric)
         fig.add_trace(
             go.Scatter(
                 x=chart_data["quarters"],
                 y=chart_data["pe_ratio"],
                 mode="lines+markers",
                 name="P/E Ratio",
-                line=dict(color="orange", width=3),
-                marker=dict(size=8),
+                line=dict(color=colors["pe"], width=2.5),
+                marker=dict(size=6, symbol="circle"),
+                fill="tozeroy",
+                fillcolor="rgba(255,179,71,0.1)",
             )
         )
 
-        # P/B Ratio
+        # P/B Ratio (secondary valuation)
         fig.add_trace(
             go.Scatter(
                 x=chart_data["quarters"],
                 y=chart_data["pb_ratio"],
                 mode="lines+markers",
                 name="P/B Ratio",
-                line=dict(color="red", width=3),
-                marker=dict(size=8),
-                yaxis="y2",
+                line=dict(color=colors["pb"], width=2.5, dash="dot"),
+                marker=dict(size=6, symbol="diamond"),
             )
         )
 
-        # ROE for quality assessment
+        # ROE for quality assessment (use secondary axis)
         fig.add_trace(
             go.Scatter(
                 x=chart_data["quarters"],
                 y=chart_data["roe"],
                 mode="lines+markers",
                 name="ROE (%)",
-                line=dict(color="green", width=3),
-                marker=dict(size=8),
-                yaxis="y3",
+                line=dict(color=colors["roe"], width=2.5),
+                marker=dict(size=6, symbol="square"),
+                yaxis="y2",
             )
         )
 
-        # Add reference lines
+        # Reference line for low P/E
         fig.add_hline(
             y=10.0,
             line_dash="dash",
-            line_color="orange",
-            annotation_text="P/E: 10x (Low Valuation)",
+            line_color="rgba(255,179,71,0.5)",
+            annotation_text="📉 Low P/E Zone",
+            annotation_font=dict(size=10, color="#FFB347"),
+            annotation_position="right",
         )
 
-        # Configure multiple y-axes
+        # Simplified dual y-axis
         fig.update_layout(
-            yaxis=dict(title="P/E Ratio", side="left"),
-            yaxis2=dict(title="P/B Ratio", side="right", overlaying="y", position=0.95),
-            yaxis3=dict(title="ROE (%)", side="right", overlaying="y", position=1.0),
+            yaxis=dict(
+                title=dict(text="P/E & P/B Ratio", font=dict(color="#A0A0A0", size=11)),
+            ),
+            yaxis2=dict(
+                title=dict(text="ROE (%)", font=dict(color="#77DD77", size=11)),
+                side="right",
+                overlaying="y",
+                showgrid=False,
+            ),
         )
 
     def _add_guided_overlays(
