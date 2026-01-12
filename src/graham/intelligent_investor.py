@@ -97,17 +97,47 @@ class GrahamAnalyzer:
         """
         eps = self.data_engine.info.get("trailingEps", 0)
         
-        # Estimate growth rate from historical data if not provided
+        # Estimate growth rate from multiple sources, use the maximum
+        growth_source = "Default"
         if growth_rate is None:
-            # Use revenue growth as proxy for expected growth
+            growth_rates = {}
+            
+            # 1. Revenue CAGR (2-year)
             rev_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Total Revenue", 0)
             rev_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Total Revenue", 2)
+            if rev_prev and rev_prev > 0 and rev_curr and rev_curr > 0:
+                rev_cagr = ((rev_curr / rev_prev) ** 0.5 - 1) * 100
+                if rev_cagr > 0:
+                    growth_rates["Revenue CAGR"] = rev_cagr
             
-            if rev_prev and rev_prev > 0 and rev_curr:
-                cagr = ((rev_curr / rev_prev) ** 0.5 - 1) * 100
-                growth_rate = min(cagr, 15)  # Cap at 15% per Graham's conservatism
+            # 2. Operating Income CAGR (2-year) - often better indicator of true growth
+            op_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
+            op_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 2)
+            if op_prev and op_prev > 0 and op_curr and op_curr > 0:
+                op_cagr = ((op_curr / op_prev) ** 0.5 - 1) * 100
+                if op_cagr > 0:
+                    growth_rates["Operating Income CAGR"] = op_cagr
+            
+            # 3. Net Income CAGR (2-year)
+            ni_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 0)
+            ni_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 2)
+            if ni_prev and ni_prev > 0 and ni_curr and ni_curr > 0:
+                ni_cagr = ((ni_curr / ni_prev) ** 0.5 - 1) * 100
+                if ni_cagr > 0:
+                    growth_rates["Net Income CAGR"] = ni_cagr
+            
+            # 4. Analyst expected EPS growth (if available from yfinance)
+            analyst_growth = self.data_engine.info.get("earningsGrowth", 0)
+            if analyst_growth and analyst_growth > 0:
+                growth_rates["Analyst EPS Growth"] = analyst_growth * 100
+            
+            # Use maximum of available growth rates, capped at 15%
+            if growth_rates:
+                growth_source = max(growth_rates, key=growth_rates.get)
+                growth_rate = min(growth_rates[growth_source], 15.0)  # Cap at 15% per Graham
             else:
-                growth_rate = 5  # Conservative default
+                growth_rate = 5.0  # Conservative default
+                growth_source = "Default (5%)"
         
         if not eps or eps <= 0:
             return {
@@ -132,6 +162,7 @@ class GrahamAnalyzer:
             "inputs": {
                 "EPS": round(eps, 2),
                 "growth_rate_g": f"{growth_rate:.1f}%",
+                "growth_source": growth_source,
                 "bond_yield_Y": f"{aaa_bond_yield:.1f}%"
             },
             "current_price": current_price,
