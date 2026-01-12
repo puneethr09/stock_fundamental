@@ -29,6 +29,25 @@ class ValuationAnalyzer:
         "communication services": 0.005,
     }
     
+    # Sector-specific valuation multiples (Jan 2026 India market data)
+    # Sources: NSE India, Trendlyne, Screener.in
+    SECTOR_MULTIPLES = {
+        "consumer defensive": {"pe": 42, "ev_ebitda": 28, "pb": 10},    # FMCG premium
+        "consumer cyclical": {"pe": 35, "ev_ebitda": 18, "pb": 5},      # Retail/Auto
+        "financial services": {"pe": 16, "ev_ebitda": None, "pb": 2.2}, # Banks (PE only)
+        "technology": {"pe": 27, "ev_ebitda": 18, "pb": 7},             # IT Services
+        "healthcare": {"pe": 35, "ev_ebitda": 20, "pb": 5},             # Pharma
+        "industrials": {"pe": 25, "ev_ebitda": 14, "pb": 4},            # Capital Goods
+        "energy": {"pe": 12, "ev_ebitda": 7, "pb": 1.5},                # O&G lower
+        "basic materials": {"pe": 15, "ev_ebitda": 8, "pb": 2},         # Metals/Mining
+        "utilities": {"pe": 18, "ev_ebitda": 10, "pb": 2},              # Power
+        "real estate": {"pe": 25, "ev_ebitda": 15, "pb": 2.5},          # Realty
+        "communication services": {"pe": 30, "ev_ebitda": 12, "pb": 4}, # Telecom/Media
+    }
+    
+    # Fallback for unknown sectors
+    DEFAULT_MULTIPLES = {"pe": 23, "ev_ebitda": 12, "pb": 3}  # Nifty 50 avg
+    
     def __init__(self, ticker):
         self.data_engine = SmartDataEngine(ticker)
         # India-specific base parameters (EY India CoE Survey 2024)
@@ -241,6 +260,164 @@ class ValuationAnalyzer:
             "model_type": data["model_type"],
             "margin_of_safety": margin_of_safety,
             "verdict": verdict
+        }
+    
+    def calculate_relative_value(self):
+        """
+        Calculate relative value using sector-specific multiples.
+        Combines P/E based value and EV/EBITDA based value.
+        
+        Returns fair value per share based on comparable sector multiples.
+        """
+        if not self.data_engine.has_data:
+            return None
+            
+        sector = self.data_engine.info.get("sector", "").lower()
+        multiples = self.SECTOR_MULTIPLES.get(sector, self.DEFAULT_MULTIPLES)
+        
+        # Get current metrics
+        eps = self.data_engine.info.get("trailingEps", 0)
+        current_price = self.data_engine.info.get("currentPrice", 0)
+        shares = self.data_engine.info.get("sharesOutstanding", 0)
+        book_value = self.data_engine.info.get("bookValue", 0)
+        
+        # Get EBITDA for EV/EBITDA valuation
+        ebit = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
+        depreciation = abs(self.data_engine.get_financials_safe(
+            self.data_engine.cashflow, "Depreciation And Amortization", 0) or 0)
+        ebitda = (ebit or 0) + depreciation
+        
+        # Get debt and cash for enterprise value calculation
+        debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0) or 0
+        cash = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Cash And Cash Equivalents", 0) or 0
+        net_debt = debt - cash
+        
+        values = []
+        methods_used = []
+        
+        # 1. P/E Based Value
+        if eps and eps > 0 and multiples.get("pe"):
+            sector_pe = multiples["pe"]
+            
+            # Adjust P/E based on company's growth vs sector average
+            # Higher growth = higher deserved P/E
+            op_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
+            op_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 2)
+            company_growth = 0.06  # Default 6%
+            if op_prev and op_prev > 0 and op_curr:
+                company_growth = max(0.02, min((op_curr / op_prev) ** 0.5 - 1, 0.25))
+            
+            # Sector average growth assumed ~8-10%
+            growth_adjustment = (company_growth / 0.08)  # Above 1 = premium, below 1 = discount
+            growth_adjustment = max(0.7, min(growth_adjustment, 1.4))  # Cap adjustment ±40%
+            
+            fair_pe = sector_pe * growth_adjustment
+            pe_fair_value = eps * fair_pe
+            values.append(pe_fair_value)
+            methods_used.append(f"P/E: {fair_pe:.1f}x → ₹{pe_fair_value:.0f}")
+        
+        # 2. EV/EBITDA Based Value
+        if ebitda and ebitda > 0 and shares > 0 and multiples.get("ev_ebitda"):
+            sector_ev_ebitda = multiples["ev_ebitda"]
+            
+            # Calculate implied enterprise value
+            fair_ev = ebitda * sector_ev_ebitda
+            
+            # Convert to equity value (EV - Net Debt = Equity)
+            fair_equity = fair_ev - net_debt
+            ev_fair_value = fair_equity / shares
+            
+            if ev_fair_value > 0:
+                values.append(ev_fair_value)
+                methods_used.append(f"EV/EBITDA: {sector_ev_ebitda}x → ₹{ev_fair_value:.0f}")
+        
+        # 3. P/B Based Value (for financials or as sanity check)
+        if book_value and book_value > 0 and multiples.get("pb"):
+            sector_pb = multiples["pb"]
+            pb_fair_value = book_value * sector_pb
+            
+            # For non-financials, give lower weight to P/B
+            if "financial" in sector:
+                values.append(pb_fair_value)
+                methods_used.append(f"P/B: {sector_pb}x → ₹{pb_fair_value:.0f}")
+        
+        if not values:
+            return {"value": None, "note": "Insufficient data for relative valuation"}
+        
+        # Calculate weighted average (equal weights for available methods)
+        relative_value = sum(values) / len(values)
+        
+        return {
+            "value": round(relative_value, 2),
+            "methods": methods_used,
+            "sector": sector.title() if sector else "Unknown",
+            "sector_multiples": multiples,
+            "current_price": current_price,
+            "upside": round((relative_value - current_price) / current_price * 100, 1) if current_price > 0 else 0
+        }
+    
+    def get_combined_intrinsic_value(self):
+        """
+        Calculate combined intrinsic value using AlphaSpread-like methodology:
+        Intrinsic Value = (DCF Value × 40%) + (Relative Value × 60%)
+        
+        This balances fundamental cash flow analysis with market-based comparables
+        for a more realistic and stable valuation.
+        """
+        # Get DCF value (Base case)
+        dcf_data = self.get_valuation_scenarios()
+        dcf_value = 0
+        if dcf_data and "scenarios" in dcf_data:
+            dcf_value = dcf_data["scenarios"].get("Base", {}).get("value", 0)
+        
+        # Get Relative value
+        relative_data = self.calculate_relative_value()
+        relative_value = relative_data.get("value", 0) if relative_data else 0
+        
+        current_price = self.data_engine.info.get("currentPrice", 0)
+        
+        # Calculate combined value
+        # Weight: 40% DCF (fundamental) + 60% Relative (market-based)
+        # If one method fails, use the other 100%
+        if dcf_value and dcf_value > 0 and relative_value and relative_value > 0:
+            combined_value = (dcf_value * 0.4) + (relative_value * 0.6)
+            weighting = "DCF 40% + Relative 60%"
+        elif dcf_value and dcf_value > 0:
+            combined_value = dcf_value
+            weighting = "DCF 100% (Relative unavailable)"
+        elif relative_value and relative_value > 0:
+            combined_value = relative_value
+            weighting = "Relative 100% (DCF unavailable)"
+        else:
+            return {"value": None, "note": "Insufficient data for valuation"}
+        
+        # Determine verdict
+        verdict = "HOLD"
+        margin_of_safety = 0
+        if combined_value > 0 and current_price > 0:
+            if current_price < combined_value:
+                margin_of_safety = ((combined_value - current_price) / combined_value) * 100
+                if margin_of_safety > 25:
+                    verdict = "UNDERVALUED"
+                else:
+                    verdict = "FAIRLY VALUED"
+            else:
+                premium = ((current_price - combined_value) / combined_value) * 100
+                if premium > 25:
+                    verdict = "OVERVALUED"
+                else:
+                    verdict = "FAIRLY VALUED"
+        
+        return {
+            "combined_value": round(combined_value, 2),
+            "dcf_value": round(dcf_value, 2) if dcf_value else None,
+            "relative_value": round(relative_value, 2) if relative_value else None,
+            "weighting": weighting,
+            "current_price": current_price,
+            "margin_of_safety": round(margin_of_safety, 1),
+            "verdict": verdict,
+            "relative_methods": relative_data.get("methods", []) if relative_data else [],
+            "model_type": dcf_data.get("model_type", "Unknown") if dcf_data else "Relative Only"
         }
     
     def calculate_epv(self):
