@@ -10,12 +10,38 @@ class SmartDataEngine:
     """
     
     def __init__(self, ticker):
+        import time
         self.ticker_symbol = ticker
         self.ticker = yf.Ticker(ticker)
-        self.info = self.ticker.info
-        self.financials = self.ticker.financials
-        self.balance_sheet = self.ticker.balance_sheet
-        self.cashflow = self.ticker.cashflow
+        
+        # Retry logic for fetching data (handles rate limits globally)
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                self.info = self.ticker.info or {}
+                self.financials = self.ticker.financials
+                self.balance_sheet = self.ticker.balance_sheet
+                self.cashflow = self.ticker.cashflow
+                break
+            except Exception as e:
+                error_str = str(e)
+                if "Rate" in error_str or "Too Many" in error_str:
+                    wait_time = (attempt + 1) * 2
+                    print(f"[SmartDataEngine] Rate limited on {ticker}. Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    if attempt == max_retries - 1:
+                        print(f"[SmartDataEngine] Failed to fetch data for {ticker} after retries.")
+                        self.info = {}
+                        self.financials = pd.DataFrame()
+                        self.balance_sheet = pd.DataFrame()
+                        self.cashflow = pd.DataFrame()
+                else:
+                    print(f"[SmartDataEngine] Error fetching {ticker}: {e}")
+                    self.info = {}
+                    self.financials = pd.DataFrame()
+                    self.balance_sheet = pd.DataFrame()
+                    self.cashflow = pd.DataFrame()
+                    break
         
         # Ensure dataframes are not empty and handle safely
         self.has_data = not (self.financials.empty or self.balance_sheet.empty or self.cashflow.empty)

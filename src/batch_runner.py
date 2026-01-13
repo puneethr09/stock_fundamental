@@ -88,7 +88,7 @@ def load_all_stocks(input_dir: str = "input") -> List[Dict]:
     return all_stocks
 
 
-def analyze_stock(stock: Dict, delay: float = 1.5) -> Dict:
+def analyze_stock(stock: Dict, delay: float = 2.0) -> Dict:
     """Run full analysis on a single stock with rate limiting"""
     import time
     ticker = stock["ticker"]
@@ -280,7 +280,7 @@ def main():
     parser = argparse.ArgumentParser(description="Batch Stock Analysis Runner")
     parser.add_argument("--input", type=str, help="Specific CSV file to process")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of stocks (for testing)")
-    parser.add_argument("--workers", type=int, default=2, help="Number of parallel workers (keep low to avoid rate limits)")
+    parser.add_argument("--workers", type=int, default=1, help="Number of parallel workers (keep low to avoid rate limits)")
     parser.add_argument("--output", type=str, default="data", help="Output directory")
     
     args = parser.parse_args()

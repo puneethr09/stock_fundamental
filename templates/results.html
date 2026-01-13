@@ -34,6 +34,17 @@
         <div class="mb-2 mb-md-0">
             <span class="badge badge-secondary mb-2">{{ sector_analysis.sector }}</span>
             <h1 class="mb-0" style="font-size: 1.8rem;">{{ company_name }} <small class="text-muted" style="font-size: 0.5em;">{{ ticker }}</small></h1>
+            {% if valuation.current_price %}
+            <div style="font-size: 1.2rem; margin-top: 0.25rem;">
+                <strong>₹{{ valuation.current_price }}</strong>
+                {% if valuation.price_change is defined %}
+                    <span class="ml-2 {% if valuation.price_change >= 0 %}text-success{% else %}text-danger{% endif %}" style="font-size: 0.9rem;">
+                        <i class="fas fa-caret-{% if valuation.price_change >= 0 %}up{% else %}down{% endif %}"></i>
+                        ₹{{ valuation.price_change|abs }} ({{ valuation.price_change_percent|abs }}%)
+                    </span>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         <form action="/analyze" method="POST" class="position-relative" autocomplete="off" style="min-width: 250px;">
             <div class="input-group">
@@ -448,6 +459,7 @@
                     
                     {% else %}
                     <!-- Fallback: Old DCF-only display -->
+                    {% if valuation.scenarios %}
                     <div class="text-center mb-3">
                         <small class="text-muted text-uppercase">{{ valuation.model_type }} Model</small>
                     </div>
@@ -465,6 +477,11 @@
                             <h5 class="text-success mb-0">₹{{ "%.0f"|format(valuation.scenarios.Optimistic.value) }}</h5>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="text-center mb-3 text-muted">
+                        <small>Valuation data unavailable (Insufficient financial data)</small>
+                    </div>
+                    {% endif %}
                     <div class="text-center py-3" style="background: rgba(255,255,255,0.03); border-radius: 8px;">
                         <small class="text-muted d-block">Current Price</small>
                         <h5 class="mb-2">₹{{ valuation.current_price }}</h5>

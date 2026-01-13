@@ -589,14 +589,14 @@ def stop_batch_analysis():
             
         pid = int(content)
         
-        # Kill the process
-        os.kill(pid, signal.SIGTERM)
+        # Kill the process forcefully
+        os.kill(pid, signal.SIGKILL)
         
         # Remove lock file
         if os.path.exists(lock_file):
             os.remove(lock_file)
             
-        return jsonify({"success": True, "message": "Analysis stopped"})
+        return jsonify({"success": True, "message": "Analysis stopped (force killed)"})
     except ProcessLookupError:
         # Process already dead
         if os.path.exists(lock_file):
@@ -684,7 +684,8 @@ def analyze_ticker(ticker=None):
             ten_minute_test={"passed": False, "overall_verdict": "ERROR", "checklist": []}, # Safety mocks
             moat_analysis={"moat_rating": "Error", "details": []},
             financial_health={"health_rating": "Error", "red_flags": [], "checks": []},
-            valuation={"intrinsic_value": 0, "current_price": 0, "margin_of_safety": 0, "verdict": "Error"},
+            valuation={"intrinsic_value": 0, "current_price": 0, "margin_of_safety": 0, "verdict": "Error", "model_type": "N/A"},
+            scorecard={"total_score": 0, "recommendation": "ERROR", "confidence": "None"},
             sector_analysis={"sector": "Error", "insights": []}
         )
 

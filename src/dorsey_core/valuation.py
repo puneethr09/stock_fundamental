@@ -355,8 +355,14 @@ class ValuationAnalyzer:
                 else:
                     verdict = "HOLD (Premium)"
                     
+        previous_close = self.data_engine.info.get("previousClose", 0)
+        change = current_price - previous_close if previous_close and current_price else 0
+        change_p = (change / previous_close) * 100 if previous_close else 0
+
         return {
             "current_price": current_price,
+            "price_change": round(change, 2),
+            "price_change_percent": round(change_p, 2),
             "intrinsic_value": base_val, # For backward compatibility in simple views
             "scenarios": data["scenarios"],
             "model_type": data["model_type"],
