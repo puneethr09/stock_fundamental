@@ -214,6 +214,22 @@
                     No data yet — run batch analysis first
                 {% endif %}
             </p>
+            
+            <!-- Run Now Button -->
+            <div style="margin-top: 1rem;">
+                {% if batch_running %}
+                <button id="runBatchBtn" class="run-batch-btn" disabled style="opacity: 0.7;">
+                    <i class="fas fa-spinner fa-spin"></i> Analysis Running...
+                </button>
+                {% else %}
+                <button id="runBatchBtn" class="run-batch-btn" onclick="runBatchAnalysis()">
+                    <i class="fas fa-play"></i> Run Analysis Now
+                </button>
+                {% endif %}
+                <p style="font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem;">
+                    Auto-runs daily at 6:00 PM IST
+                </p>
+            </div>
         </div>
         
         <!-- Ranking Tabs -->
@@ -307,5 +323,48 @@ python -m src.batch_runner             # Full run (500+ stocks)
     </div>
     
     {% include '_footer.html' %}
+    
+    <script>
+    async function runBatchAnalysis() {
+        const btn = document.getElementById('runBatchBtn');
+        const originalHTML = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+        
+        try {
+            const response = await fetch('/rankings/run', { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.success) {
+                btn.innerHTML = '<i class="fas fa-clock"></i> Running (~15 min)';
+                btn.style.opacity = '0.7';
+                
+                // Show notification
+                alert('Batch analysis started! This will take about 15 minutes for 500 stocks. Page will auto-refresh when done.');
+                
+                // Poll for completion
+                const pollInterval = setInterval(async () => {
+                    const checkResponse = await fetch('/rankings');
+                    const checkData = await checkResponse.text();
+                    
+                    // Check if no longer running (lock file removed)
+                    if (!checkData.includes('Analysis Running')) {
+                        clearInterval(pollInterval);
+                        window.location.reload();
+                    }
+                }, 30000); // Check every 30 seconds
+            } else {
+                alert(data.message || 'Failed to start batch analysis');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    }
+    </script>
 </body>
 </html>

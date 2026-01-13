@@ -79,6 +79,66 @@ pattern_trainer = PatternRecognitionTrainer()
 tool_trainer = ToolIndependenceTrainer()
 
 
+# ============================================================
+# SCHEDULED BATCH ANALYSIS (6 PM IST Daily)
+# ============================================================
+def scheduled_batch_run():
+    """Run batch analysis at scheduled time"""
+    import subprocess
+    lock_file = os.path.join(os.path.dirname(__file__), "data", ".batch_running")
+    
+    if os.path.exists(lock_file):
+        print("[SCHEDULER] Batch already running, skipping...")
+        return
+    
+    print("[SCHEDULER] Starting scheduled batch analysis at 6 PM IST")
+    try:
+        with open(lock_file, 'w') as f:
+            f.write("running")
+        
+        subprocess.run(
+            ["python", "-m", "src.batch_runner"],
+            cwd=os.path.dirname(__file__),
+            capture_output=True
+        )
+        print("[SCHEDULER] Batch analysis completed")
+    except Exception as e:
+        print(f"[SCHEDULER] Error: {e}")
+    finally:
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+
+
+def start_scheduler():
+    """Start background scheduler thread"""
+    import threading
+    import time
+    from datetime import datetime
+    
+    def scheduler_loop():
+        last_run_date = None
+        while True:
+            now = datetime.now()
+            current_time = now.strftime("%H:%M")
+            current_date = now.strftime("%Y-%m-%d")
+            
+            # Run at 18:00 (6 PM) if not already run today
+            if current_time == "18:00" and last_run_date != current_date:
+                last_run_date = current_date
+                print(f"[SCHEDULER] Triggering 6 PM batch run on {current_date}")
+                scheduled_batch_run()
+            
+            time.sleep(60)  # Check every minute
+    
+    thread = threading.Thread(target=scheduler_loop, daemon=True)
+    thread.start()
+    print("[SCHEDULER] Batch scheduler started (6 PM IST daily)")
+
+
+# Start scheduler when app loads
+start_scheduler()
+
+
 def get_company_financial_data(ticker):
     """Fetch real-time financial data for a company using yfinance API"""
     try:
@@ -443,13 +503,54 @@ def rankings():
     else:  # Default: composite_score
         stocks = sorted(stocks, key=lambda x: x.get("composite_score", 0), reverse=True)
     
+    # Check if batch is currently running
+    batch_running = os.path.exists(os.path.join(os.path.dirname(__file__), "data", ".batch_running"))
+    
     return render_template(
         "rankings.html",
         stocks=stocks,
         total_stocks=rankings_data.get("total_stocks", len(stocks)),
         generated_at=rankings_data.get("generated_at"),
         current_sort=sort_by,
+        batch_running=batch_running,
     )
+
+
+@app.route("/rankings/run", methods=["POST"])
+def run_batch_analysis():
+    """Trigger batch analysis manually"""
+    import subprocess
+    import threading
+    
+    def run_batch():
+        lock_file = os.path.join(os.path.dirname(__file__), "data", ".batch_running")
+        try:
+            # Create lock file
+            with open(lock_file, 'w') as f:
+                f.write("running")
+            
+            # Run batch analysis
+            subprocess.run(
+                ["python", "-m", "src.batch_runner"],
+                cwd=os.path.dirname(__file__),
+                capture_output=True
+            )
+        finally:
+            # Remove lock file
+            if os.path.exists(lock_file):
+                os.remove(lock_file)
+    
+    # Check if already running
+    lock_file = os.path.join(os.path.dirname(__file__), "data", ".batch_running")
+    if os.path.exists(lock_file):
+        return jsonify({"success": False, "message": "Batch analysis already running"})
+    
+    # Start in background thread
+    thread = threading.Thread(target=run_batch)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"success": True, "message": "Batch analysis started"})
 
 
 @app.route("/")
