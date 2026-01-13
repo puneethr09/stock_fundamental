@@ -32,7 +32,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE),
+        logging.FileHandler(LOG_FILE, mode='w'),  # Clear log file on each run
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -220,14 +220,13 @@ def run_batch_analysis(stocks: List[Dict], max_workers: int = 5) -> List[Dict]:
                 else:
                     status = "✅"
                 
-                # Progress update every 10 stocks
-                if completed % 10 == 0 or completed == total:
-                    elapsed = (datetime.now() - start_time).seconds
-                    rate = completed / max(elapsed, 1)
-                    remaining = (total - completed) / max(rate, 0.1)
-                    logger.info(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
-                          f"Score: {result.get('dorsey_score', 0):>3} | "
-                          f"ETA: {remaining:.0f}s")
+                # Log every stock
+                elapsed = (datetime.now() - start_time).seconds
+                rate = completed / max(elapsed, 1)
+                remaining = (total - completed) / max(rate, 0.1)
+                logger.info(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
+                      f"Score: {result.get('dorsey_score', 0):>3} | "
+                      f"ETA: {remaining:.0f}s")
                     
             except Exception as e:
                 errors += 1
