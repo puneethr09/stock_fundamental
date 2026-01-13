@@ -28,7 +28,20 @@ class SmartDataEngine:
         fin_curr = self.info.get("financialCurrency", "INR")
         
         if price_curr == "INR" and fin_curr == "USD":
-            self.fx_rate = 84.0 # Approximate USD to INR rate
+            # Sanity check: Many Indian IT companies report in USD but yfinance returns INR numbers
+            # If Revenue > 500 Billion (50,000 Crores), it's likely already in INR
+            # (Largest Indian IT company TCS is ~$30B Revenue = 2.5 Lakh Crore INR)
+            try:
+                if "Total Revenue" in self.financials.index:
+                    rev = self.financials.loc["Total Revenue"].iloc[0]
+                    if rev > 500_000_000_000:  # > 500 Billion
+                        self.fx_rate = 1.0
+                    else:
+                        self.fx_rate = 84.0
+                else:
+                    self.fx_rate = 84.0
+            except:
+                self.fx_rate = 84.0
             
     def get_financials_safe(self, df, key, year_idx=0):
         """Safely retrieve a value from a DataFrame row (key) and column (year_idx)."""

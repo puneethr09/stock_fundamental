@@ -73,6 +73,7 @@ def load_all_stocks(input_dir: str = "input") -> List[Dict]:
         "Indian_stocks_nifty_large_midcap_250.csv",
         "Indian_stocks_nifty_midcap_100.csv",
         "Indian_stocks_nifty_smallcap_250.csv",
+        "Indian_stocks_all_market.csv",
     ]
     
     for csv_file in csv_files:
