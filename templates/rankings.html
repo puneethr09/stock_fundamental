@@ -67,7 +67,8 @@
             background: var(--card-bg);
             border-radius: 12px;
             border: 1px solid var(--border);
-            overflow: hidden;
+            overflow-x: auto; /* Scrollable on mobile */
+            -webkit-overflow-scrolling: touch;
         }
         
         .rankings-table {
@@ -193,10 +194,78 @@
             font-weight: 600;
         }
         
+        /* Mobile Responsive Fixes */
+        .table-responsive-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
         @media (max-width: 768px) {
-            .rankings-table th:nth-child(n+5),
-            .rankings-table td:nth-child(n+5) {
-                display: none;
+            .rankings-container {
+                padding: 1rem;
+            }
+            
+            .rankings-header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .ranking-tabs {
+                gap: 0.3rem;
+            }
+            
+            .ranking-tab {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .ranking-tab i {
+                display: none; /* Hide icons on mobile tabs */
+            }
+            
+            .rankings-table {
+                font-size: 0.85rem;
+                min-width: 600px; /* Force scroll on narrow screens */
+            }
+            
+            .rankings-table th,
+            .rankings-table td {
+                padding: 0.5rem 0.4rem;
+            }
+            
+            .rank-badge {
+                width: 26px;
+                height: 26px;
+                font-size: 0.75rem;
+            }
+            
+            .stock-name {
+                font-size: 0.85rem;
+            }
+            
+            .view-btn {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            .run-batch-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .rankings-container {
+                padding: 0.5rem;
+            }
+            
+            .rankings-header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .ranking-tab {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.75rem;
             }
         }
     </style>

@@ -583,13 +583,100 @@ input:focus, select:focus, textarea:focus {
     }
     
     .score-circle {
-        width: 100px;
-        height: 100px;
+        width: 80px;
+        height: 80px;
     }
     
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
+    .score-circle span[style*="font-size: 2rem"] {
+        font-size: 1.5rem !important;
+    }
+    
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.1rem; }
+    h4 { font-size: 1rem; }
+    
+    /* Tighter card padding on mobile */
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* Metric cards - smaller on mobile */
+    .metric-card {
+        padding: 0.6rem;
+    }
+    
+    .metric-value {
+        font-size: 1.2rem;
+    }
+    
+    .metric-label {
+        font-size: 0.7rem;
+    }
+    
+    /* Section headers tighter */
+    .section-header {
+        margin: 1rem 0 0.5rem 0;
+        padding-bottom: 0.5rem;
+    }
+    
+    .section-header h3 {
+        font-size: 1rem;
+    }
+    
+    /* Badges smaller */
+    .badge {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+    
+    /* Buttons smaller */
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+    
+    /* Home nav button smaller */
+    .home-nav {
+        width: 48px;
+        height: 48px;
+        bottom: 16px;
+        right: 16px;
+    }
+    
+    .home-nav i {
+        font-size: 1rem;
+    }
+    
+    /* Container padding */
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 1rem; }
+    
+    .score-circle {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .card-body {
+        padding: 0.5rem;
+    }
+    
+    .metric-value {
+        font-size: 1rem;
+    }
+    
+    .info-tooltip .tooltip-content {
+        width: 220px;
+        font-size: 12px;
+    }
 }
 
 /* ============== UTILITIES ============== */
