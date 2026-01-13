@@ -26,7 +26,7 @@ class SmartDataEngine:
             except Exception as e:
                 error_str = str(e)
                 if "Rate" in error_str or "Too Many" in error_str:
-                    wait_time = (attempt + 1) * 2
+                    wait_time = 20 + (attempt * 5)  # 20s, 25s, 30s
                     print(f"[SmartDataEngine] Rate limited on {ticker}. Retrying in {wait_time}s...")
                     time.sleep(wait_time)
                     if attempt == max_retries - 1:

@@ -186,52 +186,71 @@ def _health_to_score(health_rating: str) -> int:
     return 1
 
 
-def run_batch_analysis(stocks: List[Dict], max_workers: int = 5) -> List[Dict]:
-    """Run analysis on all stocks with progress tracking"""
+def run_batch_analysis(stocks: List[Dict], max_workers: int = 1) -> List[Dict]:
+    """Run analysis on all stocks sequentially (safest for rate limits)"""
+    import time
+    
     results = []
     total = len(stocks)
     completed = 0
     errors = 0
+    consecutive_errors = 0
     
     logger.info("=" * 60)
-    logger.info(f"Starting batch analysis of {total} stocks")
+    logger.info(f"Starting SEQUENTIAL batch analysis of {total} stocks")
+    logger.info("Strategy: Single Worker | 2.0s Delay | 30s Pause per 50 | 5min Cooldown on 5 Errors")
     logger.info("=" * 60)
     
     start_time = datetime.now()
     
-    # Use ThreadPoolExecutor for parallel processing
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_stock = {
-            executor.submit(analyze_stock, stock): stock 
-            for stock in stocks
-        }
-        
-        for future in as_completed(future_to_stock):
-            stock = future_to_stock[future]
-            completed += 1
+    for i, stock in enumerate(stocks):
+        # 1. Chunk Pause (Every 50 stocks)
+        if i > 0 and i % 50 == 0:
+            logger.info("=" * 40)
+            logger.info(f"☕ Taking a 30s break (Chunk {i}) to cool down API...")
+            logger.info("=" * 40)
+            time.sleep(30)
             
-            try:
-                result = future.result()
-                results.append(result)
-                
-                if result.get("error"):
-                    errors += 1
-                    status = "❌"
-                else:
-                    status = "✅"
-                
-                # Log every stock
-                elapsed = (datetime.now() - start_time).seconds
-                rate = completed / max(elapsed, 1)
-                remaining = (total - completed) / max(rate, 0.1)
-                logger.info(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
-                      f"Score: {result.get('dorsey_score', 0):>3} | "
-                      f"ETA: {remaining:.0f}s")
-                    
-            except Exception as e:
+            # Incremental Save (safety against crashes)
+            save_results(results, output_dir=os.path.join(os.path.dirname(__file__), "..", "data"))
+        
+        # 2. Consecutive Error Cooldown
+        if consecutive_errors >= 5:
+            logger.warning("=" * 40)
+            logger.warning("⚠️ High Error Rate (5 consecutive). Pausing for 5 minutes...")
+            logger.warning("=" * 40)
+            time.sleep(300)
+            consecutive_errors = 0 # Reset to try again
+        
+        # Run Analysis
+        completed += 1
+        try:
+            result = analyze_stock(stock)
+            results.append(result)
+            
+            if result.get("error"):
                 errors += 1
-                print(f"[{completed}/{total}] ❌ {stock['ticker']} - Failed: {e}")
-    
+                consecutive_errors += 1
+                status = "❌"
+            else:
+                consecutive_errors = 0 # Success resets counter
+                status = "✅"
+            
+            # Log progress
+            elapsed = (datetime.now() - start_time).seconds
+            rate = completed / max(elapsed, 1)
+            remaining = (total - completed) / max(rate, 0.1)
+            remaining_min = remaining / 60
+            
+            logger.info(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
+                  f"Score: {result.get('dorsey_score', 0):>3} | "
+                  f"ETA: {remaining_min:.1f}m")
+                
+        except Exception as e:
+            errors += 1
+            consecutive_errors += 1
+            print(f"[{completed}/{total}] ❌ {stock['ticker']} - Critical Fail: {e}")
+            
     end_time = datetime.now()
     duration = (end_time - start_time).seconds
     
