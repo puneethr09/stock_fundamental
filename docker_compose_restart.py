@@ -33,7 +33,47 @@ def ensure_docker_permissions():
     )
 
 
+def fix_docker_dns():
+    """Configure Docker to use Google DNS to avoid Tailscale MagicDNS issues during build"""
+    print("Checking Docker DNS configuration...")
+    daemon_path = "/etc/docker/daemon.json"
+    dns_config = '{\n  "dns": ["8.8.8.8", "8.8.4.4"]\n}'
+    
+    # Check if needs update (simple check)
+    needs_update = True
+    if os.path.exists(daemon_path):
+        try:
+             # Need sudo to read? logical check first.
+             # We will just overwrite if it doesn't look right or force it.
+             # But let's verify if we can read it.
+             result = subprocess.run(f"sudo cat {daemon_path}", shell=True, capture_output=True, text=True)
+             if result.returncode == 0:
+                 content = result.stdout
+                 if '"dns":' in content and '8.8.8.8' in content:
+                     print("Docker DNS already configured.")
+                     needs_update = False
+        except Exception as e:
+             print(f"Error checking daemon.json: {e}")
+             
+    if needs_update:
+        print("Configuring Docker to use Google DNS (fixing Tailscale conflict)...")
+        # Ensure directory exists
+        run_command("sudo mkdir -p /etc/docker")
+        
+        # Write config using tee (sudo)
+        # Use simple echo to avoid string escape hell
+        cmd = f"echo '{dns_config}' | sudo tee {daemon_path}"
+        run_command(cmd)
+        
+        # Restart docker
+        print("Restarting Docker to apply DNS changes...")
+        run_command("sudo systemctl restart docker")
+        import time
+        time.sleep(5) # Wait for Docker to restart
+
+
 def main():
+    fix_docker_dns()
     ensure_docker_permissions()
 
     # Start SSH agent and add key
