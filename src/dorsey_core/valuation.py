@@ -32,27 +32,129 @@ class ValuationAnalyzer:
     # Sector-specific valuation multiples (Jan 2026 India market data)
     # Sources: NSE India, Trendlyne, Screener.in
     SECTOR_MULTIPLES = {
-        "consumer defensive": {"pe": 42, "ev_ebitda": 28, "pb": 10},    # FMCG premium
-        "consumer cyclical": {"pe": 35, "ev_ebitda": 18, "pb": 5},      # Retail/Auto
-        "financial services": {"pe": 16, "ev_ebitda": None, "pb": 2.2}, # Banks (PE only)
-        "technology": {"pe": 27, "ev_ebitda": 18, "pb": 7},             # IT Services
-        "healthcare": {"pe": 35, "ev_ebitda": 20, "pb": 5},             # Pharma
-        "industrials": {"pe": 25, "ev_ebitda": 14, "pb": 4},            # Capital Goods
-        "energy": {"pe": 12, "ev_ebitda": 7, "pb": 1.5},                # O&G lower
-        "basic materials": {"pe": 15, "ev_ebitda": 8, "pb": 2},         # Metals/Mining
-        "utilities": {"pe": 18, "ev_ebitda": 10, "pb": 2},              # Power
-        "real estate": {"pe": 25, "ev_ebitda": 15, "pb": 2.5},          # Realty
-        "communication services": {"pe": 30, "ev_ebitda": 12, "pb": 4}, # Telecom/Media
+        "consumer defensive": {"pe": 42, "ev_ebitda": 28, "pb": 10, "ps": 5},    # FMCG premium
+        "consumer cyclical": {"pe": 35, "ev_ebitda": 18, "pb": 5, "ps": 2},       # Retail/Auto
+        "financial services": {"pe": 16, "ev_ebitda": None, "pb": 2.2, "ps": 3},  # Banks (PE only)
+        "technology": {"pe": 27, "ev_ebitda": 18, "pb": 7, "ps": 4},              # IT Services
+        "healthcare": {"pe": 35, "ev_ebitda": 20, "pb": 5, "ps": 4},              # Pharma
+        "industrials": {"pe": 25, "ev_ebitda": 14, "pb": 4, "ps": 2},             # Capital Goods
+        "energy": {"pe": 12, "ev_ebitda": 7, "pb": 1.5, "ps": 1},                 # O&G lower
+        "basic materials": {"pe": 15, "ev_ebitda": 8, "pb": 2, "ps": 1.5},        # Metals/Mining
+        "utilities": {"pe": 18, "ev_ebitda": 10, "pb": 2, "ps": 2},               # Power
+        "real estate": {"pe": 25, "ev_ebitda": 15, "pb": 2.5, "ps": 3},           # Realty
+        "communication services": {"pe": 30, "ev_ebitda": 12, "pb": 4, "ps": 3},  # Telecom/Media
     }
     
     # Fallback for unknown sectors
-    DEFAULT_MULTIPLES = {"pe": 23, "ev_ebitda": 12, "pb": 3}  # Nifty 50 avg
+    DEFAULT_MULTIPLES = {"pe": 23, "ev_ebitda": 12, "pb": 3, "ps": 2.5}  # Nifty 50 avg
     
     def __init__(self, ticker):
         self.data_engine = SmartDataEngine(ticker)
         # India-specific base parameters (EY India CoE Survey 2024)
         self.base_cost_of_equity = 0.142  # 14.2% average
         self.terminal_growth = 0.045  # 4.5% (India nominal GDP long-term)
+    
+    def _calculate_wacc(self):
+        """
+        Calculate Weighted Average Cost of Capital.
+        WACC = (E/V × Re) + (D/V × Rd × (1-Tc))
+        
+        Where: E=Market Cap, D=Total Debt, V=E+D, Re=Cost of Equity, 
+               Rd=Cost of Debt, Tc=Tax Rate (25% for India)
+        
+        Source: Groww DCF Guide, Zerodha Varsity
+        """
+        if not self.data_engine.has_data:
+            return self.base_cost_of_equity
+        
+        # Get market cap (equity value)
+        market_cap = self.data_engine.info.get("marketCap", 0)
+        
+        # Get total debt
+        total_debt = self.data_engine.get_financials_safe(
+            self.data_engine.balance_sheet, "Total Debt", 0) or 0
+        
+        # Get interest expense for cost of debt calculation
+        interest_expense = abs(self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Interest Expense", 0) or 0)
+        
+        E = market_cap
+        D = total_debt
+        V = E + D
+        
+        if V <= 0 or E <= 0:
+            return self.base_cost_of_equity
+        
+        # Cost of Equity (sector-adjusted)
+        sector = self.data_engine.info.get("sector", "").lower()
+        sector_adjustment = self.SECTOR_COE_ADJUSTMENTS.get(sector, 0.0)
+        Re = self.base_cost_of_equity + sector_adjustment
+        
+        # Cost of Debt = Interest Expense / Total Debt
+        # If no debt, Rd doesn't matter since D/V = 0
+        if D > 0 and interest_expense > 0:
+            Rd = min(interest_expense / D, 0.15)  # Cap at 15%
+        else:
+            Rd = 0.08  # Default 8% if no data
+        
+        # Tax rate (India corporate tax ~25%)
+        Tc = 0.25
+        
+        # WACC Formula
+        wacc = (E / V * Re) + (D / V * Rd * (1 - Tc))
+        
+        # Floor at 8%, cap at 20%
+        return max(0.08, min(wacc, 0.20))
+    
+    def _calculate_best_growth(self, growth_cap=0.15):
+        """
+        Calculate growth rate using the best available source.
+        Uses maximum of: Revenue CAGR, Operating Income CAGR, Net Income CAGR
+        
+        This prevents underestimation when one metric lags (e.g., 
+        high growth company with high reinvestment reducing net income)
+        """
+        if not self.data_engine.has_data:
+            return 0.06  # Default 6%
+        
+        growth_rates = []
+        
+        # Revenue CAGR (2Y)
+        rev_curr = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Total Revenue", 0)
+        rev_prev = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Total Revenue", 2)
+        if rev_curr and rev_prev and rev_prev > 0:
+            rev_cagr = (rev_curr / rev_prev) ** 0.5 - 1
+            if rev_cagr > 0:
+                growth_rates.append(("Revenue", rev_cagr))
+        
+        # Operating Income CAGR (2Y)
+        op_curr = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Operating Income", 0)
+        op_prev = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Operating Income", 2)
+        if op_curr and op_prev and op_prev > 0:
+            op_cagr = (op_curr / op_prev) ** 0.5 - 1
+            if op_cagr > 0:
+                growth_rates.append(("OpIncome", op_cagr))
+        
+        # Net Income CAGR (2Y)
+        ni_curr = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Net Income", 0)
+        ni_prev = self.data_engine.get_financials_safe(
+            self.data_engine.financials, "Net Income", 2)
+        if ni_curr and ni_prev and ni_prev > 0:
+            ni_cagr = (ni_curr / ni_prev) ** 0.5 - 1
+            if ni_cagr > 0:
+                growth_rates.append(("NetIncome", ni_cagr))
+        
+        if not growth_rates:
+            return 0.06  # Default
+        
+        # Use maximum of available growth rates, capped
+        best_source, best_growth = max(growth_rates, key=lambda x: x[1])
+        return max(0.02, min(best_growth, growth_cap))
         
     def _get_model_inputs(self):
         """
@@ -180,34 +282,34 @@ class ValuationAnalyzer:
     def get_valuation_scenarios(self):
         """
         Returns 3 scenarios: Conservative, Base, Optimistic.
-        Uses India-specific cost of equity with sector adjustments.
+        Uses WACC (Weighted Average Cost of Capital) as discount rate.
         """
         inputs = self._get_model_inputs()
         if not inputs: return {}
         
-        base_growth = inputs["base_growth"]
         cap = inputs["growth_cap"]
-        sector = inputs.get("sector", "")
         
-        # Get sector-specific CoE adjustment
-        sector_adjustment = self.SECTOR_COE_ADJUSTMENTS.get(sector, 0.0)
-        base_coe = self.base_cost_of_equity + sector_adjustment
+        # Use improved growth calculation (max of Revenue/OpIncome/NetIncome)
+        base_growth = self._calculate_best_growth(cap)
         
-        # Define Scenarios with India-specific parameters
+        # Use WACC instead of fixed Cost of Equity
+        base_wacc = self._calculate_wacc()
+        
+        # Define Scenarios with WACC-based discounting
         scenarios = {
             "Conservative": {
                 "growth": min(base_growth * 0.8, cap * 0.8),
-                "discount": base_coe + 0.015,  # +1.5% for conservative
+                "discount": base_wacc + 0.015,  # +1.5% for conservative
                 "terminal": self.terminal_growth - 0.015  # 3% terminal
             },
             "Base": {
                 "growth": base_growth,
-                "discount": base_coe,  # Sector-adjusted CoE
+                "discount": base_wacc,  # WACC
                 "terminal": self.terminal_growth  # 4.5% India GDP
             },
             "Optimistic": {
                 "growth": min(base_growth * 1.2, cap * 1.2),
-                "discount": base_coe - 0.015,  # -1.5% for optimistic
+                "discount": base_wacc - 0.015,  # -1.5% for optimistic
                 "terminal": self.terminal_growth + 0.01  # 5.5% terminal
             }
         }
