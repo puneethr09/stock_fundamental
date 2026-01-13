@@ -1559,6 +1559,10 @@ class PatternRecognitionTrainer:
             self._add_growth_indicator_traces(fig, chart_data)
         elif exercise.pattern_type == PatternType.VALUE_TRAPS:
             self._add_value_trap_traces(fig, chart_data)
+        elif exercise.pattern_type == PatternType.TREND_REVERSAL:
+            self._add_trend_reversal_traces(fig, chart_data)
+        elif exercise.pattern_type == PatternType.QUALITY_DETERIORATION:
+            self._add_quality_deterioration_traces(fig, chart_data)
 
         # Add interactive zones based on difficulty
         if exercise.difficulty == ExerciseDifficulty.GUIDED:
@@ -1816,6 +1820,122 @@ class PatternRecognitionTrainer:
                 side="right",
                 overlaying="y",
                 showgrid=False,
+            ),
+        )
+
+    def _add_trend_reversal_traces(self, fig: go.Figure, chart_data: Dict[str, Any]):
+        """Add trend reversal indicator traces (momentum, RSI, volume)."""
+        colors = {"momentum": "#3CB371", "rsi": "#FFD700", "volume": "#87CEEB"}
+        
+        quarters = chart_data.get("quarters", [f"Q{i}" for i in range(1, 9)])
+        
+        # Price/Momentum trace
+        if "price_momentum" in chart_data:
+            fig.add_trace(
+                go.Scatter(
+                    x=quarters,
+                    y=chart_data["price_momentum"],
+                    mode="lines+markers",
+                    name="Price Momentum",
+                    line=dict(color=colors["momentum"], width=3),
+                    marker=dict(size=8, symbol="circle"),
+                )
+            )
+        
+        # RSI trace (secondary axis)
+        if "rsi" in chart_data:
+            fig.add_trace(
+                go.Scatter(
+                    x=quarters,
+                    y=chart_data["rsi"],
+                    mode="lines+markers",
+                    name="RSI",
+                    line=dict(color=colors["rsi"], width=2.5),
+                    marker=dict(size=6, symbol="diamond"),
+                    yaxis="y2",
+                )
+            )
+            # RSI reference lines
+            fig.add_hline(y=70, line_dash="dash", line_color="rgba(255,99,71,0.5)",
+                         annotation_text="Overbought", annotation_position="right", yref="y2")
+            fig.add_hline(y=30, line_dash="dash", line_color="rgba(50,205,50,0.5)",
+                         annotation_text="Oversold", annotation_position="right", yref="y2")
+        
+        # Volume trend
+        if "volume_trend" in chart_data:
+            fig.add_trace(
+                go.Bar(
+                    x=quarters,
+                    y=chart_data["volume_trend"],
+                    name="Volume",
+                    marker_color=colors["volume"],
+                    opacity=0.5,
+                    yaxis="y3",
+                )
+            )
+        
+        fig.update_layout(
+            yaxis=dict(title=dict(text="Price Momentum", font=dict(color="#A0A0A0", size=11))),
+            yaxis2=dict(
+                title=dict(text="RSI", font=dict(color="#FFD700", size=11)),
+                side="right", overlaying="y", showgrid=False, range=[0, 100]
+            ),
+        )
+
+    def _add_quality_deterioration_traces(self, fig: go.Figure, chart_data: Dict[str, Any]):
+        """Add quality deterioration indicator traces (margins, ROIC, efficiency)."""
+        colors = {"margin": "#FF6B6B", "roic": "#4ECDC4", "efficiency": "#45B7D1"}
+        
+        quarters = chart_data.get("quarters", [f"Q{i}" for i in range(1, 9)])
+        
+        # Gross Margin trace
+        if "gross_margin" in chart_data:
+            fig.add_trace(
+                go.Scatter(
+                    x=quarters,
+                    y=chart_data["gross_margin"],
+                    mode="lines+markers",
+                    name="Gross Margin (%)",
+                    line=dict(color=colors["margin"], width=3),
+                    marker=dict(size=8, symbol="circle"),
+                )
+            )
+        
+        # ROIC trace
+        if "roic" in chart_data:
+            fig.add_trace(
+                go.Scatter(
+                    x=quarters,
+                    y=chart_data["roic"],
+                    mode="lines+markers",
+                    name="ROIC (%)",
+                    line=dict(color=colors["roic"], width=2.5),
+                    marker=dict(size=7, symbol="square"),
+                )
+            )
+            # ROIC reference line
+            fig.add_hline(y=12, line_dash="dash", line_color="rgba(78,205,196,0.5)",
+                         annotation_text="ROIC 12% (WACC)", annotation_position="right")
+        
+        # Asset Turnover (secondary axis)
+        if "asset_turnover" in chart_data:
+            fig.add_trace(
+                go.Scatter(
+                    x=quarters,
+                    y=chart_data["asset_turnover"],
+                    mode="lines+markers",
+                    name="Asset Turnover",
+                    line=dict(color=colors["efficiency"], width=2),
+                    marker=dict(size=6, symbol="diamond"),
+                    yaxis="y2",
+                )
+            )
+        
+        fig.update_layout(
+            yaxis=dict(title=dict(text="Margin / ROIC (%)", font=dict(color="#A0A0A0", size=11))),
+            yaxis2=dict(
+                title=dict(text="Asset Turnover", font=dict(color="#45B7D1", size=11)),
+                side="right", overlaying="y", showgrid=False
             ),
         )
 
