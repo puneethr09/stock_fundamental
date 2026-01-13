@@ -92,15 +92,21 @@ def scheduled_batch_run():
         return
     
     print("[SCHEDULER] Starting scheduled batch analysis at 6 PM IST")
+    print("[SCHEDULER] Starting scheduled batch analysis at 6 PM IST")
     try:
-        with open(lock_file, 'w') as f:
-            f.write("running")
-        
-        subprocess.run(
+        # Run batch analysis with Popen
+        process = subprocess.Popen(
             ["python", "-m", "src.batch_runner"],
             cwd=os.path.dirname(__file__),
-            capture_output=True
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
+        
+        # Write PID to lock file
+        with open(lock_file, 'w') as f:
+            f.write(str(process.pid))
+        
+        process.communicate()
         print("[SCHEDULER] Batch analysis completed")
     except Exception as e:
         print(f"[SCHEDULER] Error: {e}")
@@ -529,12 +535,21 @@ def run_batch_analysis():
             with open(lock_file, 'w') as f:
                 f.write("running")
             
-            # Run batch analysis
-            subprocess.run(
+            # Run batch analysis with Popen to get PID
+            process = subprocess.Popen(
                 ["python", "-m", "src.batch_runner"],
                 cwd=os.path.dirname(__file__),
-                capture_output=True
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
             )
+            
+            # Write PID to lock file
+            with open(lock_file, 'w') as f:
+                f.write(str(process.pid))
+            
+            # Wait for completion
+            process.communicate()
+            
         finally:
             # Remove lock file
             if os.path.exists(lock_file):
@@ -551,6 +566,36 @@ def run_batch_analysis():
     thread.start()
     
     return jsonify({"success": True, "message": "Batch analysis started"})
+
+
+@app.route("/rankings/stop", methods=["POST"])
+def stop_batch_analysis():
+    """Stop the ongoing batch analysis"""
+    import signal
+    lock_file = os.path.join(os.path.dirname(__file__), "data", ".batch_running")
+    
+    if not os.path.exists(lock_file):
+        return jsonify({"success": False, "message": "No analysis running"})
+    
+    try:
+        with open(lock_file, 'r') as f:
+            pid = int(f.read().strip())
+        
+        # Kill the process
+        os.kill(pid, signal.SIGTERM)
+        
+        # Remove lock file
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+            
+        return jsonify({"success": True, "message": "Analysis stopped"})
+    except ProcessLookupError:
+        # Process already dead
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+        return jsonify({"success": True, "message": "Process was not running (cleaned up lock)"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 
 @app.route("/")

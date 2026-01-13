@@ -221,6 +221,9 @@
                 <button id="runBatchBtn" class="run-batch-btn" disabled style="opacity: 0.7;">
                     <i class="fas fa-spinner fa-spin"></i> Analysis Running...
                 </button>
+                <button id="stopBatchBtn" class="run-batch-btn" onclick="stopBatchAnalysis()" style="background: var(--red); margin-left: 0.5rem;">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
                 {% else %}
                 <button id="runBatchBtn" class="run-batch-btn" onclick="runBatchAnalysis()">
                     <i class="fas fa-play"></i> Run Analysis Now
@@ -356,6 +359,34 @@ python -m src.batch_runner             # Full run (500+ stocks)
                 }, 30000); // Check every 30 seconds
             } else {
                 alert(data.message || 'Failed to start batch analysis');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    }
+
+    async function stopBatchAnalysis() {
+        if (!confirm('Are you sure you want to stop the ongoing analysis?')) return;
+        
+        const btn = document.getElementById('stopBatchBtn');
+        const originalHTML = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Stopping...';
+        
+        try {
+            const response = await fetch('/rankings/stop', { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Analysis stopped successfully.');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to stop analysis');
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
             }
