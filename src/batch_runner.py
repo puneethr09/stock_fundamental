@@ -15,12 +15,28 @@ import sys
 import csv
 import json
 import argparse
+import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Set
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Setup logging to both console and file
+LOG_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "batch_analysis.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 from src.dorsey_runner import run_dorsey_analysis
 from src.dorsey_core.scorecard import DorseyScorecard
@@ -41,7 +57,7 @@ def load_stocks_from_csv(csv_path: str) -> List[Dict]:
                         "industry": row.get("Industry", "Unknown"),
                     })
     except FileNotFoundError:
-        print(f"[ERROR] CSV not found: {csv_path}")
+        logger.error(f"CSV not found: {csv_path}")
     return stocks
 
 
@@ -67,7 +83,7 @@ def load_all_stocks(input_dir: str = "input") -> List[Dict]:
                 seen_tickers.add(stock["ticker"])
                 all_stocks.append(stock)
     
-    print(f"[INFO] Loaded {len(all_stocks)} unique stocks from {len(csv_files)} CSV files")
+    logger.info(f"Loaded {len(all_stocks)} unique stocks from {len(csv_files)} CSV files")
     return all_stocks
 
 
@@ -156,9 +172,9 @@ def run_batch_analysis(stocks: List[Dict], max_workers: int = 5) -> List[Dict]:
     completed = 0
     errors = 0
     
-    print(f"\n{'='*60}")
-    print(f"Starting batch analysis of {total} stocks")
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+    logger.info(f"Starting batch analysis of {total} stocks")
+    logger.info("=" * 60)
     
     start_time = datetime.now()
     
@@ -188,7 +204,7 @@ def run_batch_analysis(stocks: List[Dict], max_workers: int = 5) -> List[Dict]:
                     elapsed = (datetime.now() - start_time).seconds
                     rate = completed / max(elapsed, 1)
                     remaining = (total - completed) / max(rate, 0.1)
-                    print(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
+                    logger.info(f"[{completed}/{total}] {status} {stock['ticker']:15} | "
                           f"Score: {result.get('dorsey_score', 0):>3} | "
                           f"ETA: {remaining:.0f}s")
                     
@@ -199,11 +215,11 @@ def run_batch_analysis(stocks: List[Dict], max_workers: int = 5) -> List[Dict]:
     end_time = datetime.now()
     duration = (end_time - start_time).seconds
     
-    print(f"\n{'='*60}")
-    print(f"Batch analysis complete!")
-    print(f"Total: {total} | Success: {total - errors} | Errors: {errors}")
-    print(f"Duration: {duration}s ({duration/60:.1f} min)")
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+    logger.info("Batch analysis complete!")
+    logger.info(f"Total: {total} | Success: {total - errors} | Errors: {errors}")
+    logger.info(f"Duration: {duration}s ({duration/60:.1f} min)")
+    logger.info("=" * 60)
     
     return results
 
@@ -228,14 +244,14 @@ def save_results(results: List[Dict], output_dir: str = "data") -> str:
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
     
-    print(f"[INFO] Results saved to: {filepath}")
+    logger.info(f"Results saved to: {filepath}")
     
     # Also save as 'latest.json' for easy access
     latest_path = os.path.join(output_dir, "latest.json")
     with open(latest_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
     
-    print(f"[INFO] Latest copy saved to: {latest_path}")
+    logger.info(f"Latest copy saved to: {latest_path}")
     
     return filepath
 

@@ -282,23 +282,23 @@
                             <div class="stock-ticker">{{ stock.ticker }}</div>
                             <div class="stock-industry">{{ stock.industry }}</div>
                         </td>
-                        <td>
-                            <span class="score-pill {{ 'score-high' if stock.dorsey_score >= 70 else ('score-medium' if stock.dorsey_score >= 50 else 'score-low') }}">
-                                {{ stock.dorsey_score }}/100
+                    <td>
+                            <span class="score-pill {{ 'score-high' if stock.get('dorsey_score', 0) >= 70 else ('score-medium' if stock.get('dorsey_score', 0) >= 50 else 'score-low') }}">
+                                {{ stock.get('dorsey_score', 0) }}/100
                             </span>
                         </td>
                         <td>
-                            <span class="{{ 'upside-positive' if stock.valuation_upside > 0 else 'upside-negative' }}">
-                                {{ "%.1f"|format(stock.valuation_upside or 0) }}%
+                            <span class="{{ 'upside-positive' if stock.get('valuation_upside', 0) > 0 else 'upside-negative' }}">
+                                {{ "%.1f"|format(stock.get('valuation_upside', 0) or 0) }}%
                             </span>
                         </td>
                         <td>
-                            <span class="moat-badge {{ 'moat-wide' if 'Wide' in (stock.moat_rating or '') else ('moat-narrow' if 'Narrow' in (stock.moat_rating or '') else 'moat-none') }}">
-                                {{ stock.moat_rating or 'N/A' }}
+                            <span class="moat-badge {{ 'moat-wide' if 'Wide' in (stock.get('moat_rating') or '') else ('moat-narrow' if 'Narrow' in (stock.get('moat_rating') or '') else 'moat-none') }}">
+                                {{ stock.get('moat_rating', 'N/A') }}
                             </span>
                         </td>
-                        <td>{{ stock.graham_passed or 0 }}/{{ stock.graham_total or 7 }}</td>
-                        <td>₹{{ "%.0f"|format(stock.current_price or 0) }}</td>
+                        <td>{{ stock.get('graham_passed', 0) }}/{{ stock.get('graham_total', 7) }}</td>
+                        <td>₹{{ "%.0f"|format(stock.get('current_price', 0) or 0) }}</td>
                         <td>
                             <a href="/analyze/{{ stock.ticker }}" class="view-btn">
                                 <i class="fas fa-eye"></i> View
