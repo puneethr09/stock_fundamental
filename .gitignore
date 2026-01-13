@@ -99,6 +99,7 @@ web-bundles/
 /data/*.db-journal
 /data/*.sqlite-wal
 /data/*.sqlite-shm
+/data/*.json
 
 # Backup files - NEVER commit these!
 backups/
