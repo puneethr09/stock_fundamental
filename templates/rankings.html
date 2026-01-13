@@ -256,16 +256,72 @@
         
         @media (max-width: 480px) {
             .rankings-container {
-                padding: 0.5rem;
+                padding: 0.25rem;
             }
             
             .rankings-header h1 {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
             }
             
             .ranking-tab {
-                padding: 0.4rem 0.6rem;
+                padding: 0.35rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            /* Hide less critical columns on small phones */
+            .rankings-table th:nth-child(6), /* Graham */
+            .rankings-table td:nth-child(6),
+            .rankings-table th:nth-child(7), /* Price */
+            .rankings-table td:nth-child(7) {
+                display: none;
+            }
+            
+            .rankings-table {
                 font-size: 0.75rem;
+                min-width: auto; /* Allow natural sizing */
+            }
+            
+            .rankings-table th,
+            .rankings-table td {
+                padding: 0.4rem 0.25rem;
+                white-space: nowrap;
+            }
+            
+            /* Compact moat badges */
+            .moat-badge {
+                padding: 0.15rem 0.4rem;
+                font-size: 0.65rem;
+            }
+            
+            .stock-name {
+                font-size: 0.75rem;
+                max-width: 80px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .stock-ticker {
+                font-size: 0.7rem;
+            }
+            
+            .stock-industry {
+                display: none; /* Hide industry on small phones */
+            }
+            
+            .score-pill {
+                padding: 0.15rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            .rank-badge {
+                width: 22px;
+                height: 22px;
+                font-size: 0.65rem;
+            }
+            
+            .view-btn {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.65rem;
             }
         }
     </style>
