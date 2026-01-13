@@ -80,10 +80,14 @@ def main():
     subprocess.run("eval $(ssh-agent -s)", shell=True)
     subprocess.run("ssh-add ~/.ssh/id_rsa", shell=True)
 
+    # Debug: Check if DNS applied
+    print("Verifying Docker DNS setup...")
+    run_command("sudo docker info | grep -i dns")
+
     commands = [
         "git pull",
         "sudo docker-compose down",
-        "sudo docker-compose build",
+        "sudo DOCKER_BUILDKIT=0 docker-compose build", # Disable BuildKit to force legacy builder which might respect DNS better
         "sudo docker-compose up -d",
     ]
 
