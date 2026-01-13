@@ -87,8 +87,9 @@ def load_all_stocks(input_dir: str = "input") -> List[Dict]:
     return all_stocks
 
 
-def analyze_stock(stock: Dict) -> Dict:
-    """Run full analysis on a single stock"""
+def analyze_stock(stock: Dict, delay: float = 1.5) -> Dict:
+    """Run full analysis on a single stock with rate limiting"""
+    import time
     ticker = stock["ticker"]
     result = {
         "ticker": ticker,
@@ -98,51 +99,70 @@ def analyze_stock(stock: Dict) -> Dict:
         "error": None,
     }
     
-    try:
-        # Run full Dorsey analysis
-        analysis = run_dorsey_analysis(ticker)
-        
-        # Extract key metrics for ranking
-        scorecard = analysis.get("scorecard", {})
-        valuation = analysis.get("valuation", {})
-        combined = valuation.get("combined", {})
-        moat = analysis.get("moat_analysis", {})
-        health = analysis.get("financial_health", {})
-        graham = analysis.get("graham_defensive_screen", {})
-        
-        result["dorsey_score"] = scorecard.get("total_score", 0)
-        result["recommendation"] = scorecard.get("recommendation", "N/A")
-        result["confidence"] = scorecard.get("confidence", "N/A")
-        
-        result["valuation_upside"] = combined.get("margin_of_safety", 0)
-        result["combined_value"] = combined.get("combined_value", 0)
-        result["dcf_value"] = combined.get("dcf_value", 0)
-        result["relative_value"] = combined.get("relative_value", 0)
-        result["current_price"] = valuation.get("current_price", 0)
-        result["valuation_verdict"] = combined.get("verdict", valuation.get("verdict", "N/A"))
-        
-        result["moat_rating"] = moat.get("moat_rating", "None")
-        result["moat_score"] = _moat_to_score(moat.get("moat_rating", "None"))
-        
-        result["health_rating"] = health.get("health_rating", "N/A")
-        result["health_score"] = _health_to_score(health.get("health_rating", "N/A"))
-        
-        result["graham_passed"] = graham.get("passed", 0)
-        result["graham_total"] = graham.get("total", 7)
-        result["graham_verdict"] = graham.get("verdict", "N/A")
-        
-        # Composite score (weighted)
-        result["composite_score"] = (
-            result["dorsey_score"] * 0.4 +
-            min(result["valuation_upside"], 100) * 0.3 +
-            result["moat_score"] * 10 * 0.2 +
-            result["health_score"] * 10 * 0.1
-        )
-        
-    except Exception as e:
-        result["error"] = str(e)
-        result["dorsey_score"] = 0
-        result["composite_score"] = 0
+    # Rate limiting delay
+    time.sleep(delay)
+    
+    # Retry logic for rate limiting
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Run full Dorsey analysis
+            analysis = run_dorsey_analysis(ticker)
+            
+            # Extract key metrics for ranking
+            scorecard = analysis.get("scorecard", {})
+            valuation = analysis.get("valuation", {})
+            combined = valuation.get("combined", {})
+            moat = analysis.get("moat_analysis", {})
+            health = analysis.get("financial_health", {})
+            graham = analysis.get("graham_defensive_screen", {})
+            
+            result["dorsey_score"] = scorecard.get("total_score", 0)
+            result["recommendation"] = scorecard.get("recommendation", "N/A")
+            result["confidence"] = scorecard.get("confidence", "N/A")
+            
+            result["valuation_upside"] = combined.get("margin_of_safety", 0)
+            result["combined_value"] = combined.get("combined_value", 0)
+            result["dcf_value"] = combined.get("dcf_value", 0)
+            result["relative_value"] = combined.get("relative_value", 0)
+            result["current_price"] = valuation.get("current_price", 0)
+            result["valuation_verdict"] = combined.get("verdict", valuation.get("verdict", "N/A"))
+            
+            result["moat_rating"] = moat.get("moat_rating", "None")
+            result["moat_score"] = _moat_to_score(moat.get("moat_rating", "None"))
+            
+            result["health_rating"] = health.get("health_rating", "N/A")
+            result["health_score"] = _health_to_score(health.get("health_rating", "N/A"))
+            
+            result["graham_passed"] = graham.get("passed", 0)
+            result["graham_total"] = graham.get("total", 7)
+            result["graham_verdict"] = graham.get("verdict", "N/A")
+            
+            # Composite score (weighted)
+            result["composite_score"] = (
+                result["dorsey_score"] * 0.4 +
+                min(result["valuation_upside"], 100) * 0.3 +
+                result["moat_score"] * 10 * 0.2 +
+                result["health_score"] * 10 * 0.1
+            )
+            break  # Success, exit retry loop
+            
+        except Exception as e:
+            error_str = str(e)
+            if "Rate" in error_str or "Too Many" in error_str:
+                # Rate limited - wait and retry
+                wait_time = (attempt + 1) * 5  # 5, 10, 15 seconds
+                logger.warning(f"Rate limited on {ticker}, waiting {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+                if attempt == max_retries - 1:
+                    result["error"] = error_str
+                    result["dorsey_score"] = 0
+                    result["composite_score"] = 0
+            else:
+                result["error"] = error_str
+                result["dorsey_score"] = 0
+                result["composite_score"] = 0
+                break  # Non-rate-limit error, don't retry
     
     return result
 
@@ -260,7 +280,7 @@ def main():
     parser = argparse.ArgumentParser(description="Batch Stock Analysis Runner")
     parser.add_argument("--input", type=str, help="Specific CSV file to process")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of stocks (for testing)")
-    parser.add_argument("--workers", type=int, default=5, help="Number of parallel workers")
+    parser.add_argument("--workers", type=int, default=2, help="Number of parallel workers (keep low to avoid rate limits)")
     parser.add_argument("--output", type=str, default="data", help="Output directory")
     
     args = parser.parse_args()
