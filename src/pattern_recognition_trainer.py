@@ -199,77 +199,50 @@ class PatternRecognitionTrainer:
         )
 
     def _load_indian_company_examples(self) -> Dict[PatternType, List[Dict]]:
-        """Load curated Indian company examples for each pattern type"""
+        """
+        Load Indian companies from CSV for TRUE random selection.
+        Uses nifty_500.csv as the primary source.
+        """
+        import csv
+        import os
+        
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "input", "Indian_stocks_nifty_500.csv")
+        
+        all_companies = []
+        
+        try:
+            print(f"[PatternTrainer] Loading stocks from: {csv_path}")
+            print(f"[PatternTrainer] File exists: {os.path.exists(csv_path)}")
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    company = {
+                        "ticker": row.get("Ticker", ""),
+                        "company": row.get("Company Name", ""),
+                        "sector": row.get("Industry", "General"),
+                        "pattern_period": "2023-2025",  # Recent period
+                        "description": f"Pattern analysis for {row.get('Company Name', '')}",
+                    }
+                    if company["ticker"]:
+                        all_companies.append(company)
+            print(f"[PatternTrainer] Loaded {len(all_companies)} stocks from CSV")
+        except FileNotFoundError as e:
+            print(f"[PatternTrainer] ERROR: CSV not found! {e}")
+            print(f"[PatternTrainer] Falling back to hardcoded list")
+            # Fallback to a minimal list if CSV not found
+            all_companies = [
+                {"ticker": "RELIANCE", "company": "Reliance Industries", "sector": "Oil & Gas", "pattern_period": "2023-2025", "description": "Pattern analysis"},
+                {"ticker": "TCS", "company": "Tata Consultancy Services", "sector": "IT Services", "pattern_period": "2023-2025", "description": "Pattern analysis"},
+                {"ticker": "HDFCBANK", "company": "HDFC Bank", "sector": "Banking", "pattern_period": "2023-2025", "description": "Pattern analysis"},
+            ]
+        
+        # All pattern types use the same pool - true random selection
         return {
-            PatternType.DEBT_ANALYSIS: [
-                {
-                    "ticker": "RELIANCE",
-                    "company": "Reliance Industries Limited",
-                    "sector": "Oil & Gas",
-                    "pattern_period": "2018-2020",
-                    "description": "Deleveraging journey post-Jio investments",
-                },
-                {
-                    "ticker": "BHARTIARTL",
-                    "company": "Bharti Airtel Limited",
-                    "sector": "Telecommunications",
-                    "pattern_period": "2019-2021",
-                    "description": "AGR stress leading to debt consolidation",
-                },
-                {
-                    "ticker": "ADANIPORTS",
-                    "company": "Adani Ports and SEZ Limited",
-                    "sector": "Infrastructure",
-                    "pattern_period": "2020-2022",
-                    "description": "Infrastructure expansion debt patterns",
-                },
-            ],
-            PatternType.GROWTH_INDICATORS: [
-                {
-                    "ticker": "TCS",
-                    "company": "Tata Consultancy Services Limited",
-                    "sector": "IT Services",
-                    "pattern_period": "2016-2021",
-                    "description": "Consistent ROE expansion with margin stability",
-                },
-                {
-                    "ticker": "HDFC",
-                    "company": "Housing Development Finance Corporation",
-                    "sector": "Financial Services",
-                    "pattern_period": "2015-2020",
-                    "description": "Asset quality improvement with growth",
-                },
-                {
-                    "ticker": "ASIANPAINT",
-                    "company": "Asian Paints Limited",
-                    "sector": "Consumer Goods",
-                    "pattern_period": "2017-2022",
-                    "description": "Market share gains with margin expansion",
-                },
-            ],
-            PatternType.VALUE_TRAPS: [
-                {
-                    "ticker": "YESBANK",
-                    "company": "Yes Bank Limited",
-                    "sector": "Banking",
-                    "pattern_period": "2018-2020",
-                    "description": "Low valuation masking asset quality issues",
-                },
-                {
-                    "ticker": "SUZLON",
-                    "company": "Suzlon Energy Limited",
-                    "sector": "Renewable Energy",
-                    "pattern_period": "2015-2019",
-                    "description": "Cyclical downturn with structural challenges",
-                },
-                {
-                    "ticker": "JETAIRWAYS",
-                    "company": "Jet Airways (India) Limited",
-                    "sector": "Aviation",
-                    "pattern_period": "2017-2019",
-                    "description": "Operational decline despite low P/E",
-                },
-            ],
+            PatternType.DEBT_ANALYSIS: all_companies,
+            PatternType.GROWTH_INDICATORS: all_companies,
+            PatternType.VALUE_TRAPS: all_companies,
+            PatternType.TREND_REVERSAL: all_companies,
+            PatternType.QUALITY_DETERIORATION: all_companies,
         }
 
     def _initialize_pattern_templates(self) -> Dict[PatternType, Dict]:
