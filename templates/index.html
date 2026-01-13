@@ -52,27 +52,16 @@
             <button class="cta" type="submit">Analyze</button>
           </div>
           <ul id="suggestions-list" class="suggestions"></ul>
-          <div class="modes">
-            <label class="mode">
-              <input
-                type="radio"
-                name="challenge_mode"
-                value="normal"
-                checked
-              />
-              <div class="mode-box">
-                <strong>Standard</strong>
-                <span>Automated multi-tool analysis</span>
-              </div>
-            </label>
-            <a href="/rankings" class="mode" style="text-decoration: none;">
-              <div class="mode-box" style="cursor: pointer;">
-                <strong>🏆 Rankings</strong>
-                <span>Top stocks by score & valuation</span>
-              </div>
-            </a>
-          </div>
         </form>
+        
+        <!-- Rankings Link -->
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <a href="/rankings" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600; transition: all 0.2s;">
+            <span style="font-size: 1.25rem;">🏆</span>
+            <span>View Stock Rankings</span>
+            <span style="color: var(--muted); font-size: 0.85rem;">Top stocks by score & valuation</span>
+          </a>
+        </div>
 
         <div class="hero-features">
           <div class="feature">
