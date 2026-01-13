@@ -403,6 +403,55 @@ def get_user_notifications(user_id=None):
         return jsonify({"success": False, "message": str(e)})
 
 
+@app.route("/rankings")
+def rankings():
+    """Stock rankings page with multiple sorting tabs"""
+    import json
+    import os
+    
+    # Load latest rankings data
+    data_file = os.path.join(os.path.dirname(__file__), "data", "latest.json")
+    
+    rankings_data = {"stocks": [], "generated_at": None, "total_stocks": 0}
+    
+    if os.path.exists(data_file):
+        try:
+            with open(data_file, 'r', encoding='utf-8') as f:
+                rankings_data = json.load(f)
+        except Exception as e:
+            print(f"[ERROR] Failed to load rankings: {e}")
+    
+    # Get sort parameter from query string
+    sort_by = request.args.get("sort", "composite_score")
+    
+    # Sort stocks based on selected tab
+    stocks = rankings_data.get("stocks", [])
+    
+    if sort_by == "dorsey_score":
+        stocks = sorted(stocks, key=lambda x: x.get("dorsey_score", 0), reverse=True)
+    elif sort_by == "valuation_upside":
+        stocks = sorted(stocks, key=lambda x: x.get("valuation_upside", 0), reverse=True)
+    elif sort_by == "graham_passed":
+        stocks = sorted(stocks, key=lambda x: x.get("graham_passed", 0), reverse=True)
+    elif sort_by == "moat_score":
+        stocks = sorted(stocks, key=lambda x: x.get("moat_score", 0), reverse=True)
+    elif sort_by == "health_score":
+        stocks = sorted(stocks, key=lambda x: x.get("health_score", 0), reverse=True)
+    elif sort_by == "combined_value":
+        # Sort by valuation upside since combined_value is absolute
+        stocks = sorted(stocks, key=lambda x: x.get("valuation_upside", 0), reverse=True)
+    else:  # Default: composite_score
+        stocks = sorted(stocks, key=lambda x: x.get("composite_score", 0), reverse=True)
+    
+    return render_template(
+        "rankings.html",
+        stocks=stocks,
+        total_stocks=rankings_data.get("total_stocks", len(stocks)),
+        generated_at=rankings_data.get("generated_at"),
+        current_sort=sort_by,
+    )
+
+
 @app.route("/")
 @app.route("/home")  # Adding both routes for flexibility
 def home():

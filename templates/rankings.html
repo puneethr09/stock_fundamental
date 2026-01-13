@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Stock Rankings — Leaderboard</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        .rankings-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .rankings-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .rankings-header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .rankings-header .meta {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        
+        .ranking-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+        
+        .ranking-tab {
+            padding: 0.75rem 1.25rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .ranking-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .ranking-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .rankings-table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        
+        .rankings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .rankings-table th {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .rankings-table td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        
+        .rankings-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); color: #000; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+        .rank-default { background: var(--bg-tertiary); color: var(--text-secondary); }
+        
+        .stock-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .stock-ticker {
+            color: var(--accent);
+            font-size: 0.85rem;
+        }
+        
+        .stock-industry {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        
+        .score-pill {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .score-high { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .score-medium { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+        .score-low { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+        
+        .upside-positive { color: #10B981; font-weight: 600; }
+        .upside-negative { color: #EF4444; font-weight: 600; }
+        
+        .moat-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .moat-wide { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .moat-narrow { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+        .moat-none { background: rgba(156, 163, 175, 0.15); color: #9CA3AF; }
+        
+        .view-btn {
+            padding: 0.4rem 0.8rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        
+        .view-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+        
+        .run-batch-btn {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .rankings-table th:nth-child(n+5),
+            .rankings-table td:nth-child(n+5) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+    
+    <div class="rankings-container">
+        <div class="rankings-header">
+            <h1>🏆 Stock Rankings</h1>
+            <p class="meta">
+                {% if generated_at %}
+                    Last updated: {{ generated_at[:10] }} | {{ total_stocks }} stocks analyzed
+                {% else %}
+                    No data yet — run batch analysis first
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Ranking Tabs -->
+        <div class="ranking-tabs">
+            <a href="?sort=composite_score" class="ranking-tab {{ 'active' if current_sort == 'composite_score' else '' }}">
+                <i class="fas fa-star"></i> Overall
+            </a>
+            <a href="?sort=dorsey_score" class="ranking-tab {{ 'active' if current_sort == 'dorsey_score' else '' }}">
+                <i class="fas fa-chart-line"></i> Dorsey Score
+            </a>
+            <a href="?sort=valuation_upside" class="ranking-tab {{ 'active' if current_sort == 'valuation_upside' else '' }}">
+                <i class="fas fa-arrow-up"></i> Valuation Upside
+            </a>
+            <a href="?sort=graham_passed" class="ranking-tab {{ 'active' if current_sort == 'graham_passed' else '' }}">
+                <i class="fas fa-balance-scale"></i> Graham Score
+            </a>
+            <a href="?sort=moat_score" class="ranking-tab {{ 'active' if current_sort == 'moat_score' else '' }}">
+                <i class="fas fa-shield-alt"></i> Moat Rating
+            </a>
+            <a href="?sort=health_score" class="ranking-tab {{ 'active' if current_sort == 'health_score' else '' }}">
+                <i class="fas fa-heartbeat"></i> Financial Health
+            </a>
+        </div>
+        
+        {% if stocks %}
+        <div class="rankings-table-container">
+            <table class="rankings-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Company</th>
+                        <th>Dorsey Score</th>
+                        <th>Upside</th>
+                        <th>Moat</th>
+                        <th>Graham</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks[:100] %}
+                    <tr>
+                        <td>
+                            <span class="rank-badge {{ 'rank-1' if loop.index == 1 else ('rank-2' if loop.index == 2 else ('rank-3' if loop.index == 3 else 'rank-default')) }}">
+                                {{ loop.index }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="stock-name">{{ stock.name or stock.ticker }}</div>
+                            <div class="stock-ticker">{{ stock.ticker }}</div>
+                            <div class="stock-industry">{{ stock.industry }}</div>
+                        </td>
+                        <td>
+                            <span class="score-pill {{ 'score-high' if stock.dorsey_score >= 70 else ('score-medium' if stock.dorsey_score >= 50 else 'score-low') }}">
+                                {{ stock.dorsey_score }}/100
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{{ 'upside-positive' if stock.valuation_upside > 0 else 'upside-negative' }}">
+                                {{ "%.1f"|format(stock.valuation_upside or 0) }}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="moat-badge {{ 'moat-wide' if 'Wide' in (stock.moat_rating or '') else ('moat-narrow' if 'Narrow' in (stock.moat_rating or '') else 'moat-none') }}">
+                                {{ stock.moat_rating or 'N/A' }}
+                            </span>
+                        </td>
+                        <td>{{ stock.graham_passed or 0 }}/{{ stock.graham_total or 7 }}</td>
+                        <td>₹{{ "%.0f"|format(stock.current_price or 0) }}</td>
+                        <td>
+                            <a href="/analyze/{{ stock.ticker }}" class="view-btn">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-chart-bar"></i>
+            <h3>No Rankings Data Yet</h3>
+            <p>Run the batch analysis to generate stock rankings.</p>
+            <pre style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem; text-align: left; display: inline-block;">
+python -m src.batch_runner --limit 10  # Test with 10 stocks
+python -m src.batch_runner             # Full run (500+ stocks)
+            </pre>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% include '_footer.html' %}
+</body>
+</html>
