@@ -579,7 +579,15 @@ def stop_batch_analysis():
     
     try:
         with open(lock_file, 'r') as f:
-            pid = int(f.read().strip())
+            content = f.read().strip()
+            
+        if content == "running" or not content.isdigit():
+            # Legacy lock file or invalid PID
+            if os.path.exists(lock_file):
+                os.remove(lock_file)
+            return jsonify({"success": True, "message": "Analysis state cleared (process might still be running locally)"})
+            
+        pid = int(content)
         
         # Kill the process
         os.kill(pid, signal.SIGTERM)
@@ -595,6 +603,9 @@ def stop_batch_analysis():
             os.remove(lock_file)
         return jsonify({"success": True, "message": "Process was not running (cleaned up lock)"})
     except Exception as e:
+        # Just clear lock file if anything goes wrong to unblock user
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
         return jsonify({"success": False, "message": str(e)})
 
 
