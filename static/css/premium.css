@@ -656,6 +656,11 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 480px) {
+    /* Prevent horizontal overflow on body */
+    body {
+        overflow-x: hidden;
+    }
+    
     h1 { font-size: 1.25rem; }
     h2 { font-size: 1.1rem; }
     h3 { font-size: 1rem; }
@@ -673,9 +678,69 @@ input:focus, select:focus, textarea:focus {
         font-size: 1rem;
     }
     
+    /* Fix tooltips on small screens */
     .info-tooltip .tooltip-content {
-        width: 220px;
-        font-size: 12px;
+        width: 200px;
+        font-size: 11px;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) translateY(10px);
+        max-width: 90vw;
+    }
+    
+    .info-tooltip:hover .tooltip-content {
+        transform: translateX(-50%) translateY(0);
+    }
+    
+    /* Ensure tooltips don't go off-screen for left-aligned items */
+    .col-6:first-child .info-tooltip .tooltip-content {
+        left: 0 !important;
+        transform: translateX(0) translateY(10px);
+    }
+    
+    .col-6:first-child .info-tooltip:hover .tooltip-content {
+        transform: translateX(0) translateY(0);
+    }
+    
+    /* Row overflow fix */
+    .row {
+        margin-left: -5px;
+        margin-right: -5px;
+    }
+    
+    .row > [class*="col-"] {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    
+    /* Metric cards tighter */
+    .metric-card {
+        padding: 0.4rem;
+        min-height: auto;
+    }
+    
+    .metric-label {
+        font-size: 0.65rem;
+        line-height: 1.2;
+    }
+    
+    /* Hide tooltip icon text on very small screens, show just ? */
+    .info-tooltip .tooltip-icon {
+        width: 14px;
+        height: 14px;
+        font-size: 9px;
+        margin-left: 3px;
+    }
+    
+    /* Container tighter padding */
+    .container {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    /* Cards no horizontal overflow */
+    .card {
+        overflow: hidden;
     }
 }
 
