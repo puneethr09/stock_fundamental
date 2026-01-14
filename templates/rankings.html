@@ -362,24 +362,45 @@
         
         <!-- Ranking Tabs -->
         <div class="ranking-tabs">
-            <a href="?sort=composite_score" class="ranking-tab {{ 'active' if current_sort == 'composite_score' else '' }}">
+            <a href="?sort=composite_score&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'composite_score' else '' }}">
                 <i class="fas fa-star"></i> Overall
             </a>
-            <a href="?sort=dorsey_score" class="ranking-tab {{ 'active' if current_sort == 'dorsey_score' else '' }}">
+            <a href="?sort=dorsey_score&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'dorsey_score' else '' }}">
                 <i class="fas fa-chart-line"></i> Dorsey Score
             </a>
-            <a href="?sort=valuation_upside" class="ranking-tab {{ 'active' if current_sort == 'valuation_upside' else '' }}">
+            <a href="?sort=valuation_upside&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'valuation_upside' else '' }}">
                 <i class="fas fa-arrow-up"></i> Valuation Upside
             </a>
-            <a href="?sort=graham_passed" class="ranking-tab {{ 'active' if current_sort == 'graham_passed' else '' }}">
+            <a href="?sort=graham_passed&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'graham_passed' else '' }}">
                 <i class="fas fa-balance-scale"></i> Graham Score
             </a>
-            <a href="?sort=moat_score" class="ranking-tab {{ 'active' if current_sort == 'moat_score' else '' }}">
+            <a href="?sort=moat_score&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'moat_score' else '' }}">
                 <i class="fas fa-shield-alt"></i> Moat Rating
             </a>
-            <a href="?sort=health_score" class="ranking-tab {{ 'active' if current_sort == 'health_score' else '' }}">
+            <a href="?sort=health_score&industry={{ current_industry }}" class="ranking-tab {{ 'active' if current_sort == 'health_score' else '' }}">
                 <i class="fas fa-heartbeat"></i> Financial Health
             </a>
+        </div>
+        
+        <!-- Industry Filter Dropdown -->
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <label for="industryFilter" style="color: var(--text-secondary); font-size: 0.9rem;">
+                <i class="fas fa-industry"></i> Filter by Industry:
+            </label>
+            <select id="industryFilter" 
+                    onchange="filterByIndustry(this.value)"
+                    style="padding: 0.5rem 1rem; background: var(--card-bg); border: 1px solid var(--border); 
+                           border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; min-width: 200px;">
+                <option value="all" {{ 'selected' if current_industry == 'all' else '' }}>All Industries</option>
+                {% for industry in all_industries %}
+                <option value="{{ industry }}" {{ 'selected' if current_industry == industry else '' }}>{{ industry }}</option>
+                {% endfor %}
+            </select>
+            {% if current_industry != 'all' %}
+            <span style="color: var(--accent); font-size: 0.85rem;">
+                <i class="fas fa-filter"></i> Showing {{ stocks|length }} stocks
+            </span>
+            {% endif %}
         </div>
         
         {% if stocks %}
@@ -453,6 +474,17 @@ python -m src.batch_runner             # Full run (500+ stocks)
     {% include '_footer.html' %}
     
     <script>
+    // Industry Filter Function
+    function filterByIndustry(industry) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('industry', industry);
+        // Preserve sort parameter
+        if (!currentUrl.searchParams.has('sort')) {
+            currentUrl.searchParams.set('sort', 'composite_score');
+        }
+        window.location.href = currentUrl.toString();
+    }
+    
     async function runBatchAnalysis() {
         const btn = document.getElementById('runBatchBtn');
         const originalHTML = btn.innerHTML;

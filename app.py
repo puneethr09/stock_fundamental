@@ -80,6 +80,61 @@ tool_trainer = ToolIndependenceTrainer()
 
 
 # ============================================================
+# INDUSTRY DATA LOADER (From CSV Files)
+# ============================================================
+def load_industry_data():
+    """
+    Load industry data from all input CSVs.
+    Returns:
+        - ticker_to_industry: dict mapping ticker -> industry
+        - industry_to_tickers: dict mapping industry -> list of tickers
+        - all_industries: sorted list of unique industries
+    """
+    input_dir = os.path.join(os.path.dirname(__file__), "input")
+    ticker_to_industry = {}
+    industry_to_tickers = {}
+    
+    csv_files = glob.glob(os.path.join(input_dir, "*.csv"))
+    
+    for csv_file in csv_files:
+        try:
+            with open(csv_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    ticker = row.get('Ticker', '').strip()
+                    industry = row.get('Industry', '').strip()
+                    company_name = row.get('Company Name', '').strip()
+                    
+                    # Skip header rows or empty
+                    if not ticker or not industry or industry == 'Industry':
+                        continue
+                    
+                    # Add .NS suffix if not present
+                    if not ticker.endswith('.NS') and not ticker.endswith('.BO'):
+                        ticker = f"{ticker}.NS"
+                    
+                    ticker_to_industry[ticker] = {
+                        'industry': industry,
+                        'company_name': company_name
+                    }
+                    
+                    if industry not in industry_to_tickers:
+                        industry_to_tickers[industry] = []
+                    if ticker not in industry_to_tickers[industry]:
+                        industry_to_tickers[industry].append(ticker)
+        except Exception as e:
+            print(f"[IndustryLoader] Error loading {csv_file}: {e}")
+    
+    all_industries = sorted(industry_to_tickers.keys())
+    print(f"[IndustryLoader] Loaded {len(ticker_to_industry)} tickers across {len(all_industries)} industries")
+    
+    return ticker_to_industry, industry_to_tickers, all_industries
+
+# Load industry data at startup
+TICKER_TO_INDUSTRY, INDUSTRY_TO_TICKERS, ALL_INDUSTRIES = load_industry_data()
+
+
+# ============================================================
 # SCHEDULED BATCH ANALYSIS (6 PM IST Daily)
 # ============================================================
 def scheduled_batch_run():
@@ -489,9 +544,20 @@ def rankings():
     
     # Get sort parameter from query string
     sort_by = request.args.get("sort", "composite_score")
+    industry_filter = request.args.get("industry", "all")
     
     # Sort stocks based on selected tab
     stocks = rankings_data.get("stocks", [])
+    
+    # Apply industry filter
+    if industry_filter and industry_filter != "all":
+        filtered_stocks = []
+        for stock in stocks:
+            ticker = stock.get("ticker", "")
+            if ticker in TICKER_TO_INDUSTRY:
+                if TICKER_TO_INDUSTRY[ticker].get("industry") == industry_filter:
+                    filtered_stocks.append(stock)
+        stocks = filtered_stocks
     
     if sort_by == "dorsey_score":
         stocks = sorted(stocks, key=lambda x: x.get("dorsey_score", 0), reverse=True)
@@ -518,6 +584,8 @@ def rankings():
         total_stocks=rankings_data.get("total_stocks", len(stocks)),
         generated_at=rankings_data.get("generated_at"),
         current_sort=sort_by,
+        current_industry=industry_filter,
+        all_industries=ALL_INDUSTRIES,
         batch_running=batch_running,
     )
 
@@ -667,11 +735,46 @@ def analyze_ticker(ticker=None):
         import yfinance as yf
         t_obj = yf.Ticker(t)
         company_name = t_obj.info.get("longName", t)
+        
+        # Get Related Stocks (same industry from CSV data)
+        related_stocks = []
+        if t in TICKER_TO_INDUSTRY:
+            current_industry = TICKER_TO_INDUSTRY[t].get("industry", "")
+            if current_industry and current_industry in INDUSTRY_TO_TICKERS:
+                # Get tickers in same industry (excluding current)
+                same_industry_tickers = [
+                    ticker for ticker in INDUSTRY_TO_TICKERS[current_industry]
+                    if ticker != t
+                ]
+                
+                # Try to load scores from latest.json
+                rankings_file = os.path.join(os.path.dirname(__file__), "data", "latest.json")
+                ticker_scores = {}
+                if os.path.exists(rankings_file):
+                    try:
+                        with open(rankings_file, 'r') as f:
+                            rankings_data = json.load(f)
+                            for stock in rankings_data.get("stocks", []):
+                                ticker_scores[stock.get("ticker")] = stock
+                    except:
+                        pass
+                
+                # Build related stocks list with scores
+                for rel_ticker in same_industry_tickers[:8]:  # Limit to 8
+                    stock_data = ticker_scores.get(rel_ticker, {})
+                    related_stocks.append({
+                        "ticker": rel_ticker,
+                        "company_name": TICKER_TO_INDUSTRY.get(rel_ticker, {}).get("company_name", rel_ticker),
+                        "dorsey_score": stock_data.get("dorsey_score", "N/A"),
+                        "valuation_upside": stock_data.get("valuation_upside", "N/A"),
+                    })
 
         return render_template(
             "results.html",
             ticker=t,
             company_name=company_name,
+            related_stocks=related_stocks,
+            current_industry=TICKER_TO_INDUSTRY.get(t, {}).get("industry", ""),
             **dorsey_data
         )
 
@@ -686,7 +789,9 @@ def analyze_ticker(ticker=None):
             financial_health={"health_rating": "Error", "red_flags": [], "checks": []},
             valuation={"intrinsic_value": 0, "current_price": 0, "margin_of_safety": 0, "verdict": "Error", "model_type": "N/A"},
             scorecard={"total_score": 0, "recommendation": "ERROR", "confidence": "None"},
-            sector_analysis={"sector": "Error", "insights": []}
+            sector_analysis={"sector": "Error", "insights": []},
+            related_stocks=[],
+            current_industry=""
         )
 
 

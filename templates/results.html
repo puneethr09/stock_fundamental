@@ -636,6 +636,49 @@
         </div>
     </div>
 
+    <!-- Related Stocks Section -->
+    {% if related_stocks and related_stocks|length > 0 %}
+    <div class="card mt-4" style="background: rgba(102, 126, 234, 0.05); border-color: rgba(102, 126, 234, 0.2);">
+        <div class="card-body">
+            <h5 class="mb-3">
+                <i class="fas fa-industry mr-2" style="color: var(--accent-blue);"></i>
+                Related Stocks in <span style="color: var(--accent-purple);">{{ current_industry }}</span>
+            </h5>
+            <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">
+                {% for stock in related_stocks %}
+                <a href="/analyze/{{ stock.ticker }}" 
+                   style="min-width: 180px; text-decoration: none; flex-shrink: 0;"
+                   class="related-stock-card">
+                    <div style="background: var(--card-bg); border-radius: 12px; padding: 1rem; 
+                                border: 1px solid var(--border); transition: all 0.2s;">
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; 
+                                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ stock.company_name[:20] }}{% if stock.company_name|length > 20 %}...{% endif %}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--accent-blue); margin-bottom: 0.5rem;">
+                            {{ stock.ticker }}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                            <span style="color: var(--text-secondary);">Score: 
+                                <strong style="color: var(--accent-green);">{{ stock.dorsey_score }}</strong>
+                            </span>
+                            {% if stock.valuation_upside != 'N/A' %}
+                            <span style="color: {% if stock.valuation_upside > 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                {{ stock.valuation_upside }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 0;">
+                <i class="fas fa-info-circle mr-1"></i> Click any stock to analyze. Scroll horizontally for more.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 
 <!-- Scripts -->
