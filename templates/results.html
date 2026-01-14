@@ -602,43 +602,9 @@
         </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- EDUCATIONAL FOOTER -->
-    <!-- ============================================================ -->
-    <div class="card mb-4 animate-fade-in" style="animation-delay: 0.45s;">
-        <div class="card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#educationalContent">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-graduation-cap text-purple mr-2"></i>Learn the Framework</span>
-                <i class="fas fa-chevron-down text-muted"></i>
-            </h5>
-        </div>
-        <div id="educationalContent" class="collapse">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-info"><i class="fas fa-filter mr-2"></i>Ten-Minute Test (Ch 12)</h6>
-                        <p class="small text-muted">Quick quality filter. Checks: operating profit history, FCF generation, ROE >15%, manageable debt. Pass this first before deeper analysis.</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-info"><i class="fas fa-castle mr-2"></i>Economic Moats (Ch 3)</h6>
-                        <p class="small text-muted">Sustainable competitive advantage. ROIC >15% for 10+ years is evidence. Sources: brands, patents, switching costs, network effects, scale.</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-info"><i class="fas fa-calculator mr-2"></i>Valuation (Ch 9-10)</h6>
-                        <p class="small text-muted">Never overpay. Use DCF or Graham formulas. Always demand 30%+ Margin of Safety - buffer against errors in estimates.</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <h6 class="text-info"><i class="fas fa-user-secret mr-2"></i>Financial Fakery (Ch 8)</h6>
-                        <p class="small text-muted">Watch for: CFO < Net Income, inventory growing faster than sales, receivables bloat. Cash flow doesn't lie.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Related Stocks Section -->
     {% if related_stocks and related_stocks|length > 0 %}
-    <div class="card mt-4" style="background: rgba(102, 126, 234, 0.05); border-color: rgba(102, 126, 234, 0.2);">
+    <div class="card mb-4 animate-fade-in" style="background: rgba(102, 126, 234, 0.05); border-color: rgba(102, 126, 234, 0.2); animation-delay: 0.45s;">
         <div class="card-body">
             <h5 class="mb-3">
                 <i class="fas fa-industry mr-2" style="color: var(--accent-blue);"></i>
@@ -678,6 +644,40 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- EDUCATIONAL FOOTER -->
+    <!-- ============================================================ -->
+    <div class="card mb-4 animate-fade-in" style="animation-delay: 0.5s;">
+        <div class="card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#educationalContent">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-graduation-cap text-purple mr-2"></i>Learn the Framework</span>
+                <i class="fas fa-chevron-down text-muted"></i>
+            </h5>
+        </div>
+        <div id="educationalContent" class="collapse">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-info"><i class="fas fa-filter mr-2"></i>Ten-Minute Test (Ch 12)</h6>
+                        <p class="small text-muted">Quick quality filter. Checks: operating profit history, FCF generation, ROE >15%, manageable debt. Pass this first before deeper analysis.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-info"><i class="fas fa-castle mr-2"></i>Economic Moats (Ch 3)</h6>
+                        <p class="small text-muted">Sustainable competitive advantage. ROIC >15% for 10+ years is evidence. Sources: brands, patents, switching costs, network effects, scale.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-info"><i class="fas fa-calculator mr-2"></i>Valuation (Ch 9-10)</h6>
+                        <p class="small text-muted">Never overpay. Use DCF or Graham formulas. Always demand 30%+ Margin of Safety - buffer against errors in estimates.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-info"><i class="fas fa-user-secret mr-2"></i>Financial Fakery (Ch 8)</h6>
+                        <p class="small text-muted">Watch for: CFO < Net Income, inventory growing faster than sales, receivables bloat. Cash flow doesn't lie.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 
