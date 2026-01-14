@@ -678,28 +678,63 @@ input:focus, select:focus, textarea:focus {
         font-size: 1rem;
     }
     
-    /* Fix tooltips on small screens */
+    /* MOBILE TOOLTIPS: Show as centered modal overlay */
     .info-tooltip .tooltip-content {
-        width: 200px;
-        font-size: 11px;
+        /* Fixed position = modal overlay */
+        position: fixed !important;
+        top: 50% !important;
         left: 50% !important;
         right: auto !important;
-        transform: translateX(-50%) translateY(10px);
-        max-width: 90vw;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) scale(0.9) !important;
+        
+        /* Sizing */
+        width: 85vw !important;
+        max-width: 320px;
+        max-height: 80vh;
+        overflow-y: auto;
+        
+        /* Styling */
+        font-size: 13px;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        z-index: 99999 !important;
     }
     
-    .info-tooltip:hover .tooltip-content {
-        transform: translateX(-50%) translateY(0);
+    .info-tooltip:hover .tooltip-content,
+    .info-tooltip:focus .tooltip-content,
+    .info-tooltip.active .tooltip-content {
+        transform: translate(-50%, -50%) scale(1) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
     
-    /* Ensure tooltips don't go off-screen for left-aligned items */
-    .col-6:first-child .info-tooltip .tooltip-content {
-        left: 0 !important;
-        transform: translateX(0) translateY(10px);
+    /* Hide the arrow on mobile modals */
+    .info-tooltip .tooltip-content::after {
+        display: none;
     }
     
-    .col-6:first-child .info-tooltip:hover .tooltip-content {
-        transform: translateX(0) translateY(0);
+    /* Backdrop overlay when tooltip is active */
+    .info-tooltip::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        z-index: 99998;
+        transition: all 0.2s;
+        pointer-events: none;
+    }
+    
+    .info-tooltip:hover::before,
+    .info-tooltip.active::before {
+        opacity: 1;
+        visibility: visible;
     }
     
     /* Row overflow fix */
@@ -724,11 +759,11 @@ input:focus, select:focus, textarea:focus {
         line-height: 1.2;
     }
     
-    /* Hide tooltip icon text on very small screens, show just ? */
+    /* Tooltip icon smaller */
     .info-tooltip .tooltip-icon {
-        width: 14px;
-        height: 14px;
-        font-size: 9px;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
         margin-left: 3px;
     }
     
