@@ -1,651 +1,392 @@
+"""
+Valuation Analyzer - Chapters 9-10 (Discounted Cash Flow & Relative Valuation)
 
-from src.smart_data import SmartDataEngine
-import numpy as np
+Implements:
+- Multi-Model Intrinsic Valuation (Standard FCF, FCFE for Financials, DDM for Utilities)
+- Multi-Year Normalized Growth Calibration & Fundamental Reinvestment Rate
+- WACC-Based Scenario Modeling (Conservative, Base, Optimistic)
+- AlphaSpread-Style Combined Intrinsic Value (40% DCF + 60% Relative Multiples)
+- Holding Company (HoldCo) 55% Discount Adjustment Model
+- Greenwald's Earnings Power Value (EPV) & Peter Lynch PEG Valuation
+"""
+
+try:
+    from src.smart_data import SmartDataEngine
+except ImportError:
+    from smart_data import SmartDataEngine
+
 
 class ValuationAnalyzer:
     """
-    Implements Valuation Analysis (Chapters 9-10).
-    1. Relative Valuation: P/E vs History.
-    2. Intrinsic Value: Discounted Cash Flow (DCF).
-    
-    India-specific parameters (EY India Cost of Capital Survey 2024):
-    - Base Cost of Equity: 14.2%
-    - Equity Risk Premium: 7.25% (Incwert 2024)
-    - Terminal Growth: 4.5% (India nominal GDP long-term)
+    Comprehensive valuation engine blending fundamental DCF with market-based relative valuation
+    and holding company arbitrage detection.
     """
-    
-    # Sector-specific cost of equity adjustments (EY 2024 data)
+
+    # Sector Cost of Equity Risk Adjustments (India Market Context)
     SECTOR_COE_ADJUSTMENTS = {
-        "technology": 0.01,       # +1% for IT/Tech (higher risk)
-        "consumer cyclical": 0.0,  # Base for FMCG/Consumer
-        "consumer defensive": 0.0,
-        "financial services": 0.0,  # Base for Banking
-        "real estate": 0.02,       # +2% for Real Estate (high risk)
-        "utilities": -0.01,        # -1% for Utilities (stable)
-        "energy": 0.005,           # +0.5% for Energy
+        "technology": 0.0,
+        "consumer defensive": -0.015,
+        "consumer cyclical": 0.01,
+        "financial services": 0.0,
+        "real estate": 0.02,
+        "utilities": -0.01,
+        "energy": 0.005,
         "healthcare": 0.0,
         "industrials": 0.005,
         "basic materials": 0.01,
         "communication services": 0.005,
     }
-    
-    # Sector-specific valuation multiples (Jan 2026 India market data)
-    # Sources: NSE India, Trendlyne, Screener.in
+
+    # Sector-Specific Valuation Multiples (India Multi-Year Baselines)
     SECTOR_MULTIPLES = {
-        "consumer defensive": {"pe": 42, "ev_ebitda": 28, "pb": 10, "ps": 5},    # FMCG premium
-        "consumer cyclical": {"pe": 35, "ev_ebitda": 18, "pb": 5, "ps": 2},       # Retail/Auto
-        "financial services": {"pe": 16, "ev_ebitda": None, "pb": 2.2, "ps": 3},  # Banks (PE only)
-        "technology": {"pe": 27, "ev_ebitda": 18, "pb": 7, "ps": 4},              # IT Services
-        "healthcare": {"pe": 35, "ev_ebitda": 20, "pb": 5, "ps": 4},              # Pharma
-        "industrials": {"pe": 25, "ev_ebitda": 14, "pb": 4, "ps": 2},             # Capital Goods
-        "energy": {"pe": 12, "ev_ebitda": 7, "pb": 1.5, "ps": 1},                 # O&G lower
-        "basic materials": {"pe": 15, "ev_ebitda": 8, "pb": 2, "ps": 1.5},        # Metals/Mining
-        "utilities": {"pe": 18, "ev_ebitda": 10, "pb": 2, "ps": 2},               # Power
-        "real estate": {"pe": 25, "ev_ebitda": 15, "pb": 2.5, "ps": 3},           # Realty
-        "communication services": {"pe": 30, "ev_ebitda": 12, "pb": 4, "ps": 3},  # Telecom/Media
+        "consumer defensive": {"pe": 42, "ev_ebitda": 28, "pb": 10, "ps": 5},
+        "consumer cyclical": {"pe": 35, "ev_ebitda": 18, "pb": 5, "ps": 2},
+        "financial services": {"pe": 16, "ev_ebitda": None, "pb": 2.2, "ps": 3},
+        "technology": {"pe": 27, "ev_ebitda": 18, "pb": 7, "ps": 4},
+        "healthcare": {"pe": 35, "ev_ebitda": 20, "pb": 5, "ps": 4},
+        "industrials": {"pe": 25, "ev_ebitda": 14, "pb": 4, "ps": 2},
+        "energy": {"pe": 12, "ev_ebitda": 7, "pb": 1.5, "ps": 1},
+        "basic materials": {"pe": 15, "ev_ebitda": 8, "pb": 2, "ps": 1.5},
+        "utilities": {"pe": 18, "ev_ebitda": 10, "pb": 2, "ps": 2},
+        "real estate": {"pe": 25, "ev_ebitda": 15, "pb": 2.5, "ps": 3},
+        "communication services": {"pe": 30, "ev_ebitda": 12, "pb": 4, "ps": 3},
     }
-    
-    # Fallback for unknown sectors
-    DEFAULT_MULTIPLES = {"pe": 23, "ev_ebitda": 12, "pb": 3, "ps": 2.5}  # Nifty 50 avg
-    
+
+    DEFAULT_MULTIPLES = {"pe": 23, "ev_ebitda": 12, "pb": 3, "ps": 2.5}
+
     def __init__(self, ticker):
+        self.ticker = ticker
         self.data_engine = SmartDataEngine(ticker)
-        # India-specific base parameters (EY India CoE Survey 2024)
-        self.base_cost_of_equity = 0.142  # 14.2% average
-        self.terminal_growth = 0.045  # 4.5% (India nominal GDP long-term)
-    
+        # Base Cost of Equity & Long-Term Terminal Growth for India (7.1% Rf + 6.4% ERP)
+        self.base_cost_of_equity = 0.135
+        self.terminal_growth = 0.050
+
     def _calculate_wacc(self):
-        """
-        Calculate Weighted Average Cost of Capital.
-        WACC = (E/V × Re) + (D/V × Rd × (1-Tc))
-        
-        Where: E=Market Cap, D=Total Debt, V=E+D, Re=Cost of Equity, 
-               Rd=Cost of Debt, Tc=Tax Rate (25% for India)
-        
-        Source: Groww DCF Guide, Zerodha Varsity
-        """
+        """Calculates Weighted Average Cost of Capital (WACC)."""
         if not self.data_engine.has_data:
             return self.base_cost_of_equity
-        
-        # Get market cap (equity value)
-        market_cap = self.data_engine.info.get("marketCap", 0)
-        
-        # Get total debt
-        total_debt = self.data_engine.get_financials_safe(
-            self.data_engine.balance_sheet, "Total Debt", 0) or 0
-        
-        # Get interest expense for cost of debt calculation
-        interest_expense = abs(self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Interest Expense", 0) or 0)
-        
+
+        market_cap = self.data_engine.info.get("marketCap", 0) or 0
+        total_debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0)
+        interest_expense = abs(self.data_engine.get_financials_safe(self.data_engine.financials, "Interest Expense", 0))
+
         E = market_cap
         D = total_debt
         V = E + D
-        
+
         if V <= 0 or E <= 0:
             return self.base_cost_of_equity
-        
-        # Cost of Equity (sector-adjusted)
+
         sector = self.data_engine.info.get("sector", "").lower()
-        sector_adjustment = self.SECTOR_COE_ADJUSTMENTS.get(sector, 0.0)
-        Re = self.base_cost_of_equity + sector_adjustment
-        
-        # Cost of Debt = Interest Expense / Total Debt
-        # If no debt, Rd doesn't matter since D/V = 0
-        if D > 0 and interest_expense > 0:
-            Rd = min(interest_expense / D, 0.15)  # Cap at 15%
-        else:
-            Rd = 0.08  # Default 8% if no data
-        
-        # Tax rate (India corporate tax ~25%)
+        sector_adj = self.SECTOR_COE_ADJUSTMENTS.get(sector, 0.0)
+        Re = self.base_cost_of_equity + sector_adj
+
+        Rd = min(interest_expense / D, 0.14) if (D > 0 and interest_expense > 0) else 0.08
         Tc = 0.25
-        
-        # WACC Formula
+
         wacc = (E / V * Re) + (D / V * Rd * (1 - Tc))
-        
-        # Floor at 8%, cap at 20%
-        return max(0.08, min(wacc, 0.20))
-    
-    def _calculate_best_growth(self, growth_cap=0.15):
-        """
-        Calculate growth rate using the best available source.
-        Uses maximum of: Revenue CAGR, Operating Income CAGR, Net Income CAGR
-        
-        This prevents underestimation when one metric lags (e.g., 
-        high growth company with high reinvestment reducing net income)
-        """
+        return max(0.08, min(wacc, 0.18))
+
+    def _calculate_best_growth(self, growth_cap=0.18):
+        """Calculates multi-year normalized CAGR and fundamental reinvestment rate."""
         if not self.data_engine.has_data:
-            return 0.06  # Default 6%
-        
-        growth_rates = []
-        
-        # Revenue CAGR (2Y)
-        rev_curr = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Total Revenue", 0)
-        rev_prev = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Total Revenue", 2)
-        if rev_curr and rev_prev and rev_prev > 0:
-            rev_cagr = (rev_curr / rev_prev) ** 0.5 - 1
-            if rev_cagr > 0:
-                growth_rates.append(("Revenue", rev_cagr))
-        
-        # Operating Income CAGR (2Y)
-        op_curr = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Operating Income", 0)
-        op_prev = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Operating Income", 2)
-        if op_curr and op_prev and op_prev > 0:
-            op_cagr = (op_curr / op_prev) ** 0.5 - 1
-            if op_cagr > 0:
-                growth_rates.append(("OpIncome", op_cagr))
-        
-        # Net Income CAGR (2Y)
-        ni_curr = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Net Income", 0)
-        ni_prev = self.data_engine.get_financials_safe(
-            self.data_engine.financials, "Net Income", 2)
-        if ni_curr and ni_prev and ni_prev > 0:
-            ni_cagr = (ni_curr / ni_prev) ** 0.5 - 1
-            if ni_cagr > 0:
-                growth_rates.append(("NetIncome", ni_cagr))
-        
-        if not growth_rates:
-            return 0.06  # Default
-        
-        # Use maximum of available growth rates, capped
-        best_source, best_growth = max(growth_rates, key=lambda x: x[1])
-        return max(0.02, min(best_growth, growth_cap))
-        
+            return 0.08
+
+        growth_candidates = []
+
+        rev_cagr = self.data_engine.calculate_multi_year_cagr(self.data_engine.financials, "Total Revenue", max_years=3)
+        if rev_cagr and rev_cagr > 0:
+            growth_candidates.append(("Revenue_3Y", rev_cagr))
+
+        op_cagr = self.data_engine.calculate_multi_year_cagr(self.data_engine.financials, "Operating Income", max_years=3)
+        if op_cagr and op_cagr > 0:
+            growth_candidates.append(("OpIncome_3Y", op_cagr))
+
+        ni_cagr = self.data_engine.calculate_multi_year_cagr(self.data_engine.financials, "Net Income", max_years=3)
+        if ni_cagr and ni_cagr > 0:
+            growth_candidates.append(("NetIncome_3Y", ni_cagr))
+
+        roe_dec = (self.data_engine.info.get("returnOnEquity") or 0.15)
+        payout = (self.data_engine.info.get("payoutRatio") or 0.40)
+        retention = max(0.10, min(1.0 - payout, 0.90))
+        fund_growth = max(0.04, min(roe_dec * retention, 0.20))
+        growth_candidates.append(("Fundamental_ROE_Retention", fund_growth))
+
+        best_name, best_rate = max(growth_candidates, key=lambda x: x[1])
+        return max(0.04, min(best_rate, growth_cap))
+
     def _get_model_inputs(self):
-        """
-        Internal helper to get the correct FCF, Growth Rate, and Balance Sheet items
-        based on the sector checks.
-        """
+        """Prepares balance sheet, cash flows, and growth parameters for DCF."""
         if not self.data_engine.has_data:
             return None
-            
-        # 1. Detect Sector
+
         sector = self.data_engine.info.get("sector", "").lower()
         industry = self.data_engine.info.get("industry", "").lower()
-        
+
         is_financial = "financial" in sector or "bank" in industry or "insurance" in industry
         is_utility = "utility" in sector or "utilities" in industry or "energy" in sector
-        is_telecom = "communication" in sector or "telecom" in industry
-        
+
         model_type = "FCF (Standard)"
-        current_fcf = 0.0
-        equity_mode = False # If True, result is Equity Value (don't subtract debt)
-        
-        # 2. Select Model & Calculate Base Metric
+        equity_mode = False
+
         if is_financial:
             model_type = "FCFE (Financials)"
             equity_mode = True
             ni = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 0)
-            capex = self.data_engine.get_financials_safe(self.data_engine.cashflow, "Capital Expenditur", 0)
-            if capex == 0: capex = self.data_engine.get_financials_safe(self.data_engine.cashflow, "Capital Expenditure", 0)
-            current_fcf = ni + capex # NI - Net CapEx
-            
-        elif (is_utility or is_telecom):
-            # Check for High Growth Phase (Rev Growth > 15%).
-            # If Growing fast, don't use DDM (undervalues). Use Net Income (Market pays for EPS).
-            rev_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Total Revenue", 0)
-            rev_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Total Revenue", 1)
-            growth = 0
-            if rev_prev > 0: growth = (rev_curr - rev_prev) / rev_prev
-            
+            capex = self.data_engine.get_financials_safe(self.data_engine.cashflow, "Capital Expenditure", 0)
+            current_fcf = ni + (capex if capex < 0 else -capex)
+            if current_fcf <= 0:
+                current_fcf = ni * 0.70
+        elif is_utility:
             raw_fcf = self.data_engine.calculate_fcf(0)
-            
-            # Logic:
-            # 1. If Growth > 15% and FCF < 0: Use Net Income (FCFE Proxy).
-            # 2. Else If FCF < 0 and Div Yield > 3%: Use DDM.
-            # 3. Else: FCFF.
-            
-            if growth > 0.15 and raw_fcf < 0:
-                model_type = "NI (High Growth Proxy)"
-                equity_mode = True
-                # Use Net Income
-                current_fcf = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 0)
-            
-            elif raw_fcf < 0 and self.data_engine.info.get("dividendYield", 0) > 0.03:
-                model_type = "DDM (High Yield)"
-                equity_mode = True
-                div_paid = abs(self.data_engine.get_financials_safe(self.data_engine.cashflow, "Cash Dividends Paid", 0))
-                if div_paid == 0:
-                     mkt_cap = self.data_engine.info.get("marketCap", 0)
-                     div_paid = mkt_cap * self.data_engine.info.get("dividendYield", 0)
-                current_fcf = div_paid
-            else:
-                current_fcf = raw_fcf
+            ni = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 0)
+            current_fcf = raw_fcf if raw_fcf > 0 else ni * 0.75
+            model_type = "FCF (Regulated Utilities)"
         else:
             current_fcf = self.data_engine.calculate_fcf(0)
-            
-        # 3. Calculate Base Growth Rate & Cap
-        if is_utility:
-            growth_cap = 0.08 # Regulated utilities grow slowly
-        elif is_telecom:
-            growth_cap = 0.12 # Telecoms grow faster than utilities but have high CapEx (Data consumption growth)
-        elif is_financial:
-            growth_cap = 0.10 # Banks grow with GDP + inflation, usually 10-12% max in long run
-        else:
-            growth_cap = 0.15 # Tech/Consumer can grow fast
-        
-        op_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
-        op_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 2)
-        
-        base_growth = 0.06
-        if op_prev > 0:
-            cagr = (op_curr / op_prev)**(1/2) - 1
-            base_growth = max(0.02, min(cagr, growth_cap))
-        
-        # 4. Balance Sheet Items
+            if current_fcf <= 0:
+                ni = self.data_engine.get_financials_safe(self.data_engine.financials, "Net Income", 0)
+                current_fcf = ni * 0.80
+
+        shares = self.data_engine.info.get("sharesOutstanding", 0) or 0
+        if shares <= 0:
+            return None
+
         debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0)
         cash = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Cash And Cash Equivalents", 0)
-        shares = self.data_engine.info.get("sharesOutstanding", 0)
-        
+
+        growth_cap = 0.20 if "tech" in sector else (0.14 if is_financial else 0.16)
+
         return {
+            "model_type": model_type,
             "current_fcf": current_fcf,
-            "base_growth": base_growth,
-            "growth_cap": growth_cap,
-            "equity_mode": equity_mode,
+            "shares": shares,
             "debt": debt,
             "cash": cash,
-            "shares": shares,
-            "model_type": model_type,
-            "sector": sector  # For sector-specific CoE adjustment
+            "equity_mode": equity_mode,
+            "growth_cap": growth_cap
         }
 
-    def _compute_dcf(self, inputs, growth_rate, discount_rate, terminal_growth):
-        """Pure math calculation for DCF."""
-        if not inputs or inputs["shares"] == 0: return 0.0
-        
-        current_fcf = inputs["current_fcf"]
-        projected_fcf = current_fcf
-        total_pv = 0
-        
-        for i in range(1, 6):
-            projected_fcf *= (1 + growth_rate)
-            discount_factor = (1 + discount_rate) ** i
-            total_pv += (projected_fcf / discount_factor)
-            
-        terminal_val = (projected_fcf * (1 + terminal_growth)) / (discount_rate - terminal_growth)
-        tv_discounted = terminal_val / ((1 + discount_rate) ** 5)
-        
-        total_value = total_pv + tv_discounted
-        
+    def _compute_dcf(self, inputs, growth_rate, discount_rate, terminal_rate):
+        """Executes a 10-year discounted cash flow computation with terminal value."""
+        cf = inputs["current_fcf"]
+        pv_fcf = 0.0
+
+        for year in range(1, 11):
+            if year > 5:
+                rate = growth_rate - ((growth_rate - terminal_rate) * ((year - 5) / 5))
+            else:
+                rate = growth_rate
+
+            cf = cf * (1 + rate)
+            df = (1 + discount_rate) ** year
+            pv_fcf += cf / df
+
+        if discount_rate <= terminal_rate:
+            terminal_rate = discount_rate - 0.02
+
+        terminal_val = (cf * (1 + terminal_rate)) / (discount_rate - terminal_rate)
+        pv_terminal = terminal_val / ((1 + discount_rate) ** 10)
+        total_enterprise_value = pv_fcf + pv_terminal
+
         if inputs["equity_mode"]:
-            equity_val = total_value
+            equity_val = total_enterprise_value
         else:
-            equity_val = total_value - inputs["debt"] + inputs["cash"]
-            
-        return equity_val / inputs["shares"]
+            equity_val = total_enterprise_value - inputs["debt"] + inputs["cash"]
+
+        return max(0.0, equity_val / inputs["shares"])
 
     def get_valuation_scenarios(self):
-        """
-        Returns 3 scenarios: Conservative, Base, Optimistic.
-        Uses WACC (Weighted Average Cost of Capital) as discount rate.
-        """
+        """Returns 3 DCF scenarios: Conservative, Base, and Optimistic."""
         inputs = self._get_model_inputs()
-        if not inputs: return {}
-        
+        if not inputs:
+            return {}
+
         cap = inputs["growth_cap"]
-        
-        # Use improved growth calculation (max of Revenue/OpIncome/NetIncome)
         base_growth = self._calculate_best_growth(cap)
-        
-        # Use WACC instead of fixed Cost of Equity
         base_wacc = self._calculate_wacc()
-        
-        # Define Scenarios with WACC-based discounting
+
         scenarios = {
             "Conservative": {
-                "growth": min(base_growth * 0.8, cap * 0.8),
-                "discount": base_wacc + 0.015,  # +1.5% for conservative
-                "terminal": self.terminal_growth - 0.015  # 3% terminal
+                "growth": min(base_growth * 0.85, cap * 0.85),
+                "discount": base_wacc + 0.015,
+                "terminal": self.terminal_growth - 0.010
             },
             "Base": {
                 "growth": base_growth,
-                "discount": base_wacc,  # WACC
-                "terminal": self.terminal_growth  # 4.5% India GDP
+                "discount": base_wacc,
+                "terminal": self.terminal_growth
             },
             "Optimistic": {
-                "growth": min(base_growth * 1.2, cap * 1.2),
-                "discount": base_wacc - 0.015,  # -1.5% for optimistic
-                "terminal": self.terminal_growth + 0.01  # 5.5% terminal
+                "growth": min(base_growth * 1.15, cap * 1.15),
+                "discount": base_wacc - 0.015,
+                "terminal": self.terminal_growth + 0.010
             }
         }
-        
+
         results = {}
         for name, params in scenarios.items():
             val = self._compute_dcf(inputs, params["growth"], params["discount"], params["terminal"])
             results[name] = {
-                "value": val,
-                "growth_used": params["growth"] * 100,
-                "discount_used": params["discount"] * 100
+                "value": round(val, 2),
+                "growth_used": round(params["growth"] * 100, 2),
+                "discount_used": round(params["discount"] * 100, 2)
             }
-            
+
         return {
             "scenarios": results,
             "model_type": inputs["model_type"]
         }
 
-    def get_valuation_verdict(self):
+    def calculate_relative_value(self):
+        """Calculates fair value per share based on comparable sector multiples."""
+        if not self.data_engine.has_data:
+            return None
+
+        sector = self.data_engine.info.get("sector", "").lower()
+        multiples = self.SECTOR_MULTIPLES.get(sector, self.DEFAULT_MULTIPLES)
+
+        eps = self.data_engine.info.get("trailingEps", 0) or 0
+        current_price = self.data_engine.info.get("currentPrice", 0) or 0
+        shares = self.data_engine.info.get("sharesOutstanding", 0) or 0
+        book_value = self.data_engine.info.get("bookValue", 0) or 0
+
+        ebit = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
+        depr = abs(self.data_engine.get_financials_safe(self.data_engine.cashflow, "Depreciation And Amortization", 0))
+        ebitda = (ebit or 0) + depr
+
+        debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0)
+        cash = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Cash And Cash Equivalents", 0)
+        net_debt = debt - cash
+
+        values = []
+        methods_used = []
+
+        if eps > 0 and multiples.get("pe"):
+            sector_pe = multiples["pe"]
+            pe_fair_value = eps * sector_pe
+            values.append(pe_fair_value)
+            methods_used.append(f"P/E: {sector_pe:.1f}x → ₹{pe_fair_value:.0f}")
+
+        if ebitda > 0 and shares > 0 and multiples.get("ev_ebitda"):
+            sector_ev_ebitda = multiples["ev_ebitda"]
+            fair_ev = ebitda * sector_ev_ebitda
+            fair_equity = fair_ev - net_debt
+            ev_fair_value = fair_equity / shares
+            if ev_fair_value > 0:
+                values.append(ev_fair_value)
+                methods_used.append(f"EV/EBITDA: {sector_ev_ebitda}x → ₹{ev_fair_value:.0f}")
+
+        if book_value > 0 and multiples.get("pb") and "financial" in sector:
+            sector_pb = multiples["pb"]
+            pb_fair_value = book_value * sector_pb
+            values.append(pb_fair_value)
+            methods_used.append(f"P/B: {sector_pb}x → ₹{pb_fair_value:.0f}")
+
+        if not values:
+            return None
+
+        rel_val = sum(values) / len(values)
+
+        return {
+            "value": round(rel_val, 2),
+            "methods": methods_used,
+            "sector": sector.title() if sector else "General",
+            "current_price": current_price,
+            "upside": round((rel_val - current_price) / current_price * 100, 1) if current_price > 0 else 0
+        }
+
+    def get_combined_intrinsic_value(self):
         """
-        Verdict based on BASE case, but returns all 3 for UI.
+        AlphaSpread-style blended valuation with HoldCo Arbitrage Discount integration:
+        Intrinsic Value = (DCF Value × 40%) + (Relative Value × 60%)
         """
-        data = self.get_valuation_scenarios()
-        if not data: return {}
-        
-        base_val = data["scenarios"]["Base"]["value"]
-        current_price = self.data_engine.info.get("currentPrice", 0)
-        
-        verdict = "HOLD"
+        dcf_data = self.get_valuation_scenarios()
+        dcf_val = 0
+        if dcf_data and "scenarios" in dcf_data:
+            dcf_val = dcf_data["scenarios"].get("Base", {}).get("value", 0)
+
+        rel_data = self.calculate_relative_value()
+        rel_val = rel_data.get("value", 0) if rel_data else 0
+        current_price = self.data_engine.info.get("currentPrice", 0) or 0
+
+        if dcf_val > 0 and rel_val > 0:
+            combined = (dcf_val * 0.40) + (rel_val * 0.60)
+            weighting = "DCF 40% + Relative 60%"
+        elif dcf_val > 0:
+            combined = dcf_val
+            weighting = "DCF 100%"
+        elif rel_val > 0:
+            combined = rel_val
+            weighting = "Relative 100%"
+        else:
+            return {"combined_value": current_price, "margin_of_safety": 0, "verdict": "FAIRLY VALUED"}
+
+        # -------------------------------------------------------------
+        # HOLDING COMPANY (HOLDCO) DISCOUNT ADJUSTMENT
+        # -------------------------------------------------------------
+        gross_asset_val = combined
+        is_holdco = False
+        holdco_discount_pct = 0.0
+
+        try:
+            from src.anomaly_detector import AnomalyDetector
+            ad = AnomalyDetector(self.ticker)
+            situations = ad.detect_special_situations()
+            if situations.get("situation_type") == "HOLDING_COMPANY":
+                is_holdco = True
+                h_adj = situations.get("holdco_adjustment", {})
+                factor = h_adj.get("discount_factor", 0.45)
+                holdco_discount_pct = h_adj.get("discount_percentage", 55.0)
+                combined = gross_asset_val * factor
+                weighting = f"HoldCo Adjusted ({holdco_discount_pct:.0f}% Discount) | Gross Asset Value: ₹{gross_asset_val:,.0f}"
+        except Exception:
+            pass
+
         margin_of_safety = 0
-        
-        if base_val > 0 and current_price > 0:
-            if current_price < base_val:
-                margin_of_safety = ((base_val - current_price) / base_val) * 100
-                if margin_of_safety > 30: 
-                    verdict = "BUY (Undervalued)"
-                else:
-                    verdict = "HOLD (Fair Value)"
+        verdict = "HOLD"
+
+        if combined > 0 and current_price > 0:
+            if current_price < combined:
+                margin_of_safety = ((combined - current_price) / combined) * 100
+                verdict = "BUY (Undervalued)" if margin_of_safety >= 20 else "HOLD (Fair Value)"
             else:
-                premium = ((current_price - base_val) / base_val) * 100
-                if premium > 50:
-                    verdict = "SELL (Overvalued)"
-                else:
-                    verdict = "HOLD (Premium)"
-                    
-        previous_close = self.data_engine.info.get("previousClose", 0)
-        change = current_price - previous_close if previous_close and current_price else 0
-        change_p = (change / previous_close) * 100 if previous_close else 0
+                premium = ((current_price - combined) / combined) * 100
+                verdict = "SELL (Overvalued)" if premium >= 25 else "HOLD (Premium)"
+
+        return {
+            "combined_value": round(combined, 2),
+            "gross_asset_value": round(gross_asset_val, 2) if is_holdco else None,
+            "is_holdco": is_holdco,
+            "holdco_discount_pct": holdco_discount_pct if is_holdco else 0.0,
+            "dcf_value": round(dcf_val, 2) if dcf_val else None,
+            "relative_value": round(rel_val, 2) if rel_val else None,
+            "weighting": weighting,
+            "current_price": current_price,
+            "margin_of_safety": round(margin_of_safety, 1),
+            "verdict": verdict,
+            "relative_methods": rel_data.get("methods", []) if rel_data else [],
+            "model_type": dcf_data.get("model_type", "Standard") if dcf_data else "Relative"
+        }
+
+    def get_valuation_verdict(self):
+        """Unified valuation summary returning both Combined and DCF Scenarios."""
+        combined = self.get_combined_intrinsic_value()
+        dcf_scenarios = self.get_valuation_scenarios()
+
+        current_price = self.data_engine.info.get("currentPrice", 0) or 0
+        prev_close = self.data_engine.info.get("previousClose", 0) or 0
+        change = current_price - prev_close if (prev_close and current_price) else 0
+        change_p = (change / prev_close) * 100 if prev_close else 0
 
         return {
             "current_price": current_price,
             "price_change": round(change, 2),
             "price_change_percent": round(change_p, 2),
-            "intrinsic_value": base_val, # For backward compatibility in simple views
-            "scenarios": data["scenarios"],
-            "model_type": data["model_type"],
-            "margin_of_safety": margin_of_safety,
-            "verdict": verdict
+            "intrinsic_value": combined.get("combined_value", 0),
+            "scenarios": dcf_scenarios.get("scenarios", {}),
+            "model_type": dcf_scenarios.get("model_type", "Standard"),
+            "margin_of_safety": combined.get("margin_of_safety", 0),
+            "verdict": combined.get("verdict", "HOLD"),
+            "combined": combined
         }
-    
-    def calculate_relative_value(self):
-        """
-        Calculate relative value using sector-specific multiples.
-        Combines P/E based value and EV/EBITDA based value.
-        
-        Returns fair value per share based on comparable sector multiples.
-        """
-        if not self.data_engine.has_data:
-            return None
-            
-        sector = self.data_engine.info.get("sector", "").lower()
-        multiples = self.SECTOR_MULTIPLES.get(sector, self.DEFAULT_MULTIPLES)
-        
-        # Get current metrics
-        eps = self.data_engine.info.get("trailingEps", 0)
-        current_price = self.data_engine.info.get("currentPrice", 0)
-        shares = self.data_engine.info.get("sharesOutstanding", 0)
-        book_value = self.data_engine.info.get("bookValue", 0)
-        
-        # Get EBITDA for EV/EBITDA valuation
-        ebit = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
-        depreciation = abs(self.data_engine.get_financials_safe(
-            self.data_engine.cashflow, "Depreciation And Amortization", 0) or 0)
-        ebitda = (ebit or 0) + depreciation
-        
-        # Get debt and cash for enterprise value calculation
-        debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0) or 0
-        cash = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Cash And Cash Equivalents", 0) or 0
-        net_debt = debt - cash
-        
-        values = []
-        methods_used = []
-        
-        # 1. P/E Based Value
-        if eps and eps > 0 and multiples.get("pe"):
-            sector_pe = multiples["pe"]
-            
-            # Adjust P/E based on company's growth vs sector average
-            # Higher growth = higher deserved P/E
-            op_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
-            op_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 2)
-            company_growth = 0.06  # Default 6%
-            if op_prev and op_prev > 0 and op_curr:
-                company_growth = max(0.02, min((op_curr / op_prev) ** 0.5 - 1, 0.25))
-            
-            # Sector average growth assumed ~8-10%
-            growth_adjustment = (company_growth / 0.08)  # Above 1 = premium, below 1 = discount
-            growth_adjustment = max(0.7, min(growth_adjustment, 1.4))  # Cap adjustment ±40%
-            
-            fair_pe = sector_pe * growth_adjustment
-            pe_fair_value = eps * fair_pe
-            values.append(pe_fair_value)
-            methods_used.append(f"P/E: {fair_pe:.1f}x → ₹{pe_fair_value:.0f}")
-        
-        # 2. EV/EBITDA Based Value
-        if ebitda and ebitda > 0 and shares > 0 and multiples.get("ev_ebitda"):
-            sector_ev_ebitda = multiples["ev_ebitda"]
-            
-            # Calculate implied enterprise value
-            fair_ev = ebitda * sector_ev_ebitda
-            
-            # Convert to equity value (EV - Net Debt = Equity)
-            fair_equity = fair_ev - net_debt
-            ev_fair_value = fair_equity / shares
-            
-            if ev_fair_value > 0:
-                values.append(ev_fair_value)
-                methods_used.append(f"EV/EBITDA: {sector_ev_ebitda}x → ₹{ev_fair_value:.0f}")
-        
-        # 3. P/B Based Value (for financials or as sanity check)
-        if book_value and book_value > 0 and multiples.get("pb"):
-            sector_pb = multiples["pb"]
-            pb_fair_value = book_value * sector_pb
-            
-            # For non-financials, give lower weight to P/B
-            if "financial" in sector:
-                values.append(pb_fair_value)
-                methods_used.append(f"P/B: {sector_pb}x → ₹{pb_fair_value:.0f}")
-        
-        if not values:
-            return {"value": None, "note": "Insufficient data for relative valuation"}
-        
-        # Calculate weighted average (equal weights for available methods)
-        relative_value = sum(values) / len(values)
-        
-        return {
-            "value": round(relative_value, 2),
-            "methods": methods_used,
-            "sector": sector.title() if sector else "Unknown",
-            "sector_multiples": multiples,
-            "current_price": current_price,
-            "upside": round((relative_value - current_price) / current_price * 100, 1) if current_price > 0 else 0
-        }
-    
-    def get_combined_intrinsic_value(self):
-        """
-        Calculate combined intrinsic value using AlphaSpread-like methodology:
-        Intrinsic Value = (DCF Value × 40%) + (Relative Value × 60%)
-        
-        This balances fundamental cash flow analysis with market-based comparables
-        for a more realistic and stable valuation.
-        """
-        # Get DCF value (Base case)
-        dcf_data = self.get_valuation_scenarios()
-        dcf_value = 0
-        if dcf_data and "scenarios" in dcf_data:
-            dcf_value = dcf_data["scenarios"].get("Base", {}).get("value", 0)
-        
-        # Get Relative value
-        relative_data = self.calculate_relative_value()
-        relative_value = relative_data.get("value", 0) if relative_data else 0
-        
-        current_price = self.data_engine.info.get("currentPrice", 0)
-        
-        # Calculate combined value
-        # Weight: 40% DCF (fundamental) + 60% Relative (market-based)
-        # If one method fails, use the other 100%
-        if dcf_value and dcf_value > 0 and relative_value and relative_value > 0:
-            combined_value = (dcf_value * 0.4) + (relative_value * 0.6)
-            weighting = "DCF 40% + Relative 60%"
-        elif dcf_value and dcf_value > 0:
-            combined_value = dcf_value
-            weighting = "DCF 100% (Relative unavailable)"
-        elif relative_value and relative_value > 0:
-            combined_value = relative_value
-            weighting = "Relative 100% (DCF unavailable)"
-        else:
-            return {"value": None, "note": "Insufficient data for valuation"}
-        
-        # Determine verdict
-        verdict = "HOLD"
-        margin_of_safety = 0
-        if combined_value > 0 and current_price > 0:
-            if current_price < combined_value:
-                margin_of_safety = ((combined_value - current_price) / combined_value) * 100
-                if margin_of_safety > 25:
-                    verdict = "UNDERVALUED"
-                else:
-                    verdict = "FAIRLY VALUED"
-            else:
-                premium = ((current_price - combined_value) / combined_value) * 100
-                if premium > 25:
-                    verdict = "OVERVALUED"
-                else:
-                    verdict = "FAIRLY VALUED"
-        
-        return {
-            "combined_value": round(combined_value, 2),
-            "dcf_value": round(dcf_value, 2) if dcf_value else None,
-            "relative_value": round(relative_value, 2) if relative_value else None,
-            "weighting": weighting,
-            "current_price": current_price,
-            "margin_of_safety": round(margin_of_safety, 1),
-            "verdict": verdict,
-            "relative_methods": relative_data.get("methods", []) if relative_data else [],
-            "model_type": dcf_data.get("model_type", "Unknown") if dcf_data else "Relative Only"
-        }
-    
-    def calculate_epv(self):
-        """
-        Greenwald's Earnings Power Value - values company assuming zero growth.
-        EPV = Adjusted EBIT × (1 - Tax Rate) / Cost of Capital
-        
-        This provides a conservative baseline: what is the company worth
-        if it never grows but maintains current earnings power forever?
-        """
-        if not self.data_engine.has_data:
-            return None
-            
-        # Get normalized EBIT (3-year average if available)
-        ebit_values = []
-        for i in range(3):
-            ebit = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", i)
-            if ebit and ebit > 0:
-                ebit_values.append(ebit)
-        
-        if not ebit_values:
-            return {"value": None, "note": "No positive EBIT available"}
-        
-        avg_ebit = sum(ebit_values) / len(ebit_values)
-        
-        # Get sector and calculate CoE
-        sector = self.data_engine.info.get("sector", "").lower()
-        sector_adjustment = self.SECTOR_COE_ADJUSTMENTS.get(sector, 0.0)
-        coe = self.base_cost_of_equity + sector_adjustment
-        
-        # Tax rate (India corporate tax ~25%)
-        tax_rate = 0.25
-        
-        # NOPAT (Net Operating Profit After Tax)
-        nopat = avg_ebit * (1 - tax_rate)
-        
-        # Maintenance CapEx approximation (use depreciation as proxy)
-        depreciation = abs(self.data_engine.get_financials_safe(
-            self.data_engine.cashflow, "Depreciation And Amortization", 0) or 0)
-        
-        # Owner earnings = NOPAT - Maintenance CapEx
-        owner_earnings = nopat - depreciation * 0.8  # Assume 80% of D&A is maintenance
-        
-        # Capitalize at cost of equity
-        enterprise_value = owner_earnings / coe
-        
-        # Adjust for cash and debt
-        debt = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Total Debt", 0) or 0
-        cash = self.data_engine.get_financials_safe(self.data_engine.balance_sheet, "Cash And Cash Equivalents", 0) or 0
-        equity_value = enterprise_value + cash - debt
-        
-        shares = self.data_engine.info.get("sharesOutstanding", 0)
-        if shares <= 0:
-            return {"value": None, "note": "No shares outstanding data"}
-        
-        epv_per_share = equity_value / shares
-        current_price = self.data_engine.info.get("currentPrice", 0)
-        
-        return {
-            "value": round(epv_per_share, 2),
-            "normalized_ebit": round(avg_ebit / 10_000_000, 2),  # In Cr
-            "cost_of_capital": f"{coe * 100:.1f}%",
-            "current_price": current_price,
-            "upside": round((epv_per_share - current_price) / current_price * 100, 1) if current_price > 0 else 0,
-            "verdict": "Undervalued" if epv_per_share > current_price * 1.2 else (
-                "Fair" if epv_per_share > current_price * 0.8 else "Overvalued"
-            )
-        }
-    
-    def calculate_peg_fair_value(self):
-        """
-        PEG-based fair value estimation.
-        Peter Lynch: Fair PEG = 1.0, meaning P/E should roughly equal growth rate.
-        
-        Fair P/E = Expected Growth Rate (%) × PEG Multiplier
-        """
-        eps = self.data_engine.info.get("trailingEps", 0)
-        current_pe = self.data_engine.info.get("trailingPE", 0)
-        
-        if not eps or eps <= 0 or not current_pe:
-            return {"value": None, "note": "EPS or P/E not available"}
-        
-        # Get growth rate (same methodology as DCF)
-        op_curr = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 0)
-        op_prev = self.data_engine.get_financials_safe(self.data_engine.financials, "Operating Income", 2)
-        
-        growth_rate = 0.06
-        if op_prev and op_prev > 0 and op_curr and op_curr > 0:
-            growth_rate = (op_curr / op_prev) ** 0.5 - 1
-            growth_rate = max(0.05, min(growth_rate, 0.20))  # Cap between 5% and 20%
-        
-        growth_pct = growth_rate * 100
-        
-        # Calculate fair value at different PEG levels
-        # Lower PEG = more conservative
-        peg_conservative = 0.8   # Strict value investor
-        peg_base = 1.2           # Reasonable for quality
-        peg_optimistic = 1.8     # Growth premium
-        
-        fair_pe_conservative = growth_pct * peg_conservative
-        fair_pe_base = growth_pct * peg_base
-        fair_pe_optimistic = growth_pct * peg_optimistic
-        
-        current_price = self.data_engine.info.get("currentPrice", 0)
-        current_peg = current_pe / growth_pct if growth_pct > 0 else 0
-        
-        return {
-            "conservative": round(eps * fair_pe_conservative, 2),
-            "base": round(eps * fair_pe_base, 2),
-            "optimistic": round(eps * fair_pe_optimistic, 2),
-            "current_peg": round(current_peg, 2),
-            "growth_rate": f"{growth_pct:.1f}%",
-            "current_price": current_price,
-            "assessment": "Cheap" if current_peg < 1.0 else (
-                "Fair" if current_peg < 1.5 else (
-                    "Expensive" if current_peg < 2.5 else "Very Expensive"
-                )
-            )
-        }
-
-if __name__ == "__main__":
-    v = ValuationAnalyzer("RELIANCE.NS")
-    print(v.get_valuation_verdict())

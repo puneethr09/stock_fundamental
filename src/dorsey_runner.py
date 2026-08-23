@@ -1,18 +1,17 @@
 """
-Dorsey Runner - Main Integration Module
+Dorsey Runner - Main Integration & Quantitative Orchestrator
 
-Executes the complete Dorsey Protocol for stock analysis.
-Combines all modules into a unified analysis result for the UI.
-
-Includes:
+Executes the complete Dorsey Protocol & Institutional Quant Screen:
+- Special Situations & Anomaly Detection (HoldCo, SOTP, Cyclicals)
 - Ten-Minute Test (Chapter 12)
-- Moat Analysis (Chapter 3)
-- Financial Health (Chapters 5-8)
-- Valuation (Chapters 9-10)
-- Sector-Specific Analysis (Chapters 13-26)
-- Mistake Detection (Chapter 2)
-- Dorsey Scorecard (Chapter 11)
-- Graham Analysis (Intelligent Investor)
+- Moat Analysis & Pricing Power (Chapter 3)
+- Financial Health, Graduated Red Flags & Piotroski F-Score (Chapters 5-8)
+- DuPont 3-Way ROE Decomposition
+- Sloan Accrual Ratio (Earnings Quality)
+- 52-Week Range & Momentum Context
+- Multi-Model Intrinsic Valuation & Margin of Safety (Chapters 9-10)
+- 100-Point Rebalanced Scorecard (Chapter 11)
+- Graham Value Investing Analysis (Intelligent Investor)
 """
 
 from src.ten_minute_test import TenMinuteTest
@@ -22,99 +21,73 @@ from src.dorsey_core.valuation import ValuationAnalyzer
 from src.dorsey_core.mistake_detector import MistakeDetector
 from src.dorsey_core.scorecard import DorseyScorecard
 from src.dorsey_sectors.factory import SectorFactory
-
-# Graham modules
 from src.graham.intelligent_investor import GrahamAnalyzer
 from src.graham.defensive_criteria import DefensiveInvestorScreen
+from src.smart_data import SmartDataEngine
+from src.anomaly_detector import AnomalyDetector
 
 
 def run_dorsey_analysis(ticker):
     """
-    Executes the full Dorsey Protocol.
-    Returns a unified dictionary for the UI.
-    
-    Args:
-        ticker: Stock ticker symbol (e.g., 'TCS.NS')
-        
-    Returns:
-        Dictionary containing all analysis results
+    Executes the full Dorsey, Quant & Anomaly Protocol.
+    Returns a unified dictionary for the Flask UI and LLM intelligence card.
     """
     results = {}
-    
-    # ============================================================
-    # 1. TEN MINUTE TEST (Chapter 12)
-    # ============================================================
+    data_engine = SmartDataEngine(ticker)
+
+    # 1. Anomaly & Special Situation Detection
+    ad = AnomalyDetector(ticker)
+    results["special_situation"] = ad.detect_special_situations()
+
+    # 2. 52-Week Range Context
+    results["momentum_52w"] = data_engine.get_52w_position()
+
+    # 3. Ten Minute Test (Chapter 12)
     tm = TenMinuteTest(ticker)
     results["ten_minute_test"] = tm.run_test()
-    
-    # ============================================================
-    # 2. CORE FRAMEWORK
-    # ============================================================
-    
-    # Moat Analysis (Chapter 3)
+
+    # 4. Moat Analysis (Chapter 3)
     m = MoatAnalyzer(ticker)
     results["moat_analysis"] = m.analyze_moat()
-    
-    # Financial Health (Chapters 5-8)
+
+    # 5. Financial Health & Forensic Quant (Chapters 5-8)
     f = FinancialsAnalyzer(ticker)
-    results["financial_health"] = f.analyze_health()
-    
-    # Valuation (Chapters 9-10)
+    health_result = f.analyze_health()
+    results["financial_health"] = health_result
+    results["piotroski_f_score"] = health_result.get("piotroski_f_score", {})
+    results["dupont_analysis"] = health_result.get("dupont_analysis", {})
+    results["sloan_accrual"] = health_result.get("sloan_accrual", {})
+
+    # 6. Valuation (Chapters 9-10 with HoldCo adjustment)
     v = ValuationAnalyzer(ticker)
     results["valuation"] = v.get_valuation_verdict()
-    
-    # Combined Valuation (AlphaSpread-like: DCF + Relative)
-    combined_val = v.get_combined_intrinsic_value()
-    if combined_val:
-        results["valuation"]["combined"] = combined_val
-    
-    # Mistake Detection (Chapter 2)
+
+    # 7. Mistake Detection (Chapter 2)
     md = MistakeDetector(ticker)
     results["mistake_warnings"] = md.detect_mistakes()
-    
-    # ============================================================
-    # 3. SECTOR SPECIFICS (Chapters 13-26)
-    # ============================================================
-    s = SectorFactory.get_strategy(ticker)
-    results["sector_analysis"] = s.analyze()
-    results["sector_chapter"] = SectorFactory.get_chapter_reference(ticker)
-    
-    # ============================================================
-    # 4. DORSEY SCORECARD (Chapter 11)
-    # ============================================================
+
+    # 8. Sector Specifics (Chapters 13-26)
+    try:
+        s = SectorFactory.get_strategy(ticker)
+        results["sector_analysis"] = s.analyze()
+        results["sector_chapter"] = SectorFactory.get_chapter_reference(ticker)
+    except Exception:
+        results["sector_analysis"] = {}
+        results["sector_chapter"] = "General"
+
+    # 9. Rebalanced Composite Scorecard (Chapter 11)
     scorecard = DorseyScorecard(ticker)
     full_scorecard = scorecard.generate_scorecard()
-    
-    results["scorecard"] = {
-        "total_score": full_scorecard.get("total_score", 0),
-        "max_score": full_scorecard.get("max_score", 100),
-        "percentage": full_scorecard.get("percentage", "0%"),
-        "recommendation": full_scorecard.get("recommendation", "N/A"),
-        "confidence": full_scorecard.get("confidence", "N/A"),
-        "summary": full_scorecard.get("summary", ""),
-        "scores": full_scorecard.get("scores", {}),
-        "dorsey_five_rules_check": full_scorecard.get("dorsey_five_rules_check", {})
-    }
-    
-    # ============================================================
-    # 5. GRAHAM ANALYSIS (Intelligent Investor)
-    # ============================================================
+    results["scorecard"] = full_scorecard
+
+    # 10. Graham Analysis
     try:
         graham = GrahamAnalyzer(ticker)
         graham_result = graham.analyze()
-        
-        results["graham_analysis"] = {
-            "graham_number": graham_result.get("graham_number", {}),
-            "intrinsic_value": graham_result.get("graham_intrinsic_value", {}),
-            "margin_of_safety": graham_result.get("margin_of_safety", {}),
-            "mr_market": graham_result.get("mr_market_indicator", {}),
-            "principles_check": graham_result.get("graham_principles_checklist", {})
-        }
-        
-        # Defensive Investor Screen
+        results["graham_analysis"] = graham_result
+
         defensive = DefensiveInvestorScreen(ticker)
         defensive_result = defensive.screen()
-        
         results["graham_defensive_screen"] = {
             "passed": defensive_result.get("summary", {}).get("passed", 0),
             "total": defensive_result.get("summary", {}).get("total", 7),
@@ -124,58 +97,11 @@ def run_dorsey_analysis(ticker):
     except Exception as e:
         results["graham_analysis"] = {"error": str(e)}
         results["graham_defensive_screen"] = {"error": str(e)}
-    
+
     return results
 
 
 def run_quick_analysis(ticker):
-    """
-    Runs a quick analysis with just the scorecard summary.
-    Useful for bulk screening.
-    """
+    """Runs a quick analysis with just the scorecard summary."""
     scorecard = DorseyScorecard(ticker)
     return scorecard.get_quick_summary()
-
-
-def run_graham_only(ticker):
-    """
-    Runs just the Graham analysis for value investors.
-    """
-    results = {}
-    
-    # Graham Analysis
-    graham = GrahamAnalyzer(ticker)
-    results["graham"] = graham.analyze()
-    
-    # Defensive Screen
-    defensive = DefensiveInvestorScreen(ticker)
-    results["defensive_screen"] = defensive.screen()
-    
-    return results
-
-
-if __name__ == "__main__":
-    # Test
-    import json
-    
-    print("="*70)
-    print("DORSEY RUNNER TEST")
-    print("="*70)
-    
-    result = run_dorsey_analysis("TCS.NS")
-    
-    print(f"\nScorecard: {result['scorecard']['total_score']}/{result['scorecard']['max_score']}")
-    print(f"Recommendation: {result['scorecard']['recommendation']}")
-    print(f"Moat Rating: {result['moat_analysis'].get('moat_rating', 'N/A')}")
-    print(f"Ten-Minute Test: {result['ten_minute_test'].get('overall_verdict', 'N/A')}")
-    print(f"Health: {result['financial_health'].get('health_rating', 'N/A')}")
-    print(f"Sector: {result['sector_chapter']}")
-    
-    if result.get('graham_analysis'):
-        gn = result['graham_analysis'].get('graham_number', {})
-        if gn.get('value'):
-            print(f"Graham Number: ₹{gn['value']}")
-    
-    if result.get('mistake_warnings'):
-        warnings = result['mistake_warnings'].get('mistake_warnings', [])
-        print(f"Mistake Warnings: {len(warnings)}")

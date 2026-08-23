@@ -57,111 +57,88 @@
         </form>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- DORSEY SCORECARD - THE VERDICT -->
+        <!-- ============================================================ -->
+    <!-- MASTER COMPOSITE VERDICT HERO (ONE UNIFIED DEFINITIVE SCORE) -->
     <!-- ============================================================ -->
     {% if scorecard %}
-    <div class="card mb-4 animate-fade-in {% if scorecard.recommendation == 'STRONG BUY' %}border-glow-green{% elif 'AVOID' in scorecard.recommendation %}border-glow-red{% else %}glow-blue{% endif %}" style="border-width: 2px;">
-        <div class="card-body py-4">
+    <div class="card mb-4 shadow-lg animate-fade-in {% if scorecard.recommendation == 'STRONG BUY' %}border-glow-green{% elif 'AVOID' in scorecard.recommendation %}border-glow-red{% else %}glow-blue{% endif %}" style="border-width: 2px; border-radius: 14px; background: linear-gradient(145deg, #181825, #11111b);">
+        <div class="card-header d-flex justify-content-between align-items-center py-3 px-4" style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="d-flex align-items-center flex-wrap">
+                <span class="badge badge-pill badge-primary px-3 py-1 mr-2 mb-1" style="font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;">
+                    <i class="fas fa-crown text-warning mr-1"></i> MASTER COMPOSITE SCORE
+                </span>
+                {% if scorecard.archetype and scorecard.archetype.name %}
+                <span class="badge badge-pill badge-dark px-3 py-1 mr-2 mb-1 border" style="font-size: 0.82rem; border-color: rgba(255,255,255,0.2) !important;">
+                    {{ scorecard.archetype.name }}
+                </span>
+                {% endif %}
+            </div>
+            {% if momentum_52w and momentum_52w.status != 'N/A' %}
+            <div>
+                <span class="badge badge-pill {% if 'Low' in momentum_52w.status %}badge-success{% elif 'High' in momentum_52w.status %}badge-info{% else %}badge-secondary{% endif %}" style="font-size: 0.80rem;">
+                    <i class="fas fa-chart-area mr-1"></i> 52W Range: {{ momentum_52w.range_position_pct }}% ({{ momentum_52w.status }})
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body py-4 px-4">
             <div class="row align-items-center">
-                <!-- Score Circle -->
-                <div class="col-md-2 text-center mb-3 mb-md-0">
-                    <div class="score-circle {% if scorecard.total_score >= 60 %}{% elif scorecard.total_score >= 40 %}moderate{% else %}poor{% endif %}">
+                <!-- Single Master Score Circle -->
+                <div class="col-lg-3 col-md-4 text-center mb-3 mb-md-0 border-right" style="border-color: rgba(255,255,255,0.08) !important;">
+                    <div class="score-circle {% if scorecard.total_score >= 65 %}{% elif scorecard.total_score >= 50 %}moderate{% else %}poor{% endif %} mx-auto mb-2" style="width: 110px; height: 110px;">
                         <div class="text-center">
-                            <span style="font-size: 2rem; font-weight: 800; line-height: 1;">{{ scorecard.total_score|round|int }}</span>
-                            <span class="d-block text-muted" style="font-size: 0.8rem;">/100</span>
+                            <span style="font-size: 2.3rem; font-weight: 800; line-height: 1;">{{ scorecard.total_score|round|int }}</span>
+                            <span class="d-block text-muted" style="font-size: 0.8rem; font-weight: 600;">/ 100</span>
                         </div>
                     </div>
-                    <p class="mt-2 mb-0 small text-muted">
-                        <span class="info-tooltip tooltip-bottom">Dorsey Score
-                            <span class="tooltip-icon">?</span>
-                            <span class="tooltip-content">
-                                <span class="tooltip-title"><i class="fas fa-star"></i> Dorsey Score</span>
-                                <span class="tooltip-text">A composite score from 0-100 based on Pat Dorsey's Five Rules framework. Combines Ten-Minute Test, Moat Analysis, Financial Health, and Valuation.</span>
-                                <span class="tooltip-benchmark">
-                                    <span class="benchmark-good">75+: Strong Buy</span> |
-                                    <span class="benchmark-bad">&lt;40: Avoid</span>
-                                </span>
-                            </span>
-                        </span>
-                    </p>
-                </div>
-                
-                <!-- Recommendation -->
-                <div class="col-md-3 text-center mb-3 mb-md-0">
-                    <h2 class="mb-1 {% if scorecard.recommendation == 'STRONG BUY' %}text-success{% elif scorecard.recommendation == 'BUY' %}text-info{% elif 'AVOID' in scorecard.recommendation %}text-danger{% else %}text-warning{% endif %}">
+                    <h3 class="mb-0 {% if scorecard.recommendation == 'STRONG BUY' %}text-success{% elif scorecard.recommendation == 'BUY' %}text-info{% elif 'AVOID' in scorecard.recommendation %}text-danger{% else %}text-warning{% endif %}" style="font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px;">
                         {{ scorecard.recommendation }}
-                    </h2>
-                    <small class="text-muted">Confidence: {{ scorecard.confidence }}</small>
+                    </h3>
+                    <small class="text-muted" style="font-size: 0.8rem;">Confidence: <span class="text-white">{{ scorecard.confidence }}</span></small>
                 </div>
-                
-                <!-- Component Breakdown -->
-                <div class="col-md-7">
+
+                <!-- 4 Master Pillars Breakdown (Dynamic Archetype Weights) -->
+                <div class="col-lg-9 col-md-8 pl-md-4">
                     <div class="row">
+                        <!-- Pillar 1: Valuation -->
                         <div class="col-6 col-lg-3 mb-2">
-                            <div class="metric-card text-center">
-                                <div class="metric-label">
-                                    <span class="info-tooltip tooltip-bottom">10-Min Test
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <span class="tooltip-title"><i class="fas fa-clock"></i> Ten-Minute Test</span>
-                                            <span class="tooltip-text">Quick quality filter from Chapter 12. Checks operating profit, FCF, ROE, debt levels, and earnings consistency.</span>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="metric-value">{{ scorecard.scores.ten_minute_test.score|round|int }}<span class="text-muted" style="font-size:0.8rem">/{{ scorecard.scores.ten_minute_test.max }}</span></div>
+                            <div class="p-2 rounded text-center" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="small text-muted font-weight-bold mb-1"><i class="fas fa-tag text-success mr-1"></i>Valuation</div>
+                                <div class="font-weight-bold" style="font-size: 1.15rem;">{{ scorecard.scores.valuation.score|round|int }}<span class="text-muted" style="font-size: 0.75rem;"> / {{ scorecard.scores.valuation.max }}</span></div>
+                                <small class="{% if 'BUY' in scorecard.scores.valuation.assessment %}text-success{% elif 'SELL' in scorecard.scores.valuation.assessment %}text-danger{% else %}text-warning{% endif %}" style="font-size: 0.75rem; font-weight: 600;">{{ scorecard.scores.valuation.assessment }}</small>
                             </div>
                         </div>
+                        <!-- Pillar 2: Moat -->
                         <div class="col-6 col-lg-3 mb-2">
-                            <div class="metric-card text-center">
-                                <div class="metric-label">
-                                    <span class="info-tooltip tooltip-bottom">Moat
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <span class="tooltip-title"><i class="fas fa-shield-alt"></i> Economic Moat</span>
-                                            <span class="tooltip-text">A durable competitive advantage that protects profits. Wide moats come from: intangible assets, switching costs, network effects, or cost advantages.</span>
-                                            <div class="tooltip-formula">ROIC > 15% for 10+ years = Wide Moat</div>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="metric-value">{{ scorecard.scores.moat.score }}<span class="text-muted" style="font-size:0.8rem">/{{ scorecard.scores.moat.max }}</span></div>
+                            <div class="p-2 rounded text-center" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="small text-muted font-weight-bold mb-1"><i class="fas fa-shield-alt text-info mr-1"></i>Moat Power</div>
+                                <div class="font-weight-bold" style="font-size: 1.15rem;">{{ scorecard.scores.moat.score|round|int }}<span class="text-muted" style="font-size: 0.75rem;"> / {{ scorecard.scores.moat.max }}</span></div>
+                                <small class="text-info" style="font-size: 0.75rem; font-weight: 600;">{{ scorecard.scores.moat.rating }}</small>
                             </div>
                         </div>
+                        <!-- Pillar 3: Health -->
                         <div class="col-6 col-lg-3 mb-2">
-                            <div class="metric-card text-center">
-                                <div class="metric-label">
-                                    <span class="info-tooltip tooltip-bottom">Health
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <span class="tooltip-title"><i class="fas fa-heartbeat"></i> Financial Health</span>
-                                            <span class="tooltip-text">Balance sheet strength and red flag detection. Checks interest coverage, CFO quality, inventory/receivables bloat from Chapter 8.</span>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="metric-value">{{ scorecard.scores.financial_health.score }}<span class="text-muted" style="font-size:0.8rem">/{{ scorecard.scores.financial_health.max }}</span></div>
+                            <div class="p-2 rounded text-center" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="small text-muted font-weight-bold mb-1"><i class="fas fa-heartbeat text-danger mr-1"></i>Health</div>
+                                <div class="font-weight-bold" style="font-size: 1.15rem;">{{ scorecard.scores.financial_health.score|round|int }}<span class="text-muted" style="font-size: 0.75rem;"> / {{ scorecard.scores.financial_health.max }}</span></div>
+                                <small class="{% if scorecard.scores.financial_health.rating == 'ROBUST' or scorecard.scores.financial_health.rating == 'HEALTHY' %}text-success{% elif scorecard.scores.financial_health.rating == 'RISKY' %}text-danger{% else %}text-warning{% endif %}" style="font-size: 0.75rem; font-weight: 600;">{{ scorecard.scores.financial_health.rating }}</small>
                             </div>
                         </div>
+                        <!-- Pillar 4: 10-Min Screen -->
                         <div class="col-6 col-lg-3 mb-2">
-                            <div class="metric-card text-center">
-                                <div class="metric-label">
-                                    <span class="info-tooltip tooltip-bottom">Value
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <span class="tooltip-title"><i class="fas fa-tags"></i> Valuation</span>
-                                            <span class="tooltip-text">Price vs intrinsic value using DCF or sector-appropriate model. Margin of Safety protects against estimation errors.</span>
-                                            <div class="tooltip-benchmark">
-                                                <span class="benchmark-good">30%+ MoS: Undervalued</span>
-                                            </div>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="metric-value">{{ scorecard.scores.valuation.score }}<span class="text-muted" style="font-size:0.8rem">/{{ scorecard.scores.valuation.max }}</span></div>
+                            <div class="p-2 rounded text-center" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="small text-muted font-weight-bold mb-1"><i class="fas fa-clock text-warning mr-1"></i>10-Min Screen</div>
+                                <div class="font-weight-bold" style="font-size: 1.15rem;">{{ scorecard.scores.ten_minute_test.score|round|int }}<span class="text-muted" style="font-size: 0.75rem;"> / {{ scorecard.scores.ten_minute_test.max }}</span></div>
+                                <small class="{% if scorecard.scores.ten_minute_test.verdict == 'PASS' %}text-success{% else %}text-warning{% endif %}" style="font-size: 0.75rem; font-weight: 600;">{{ scorecard.scores.ten_minute_test.verdict }}</small>
                             </div>
                         </div>
                     </div>
-                    {% if scorecard.summary %}
-                    <p class="text-muted small mt-3 mb-0"><i class="fas fa-lightbulb text-warning mr-2"></i>{{ scorecard.summary }}</p>
-                    {% endif %}
+                    <!-- Master Summary Sentence -->
+                    <div class="mt-3 p-2 rounded" style="background: rgba(99, 102, 241, 0.08); border-left: 3px solid #6366f1;">
+                        <span style="font-size: 0.88rem; color: #e2e8f0; line-height: 1.4;">
+                            <i class="fas fa-info-circle text-primary mr-1"></i> {{ scorecard.summary }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -169,117 +146,78 @@
     {% endif %}
 
     <!-- ============================================================ -->
-    <!-- GRAHAM ANALYSIS - INTELLIGENT INVESTOR -->
+    <!-- SPECIAL SITUATION & STRUCTURAL ANOMALY CONTEXT -->
     <!-- ============================================================ -->
-    {% if graham_analysis and graham_analysis.graham_number %}
-    <div class="card mb-4 animate-fade-in" style="animation-delay: 0.1s;">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-book text-info mr-2"></i>Graham Analysis
-                <span class="info-tooltip">
-                    <span class="tooltip-icon">?</span>
-                    <span class="tooltip-content">
-                        <span class="tooltip-title"><i class="fas fa-user-tie"></i> Benjamin Graham</span>
-                        <span class="tooltip-text">Value investing principles from "The Intelligent Investor" - considered the bible of value investing. Graham was Warren Buffett's mentor.</span>
-                    </span>
-                </span>
-            </h5>
-            <span class="badge badge-secondary">Intelligent Investor</span>
+    {% if special_situation and special_situation.has_special_situation %}
+    <div class="alert alert-{{ special_situation.badge_color }} mb-4 p-3 shadow-sm animate-fade-in" style="border-radius: 10px; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.08); color: #fde68a;">
+        <div class="d-flex align-items-center mb-1">
+            <strong style="font-size: 0.95rem; letter-spacing: 0.5px;"><i class="fas fa-lightbulb mr-2"></i>{{ special_situation.badge_title }}</strong>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <!-- Graham Number -->
-                <div class="col-md-4 text-center mb-3 mb-md-0">
-                    <div class="metric-card h-100">
-                        <div class="metric-label">
-                            <span class="info-tooltip">Graham Number
-                                <span class="tooltip-icon">?</span>
-                                <span class="tooltip-content">
-                                    <span class="tooltip-title"><i class="fas fa-calculator"></i> Graham Number</span>
-                                    <span class="tooltip-text">Maximum price for a defensive investor. Stock trading below this has margin of safety.</span>
-                                    <div class="tooltip-formula">√(22.5 × EPS × BVPS)</div>
-                                </span>
-                            </span>
-                        </div>
-                        {% if graham_analysis.graham_number.value %}
-                        <div class="metric-value text-info">₹{{ graham_analysis.graham_number.value|round|int }}</div>
-                        <span class="metric-status {% if graham_analysis.graham_number.verdict == 'Undervalued' %}pass{% elif graham_analysis.graham_number.verdict == 'Overvalued' %}fail{% else %}warn{% endif %}">
-                            {{ graham_analysis.graham_number.verdict }}
-                        </span>
-                        {% else %}
-                        <div class="metric-value text-muted">N/A</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Graham Intrinsic Value -->
-                <div class="col-md-4 text-center mb-3 mb-md-0">
-                    <div class="metric-card h-100">
-                        <div class="metric-label">
-                            <span class="info-tooltip">Intrinsic Value
-                                <span class="tooltip-icon">?</span>
-                                <span class="tooltip-content">
-                                    <span class="tooltip-title"><i class="fas fa-gem"></i> Graham Intrinsic Value</span>
-                                    <span class="tooltip-text">1974 revised formula accounting for bond yields and growth.</span>
-                                    <div class="tooltip-formula">V = EPS × (8.5 + 2g) × 4.4/Y</div>
-                                </span>
-                            </span>
-                        </div>
-                        {% if graham_analysis.intrinsic_value.revised_formula_value %}
-                        <div class="metric-value text-info">₹{{ graham_analysis.intrinsic_value.revised_formula_value|round|int }}</div>
-                        <span class="metric-status {% if graham_analysis.intrinsic_value.verdict == 'Buy' %}pass{% elif graham_analysis.intrinsic_value.verdict == 'Avoid' %}fail{% else %}warn{% endif %}">
-                            {{ graham_analysis.intrinsic_value.verdict }}
-                        </span>
-                        {% else %}
-                        <div class="metric-value text-muted">N/A</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Defensive Screen -->
-                <div class="col-md-4 text-center">
-                    <div class="metric-card h-100">
-                        <div class="metric-label">
-                            <span class="info-tooltip">Defensive Criteria
-                                <span class="tooltip-icon">?</span>
-                                <span class="tooltip-content">
-                                    <span class="tooltip-title"><i class="fas fa-shield-alt"></i> Defensive Investor</span>
-                                    <span class="tooltip-text">7 criteria for conservative investors: adequate size, financial condition, earnings stability, dividend record, earnings growth, moderate P/E, moderate P/B.</span>
-                                    <div class="tooltip-benchmark">
-                                        <span class="benchmark-good">6-7: Strong Candidate</span>
-                                    </div>
-                                </span>
-                            </span>
-                        </div>
-                        {% if graham_defensive_screen %}
-                        <div class="metric-value {% if graham_defensive_screen.passed >= 5 %}text-success{% elif graham_defensive_screen.passed >= 3 %}text-warning{% else %}text-danger{% endif %}">
-                            {{ graham_defensive_screen.passed }}/{{ graham_defensive_screen.total }}
-                        </div>
-                        <span class="metric-status {% if graham_defensive_screen.passed >= 5 %}pass{% elif graham_defensive_screen.passed >= 3 %}warn{% else %}fail{% endif %}">
-                            {{ graham_defensive_screen.verdict }}
-                        </span>
-                        {% else %}
-                        <div class="metric-value text-muted">N/A</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            {% if graham_analysis.mr_market %}
-            <div class="text-center mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <small class="text-muted mr-2">Mr. Market Mood:</small>
-                <span class="badge {% if graham_analysis.mr_market.mr_market_mood == 'Pessimistic' %}badge-success{% elif graham_analysis.mr_market.mr_market_mood == 'Euphoric' %}badge-danger{% else %}badge-secondary{% endif %}">
-                    {{ graham_analysis.mr_market.mr_market_mood }}
-                </span>
-                <small class="text-muted ml-2">(P/E: {{ graham_analysis.mr_market.current_pe }})</small>
-                <span class="info-tooltip ml-2">
-                    <span class="tooltip-icon" style="width:16px; height:16px; font-size:10px;">?</span>
-                    <span class="tooltip-content" style="width: 280px;">
-                        <span class="tooltip-title"><i class="fas fa-theater-masks"></i> Mr. Market</span>
-                        <span class="tooltip-text">Graham's allegory: treat the market as a manic-depressive partner. When euphoric, sell; when pessimistic, buy.</span>
-                    </span>
-                </span>
+        <div style="font-size: 0.88rem; line-height: 1.45; color: #f3f4f6;">
+            {{ special_situation.description }}
+            {% if special_situation.holdco_adjustment and valuation.combined.gross_asset_value %}
+            <div class="mt-2 pt-2 border-top" style="border-color: rgba(255,255,255,0.12) !important;">
+                <strong>Gross Asset Value (GAV):</strong> <span class="text-white">₹{{ valuation.combined.gross_asset_value }}</span> &bull; 
+                <strong>HoldCo Market Target ({{ special_situation.holdco_adjustment.discount_percentage|round|int }}% Disc):</strong> <span class="text-warning font-weight-bold">₹{{ valuation.combined.combined_value }}</span>
             </div>
             {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- CFA-GRADE EDGE AI QUALITATIVE RESEARCH SYNTHESIS -->
+    <!-- ============================================================ -->
+    {% if ai_report and ai_report.ai_verdict %}
+    <div class="card mb-4 shadow-lg" style="border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 14px; background: linear-gradient(145deg, #181825, #11111b); color: #cdd6f4; overflow: hidden;">
+        <div class="card-header d-flex justify-content-between align-items-center py-2 px-4" style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid rgba(99, 102, 241, 0.18);">
+            <div class="d-flex align-items-center">
+                <span class="mr-2" style="font-size: 1.25rem;">🧠</span>
+                <div>
+                    <strong style="color: #c7d2fe; font-size: 0.98rem; letter-spacing: 0.5px;">AUTONOMOUS CFA-GRADE EQUITY RESEARCH SYNTHESIS</strong>
+                </div>
+            </div>
+            <div>
+                <span class="badge badge-pill" style="font-size: 0.76rem; padding: 4px 10px; background: rgba(99, 102, 241, 0.20); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35);">
+                    <i class="fas fa-microchip mr-1"></i> Cortex-A76 Local Engine &bull; Private
+                </span>
+            </div>
+        </div>
+        <div class="card-body py-3 px-4">
+            <!-- Verdict -->
+            <div class="mb-3 p-3" style="background: rgba(99, 102, 241, 0.05); border-radius: 10px; border-left: 3px solid #6366f1;">
+                <div class="text-uppercase small mb-1" style="color: #a5b4fc; font-weight: 700; letter-spacing: 0.8px; font-size: 0.78rem;">
+                    <i class="fas fa-chart-line mr-1"></i> Executive Valuation Verdict &amp; Thesis
+                </div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #f8fafc; line-height: 1.5;">
+                    {{ ai_report.ai_verdict }}
+                </div>
+            </div>
+
+            <!-- Two Columns for Moat and Risks -->
+            <div class="row">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <div class="p-3" style="background: rgba(16, 185, 129, 0.04); border-radius: 10px; border-left: 3px solid #10b981; height: 100%;">
+                        <div class="text-uppercase small mb-1" style="color: #34d399; font-weight: 700; letter-spacing: 0.8px; font-size: 0.78rem;">
+                            <i class="fas fa-chess-rook mr-1"></i> Economic Moat &amp; Pricing Power
+                        </div>
+                        <div style="color: #e2e8f0; line-height: 1.45; font-size: 0.88rem;">
+                            {{ ai_report.moat_analysis }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3" style="background: rgba(244, 63, 94, 0.04); border-radius: 10px; border-left: 3px solid #f43f5e; height: 100%;">
+                        <div class="text-uppercase small mb-1" style="color: #fb7185; font-weight: 700; letter-spacing: 0.8px; font-size: 0.78rem;">
+                            <i class="fas fa-exclamation-circle mr-1"></i> Critical Risks &amp; Downside Catalysts
+                        </div>
+                        <div style="color: #e2e8f0; line-height: 1.45; font-size: 0.88rem;">
+                            {{ ai_report.top_risks | replace('
+', '<br>') | safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -523,6 +461,50 @@
                     <h3 class="text-center mb-3 {% if financial_health.health_rating == 'ROBUST' %}text-success{% elif financial_health.health_rating == 'RISKY' %}text-danger{% else %}text-warning{% endif %}">
                         {{ financial_health.health_rating }}
                     </h3>
+
+                    <!-- Piotroski F-Score Badge -->
+                    {% if piotroski_f_score and piotroski_f_score.score is defined %}
+                    <div class="mb-3 p-2 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span style="font-size: 0.82rem; font-weight: 600;"><i class="fas fa-chart-line text-info mr-1"></i>Piotroski F-Score:</span>
+                            <span class="badge {% if piotroski_f_score.score >= 7 %}badge-success{% elif piotroski_f_score.score >= 5 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 0.80rem;">
+                                {{ piotroski_f_score.score }}/9 ({{ piotroski_f_score.rating }})
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar {% if piotroski_f_score.score >= 7 %}bg-success{% elif piotroski_f_score.score >= 5 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ (piotroski_f_score.score / 9) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- DuPont ROE Breakdown -->
+                    {% if dupont_analysis and dupont_analysis.roe is defined %}
+                    <div class="mb-3 p-2 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 0.80rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span style="font-weight: 600;"><i class="fas fa-layer-group text-warning mr-1"></i>DuPont ROE Engine:</span>
+                            <span class="badge badge-info">{{ dupont_analysis.driver_type }}</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.78rem; line-height: 1.3;">
+                            <strong>{{ dupont_analysis.primary_driver }}</strong><br>
+                            Margin: <span class="text-white font-weight-bold">{{ dupont_analysis.net_margin_pct }}%</span> &bull; 
+                            Turnover: <span class="text-white font-weight-bold">{{ dupont_analysis.asset_turnover }}x</span> &bull; 
+                            Leverage: <span class="text-white font-weight-bold">{{ dupont_analysis.financial_leverage }}x</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Sloan Accrual Quality -->
+                    {% if sloan_accrual and sloan_accrual.status is defined %}
+                    <div class="mb-3 p-2 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 0.80rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span style="font-weight: 600;"><i class="fas fa-balance-scale text-primary mr-1"></i>Earnings Quality (Sloan):</span>
+                            <span class="badge {% if sloan_accrual.status == 'EXCELLENT' %}badge-success{% elif sloan_accrual.status == 'ACCEPTABLE' %}badge-info{% else %}badge-danger{% endif %}">
+                                {{ sloan_accrual.status }}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ sloan_accrual.assessment }} (Accrual: {{ sloan_accrual.accrual_ratio_pct }}%)</small>
+                    </div>
+                    {% endif %}
                     
                     {% if financial_health.red_flags %}
                     <div class="alert alert-danger py-2 px-3 mb-3">

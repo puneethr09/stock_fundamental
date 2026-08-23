@@ -699,6 +699,22 @@ def achievements():
     return render_template("achievements.html", user_id=uid)
 
 
+
+# ---- In-memory Dorsey analysis cache (TTL = 4 hours) ----
+import time as _time
+_DORSEY_CACHE = {}
+_DORSEY_TTL = 4 * 3600  # 4 hours
+
+def _get_dorsey_cached(ticker):
+    entry = _DORSEY_CACHE.get(ticker)
+    if entry and (_time.time() - entry['ts'] < _DORSEY_TTL):
+        return entry['data'], entry['name']
+    return None, None
+
+def _set_dorsey_cached(ticker, dorsey_data, company_name):
+    _DORSEY_CACHE[ticker] = {'data': dorsey_data, 'name': company_name, 'ts': _time.time()}
+# ---- End Dorsey cache ----
+
 @app.route("/analyze", methods=["POST", "GET"])
 def analyze():
     # Handle both POST (from search bar) and GET params
@@ -727,14 +743,18 @@ def analyze_ticker(ticker=None):
              # Simple heuristic for NSE default
              t = f"{t}.NS"
         
-        # Run Full Dorsey Analysis
-        from src.dorsey_runner import run_dorsey_analysis
-        dorsey_data = run_dorsey_analysis(t)
-        
-        # Also fetch generic company info for header (Name, Sector for display)
-        import yfinance as yf
-        t_obj = yf.Ticker(t)
-        company_name = t_obj.info.get("longName", t)
+        # Run Full Dorsey Analysis (with 4-hour in-memory cache)
+        cached_dorsey, cached_name = _get_dorsey_cached(t)
+        if cached_dorsey:
+            dorsey_data = cached_dorsey
+            company_name = cached_name
+        else:
+            from src.dorsey_runner import run_dorsey_analysis
+            dorsey_data = run_dorsey_analysis(t)
+            import yfinance as yf
+            t_obj = yf.Ticker(t)
+            company_name = t_obj.info.get("longName", t)
+            _set_dorsey_cached(t, dorsey_data, company_name)
         
         # Get Related Stocks (same industry from CSV data)
         related_stocks = []
@@ -768,17 +788,26 @@ def analyze_ticker(ticker=None):
                         "dorsey_score": stock_data.get("dorsey_score", "N/A"),
                         "valuation_upside": stock_data.get("valuation_upside", "N/A"),
                     })
+        # Fetch Edge AI Fundamental Intelligence
+        try:
+            from src.ai_analyst import get_stock_ai_intelligence
+            ai_report = get_stock_ai_intelligence(t, company_name, dorsey_data=dorsey_data)
+        except Exception as e:
+            print(f'AI intelligence error: {e}')
+            ai_report = None
 
         return render_template(
             "results.html",
             ticker=t,
             company_name=company_name,
+            ai_report=ai_report,
             related_stocks=related_stocks,
             current_industry=TICKER_TO_INDUSTRY.get(t, {}).get("industry", ""),
             **dorsey_data
         )
 
     except Exception as e:
+        import traceback; traceback.print_exc()
         return render_template(
             "results.html", 
             error=f"Server error: {e}",
@@ -1429,6 +1458,7 @@ def tool_challenge(ticker=None):
         )
 
     except Exception as e:
+        import traceback; traceback.print_exc()
         return render_template(
             "tool_challenge.html",
             error=f"Failed to generate challenge: {str(e)}",

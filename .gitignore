@@ -107,3 +107,4 @@ backups/
 *.tar.bz2
 backup_*.tar.gz
 backup_report_*.txt
+data/

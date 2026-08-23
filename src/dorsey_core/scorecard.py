@@ -1,309 +1,225 @@
 """
-Dorsey Scorecard - Chapter 11: Putting It All Together
+Dorsey Scorecard - Chapter 11 (Composite Investment Decision Engine)
 
-Combines all analysis modules into a comprehensive investment scorecard
-based on Pat Dorsey's Five Rules framework.
-
-This is the culmination of Dorsey's analysis framework, integrating:
-- Ten-Minute Test (Chapter 12)
-- Moat Analysis (Chapter 3)
-- Financial Health (Chapters 5-8)
-- Valuation (Chapters 9-10)
-- Sector-Specific Analysis (Chapters 13-26)
+Integrates:
+- Dynamic Business Archetype Weighting (Perpetual Compounder vs Cyclical vs Financials)
+- Ten-Minute Quality Filter
+- Moat Analysis & Pricing Power
+- Financial Health, Red Flags & Piotroski F-Score
+- Combined Intrinsic Valuation & Margin of Safety
 """
 
-from src.smart_data import SmartDataEngine
-from src.ten_minute_test import TenMinuteTest
-from src.dorsey_core.moat import MoatAnalyzer
-from src.dorsey_core.financials import FinancialsAnalyzer
-from src.dorsey_core.valuation import ValuationAnalyzer
-from src.dorsey_sectors.factory import SectorFactory
+try:
+    from src.smart_data import SmartDataEngine
+    from src.ten_minute_test import TenMinuteTest
+    from src.dorsey_core.moat import MoatAnalyzer
+    from src.dorsey_core.financials import FinancialsAnalyzer
+    from src.dorsey_core.valuation import ValuationAnalyzer
+    from src.dorsey_sectors.factory import SectorFactory
+    from src.anomaly_detector import AnomalyDetector
+except ImportError:
+    from smart_data import SmartDataEngine
+    from ten_minute_test import TenMinuteTest
+    from moat import MoatAnalyzer
+    from financials import FinancialsAnalyzer
+    from valuation import ValuationAnalyzer
+    from dorsey_sectors.factory import SectorFactory
+    try:
+        from anomaly_detector import AnomalyDetector
+    except ImportError:
+        AnomalyDetector = None
 
 
 class DorseyScorecard:
     """
-    Complete Dorsey Analysis Scorecard - Chapter 11: Putting It All Together.
-    
-    Combines all modules into a single investment decision framework:
-    1. Ten-Minute Test: Quick quality filter
-    2. Moat Analysis: Sustainable competitive advantage
-    3. Financial Health: Balance sheet and red flags
-    4. Valuation: Price vs intrinsic value
-    5. Sector Analysis: Industry-specific considerations
-    
-    Final Output: BUY / HOLD / AVOID recommendation with confidence level
+    100-point institutional composite scorecard with Dynamic Business Archetype Weighting.
+    Adjusts weights for perpetual compounders vs cyclicals vs banking institutions.
     """
-    
+
     def __init__(self, ticker):
         self.ticker = ticker
         self.data_engine = SmartDataEngine(ticker)
-        
+
     def generate_scorecard(self):
-        """
-        Generate comprehensive Dorsey scorecard.
-        """
+        """Generates comprehensive 100-point Dorsey & Quant scorecard."""
         if not self.data_engine.has_data:
             return {
                 "ticker": self.ticker,
                 "status": "NO DATA",
                 "recommendation": "CANNOT ANALYZE"
             }
-        
-        # Get basic info
+
         company_name = self.data_engine.info.get("longName", self.ticker)
-        current_price = self.data_engine.info.get("currentPrice", 0)
+        current_price = self.data_engine.info.get("currentPrice", 0) or 0
         sector = self.data_engine.info.get("sector", "Unknown")
-        
-        # ============================================================
-        # 1. TEN-MINUTE TEST
-        # ============================================================
+
+        # 1. Determine Business Archetype & Dynamic Pillar Weights
+        archetype = {
+            "type": "PERPETUAL_COMPOUNDER",
+            "name": "🌳 Perpetual Compounder",
+            "weights": {"valuation": 30, "moat": 35, "health": 15, "ten_minute": 20}
+        }
+        if AnomalyDetector:
+            try:
+                ad = AnomalyDetector(self.ticker)
+                archetype = ad.get_business_archetype()
+            except Exception:
+                pass
+
+        weights = archetype["weights"]
+        w_val = weights["valuation"]
+        w_moat = weights["moat"]
+        w_health = weights["health"]
+        w_tm = weights["ten_minute"]
+
+        # 2. Ten-Minute Test
         ten_min = TenMinuteTest(self.ticker)
         ten_min_result = ten_min.run_test()
-        
-        # ============================================================
-        # 2. MOAT ANALYSIS
-        # ============================================================
+
+        # 3. Moat Analysis
         moat_analyzer = MoatAnalyzer(self.ticker)
         moat_result = moat_analyzer.analyze_moat()
-        
-        # ============================================================
-        # 3. FINANCIAL HEALTH
-        # ============================================================
+
+        # 4. Financial Health & Piotroski
         financials = FinancialsAnalyzer(self.ticker)
         health_result = financials.analyze_health()
-        
-        # ============================================================
-        # 4. VALUATION
-        # ============================================================
+
+        # 5. Valuation & Margin of Safety
         valuation = ValuationAnalyzer(self.ticker)
-        valuation_result = valuation.get_valuation_scenarios()
-        
-        # Calculate valuation vs price
-        valuation_assessment = "Unknown"
-        margin_of_safety = 0
-        
-        if valuation_result and "scenarios" in valuation_result:
-            base_value = valuation_result["scenarios"].get("Base", {}).get("value", 0)
-            if base_value and current_price:
-                margin_of_safety = ((base_value - current_price) / base_value) * 100
-                
-                if margin_of_safety > 30:
-                    valuation_assessment = "Undervalued"
-                elif margin_of_safety > 10:
-                    valuation_assessment = "Fairly Valued"
-                elif margin_of_safety > -10:
-                    valuation_assessment = "Fully Valued"
-                else:
-                    valuation_assessment = "Overvalued"
-        
-        # ============================================================
-        # 5. SECTOR ANALYSIS
-        # ============================================================
-        sector_strategy = SectorFactory.get_strategy(self.ticker)
-        sector_result = sector_strategy.analyze()
-        sector_chapter = SectorFactory.get_chapter_reference(self.ticker)
-        
-        # ============================================================
-        # COMPOSITE SCORING
-        # ============================================================
-        total_score = 0
-        max_score = 100
-        
-        # Ten-Minute Test (25 points max)
-        ten_min_score = (ten_min_result.get("score", 0) / ten_min_result.get("max_score", 8)) * 25
-        total_score += ten_min_score
-        
-        # Moat Rating (30 points max)
-        moat_scores = {
-            "Wide Moat": 30,
-            "Narrow Moat": 20,
-            "Possible Moat": 10,
-            "No Moat": 0
-        }
-        moat_score = moat_scores.get(moat_result.get("moat_rating", "No Moat"), 0)
-        total_score += moat_score
-        
-        # Financial Health (20 points max)
-        health_scores = {
-            "ROBUST": 20,
-            "MODERATE": 12,
-            "WEAK": 6,
-            "RISKY": 0
-        }
-        health_score = health_scores.get(health_result.get("health_rating", "WEAK"), 6)
-        
-        # Deduct for red flags
-        red_flag_count = len(health_result.get("red_flags", []))
-        health_score = max(0, health_score - (red_flag_count * 5))
-        total_score += health_score
-        
-        # Valuation (25 points max)
-        valuation_scores = {
-            "Undervalued": 25,
-            "Fairly Valued": 15,
-            "Fully Valued": 5,
-            "Overvalued": 0,
-            "Unknown": 10
-        }
-        val_score = valuation_scores.get(valuation_assessment, 10)
-        total_score += val_score
-        
-        # ============================================================
-        # FINAL RECOMMENDATION
-        # ============================================================
-        if total_score >= 75:
+        val_verdict = valuation.get_valuation_verdict()
+        combined_val = val_verdict.get("combined", {})
+        margin_of_safety = combined_val.get("margin_of_safety", 0)
+        val_assessment = combined_val.get("verdict", "FAIRLY VALUED")
+
+        # 6. Sector Specifics
+        try:
+            sector_strat = SectorFactory.get_strategy(self.ticker)
+            sector_result = sector_strat.analyze()
+            sector_chapter = SectorFactory.get_chapter_reference(self.ticker)
+        except Exception:
+            sector_result = {}
+            sector_chapter = "General"
+
+        # --- DYNAMIC COMPOSITE SCORING (100 Points Total) ---
+        total_score = 0.0
+
+        # Component 1: Ten-Minute Test (max w_tm pts)
+        tm_raw = ten_min_result.get("score", 0)
+        tm_max = ten_min_result.get("max_score", 8)
+        score_tm = (tm_raw / tm_max) * w_tm if tm_max > 0 else (0.5 * w_tm)
+        total_score += score_tm
+
+        # Component 2: Moat Rating (max w_moat pts)
+        moat_rating = moat_result.get("moat_rating", "No Moat")
+        if "Wide" in moat_rating:
+            score_moat = 1.0 * w_moat
+        elif "Narrow" in moat_rating:
+            score_moat = 0.72 * w_moat
+        elif "Possible" in moat_rating:
+            score_moat = 0.40 * w_moat
+        else:
+            score_moat = 0.0
+        total_score += score_moat
+
+        # Component 3: Financial Health & Forensic Checks (max w_health pts)
+        health_raw = float(health_result.get("health_score", 15.0))
+        score_health = (health_raw / 25.0) * w_health
+        total_score += score_health
+
+        # Component 4: Intrinsic Valuation & Margin of Safety (max w_val pts)
+        if margin_of_safety >= 25.0:
+            score_val = 1.0 * w_val
+        elif margin_of_safety >= 10.0:
+            score_val = 0.73 * w_val
+        elif margin_of_safety >= -10.0:
+            score_val = 0.46 * w_val
+        elif margin_of_safety >= -25.0:
+            score_val = 0.20 * w_val
+        else:
+            score_val = 0.0
+        total_score += score_val
+
+        # --- FINAL RECOMMENDATION ---
+        red_count = len(health_result.get("red_flags", []))
+        p_score = health_result.get("piotroski_f_score", {}).get("score", 5)
+
+        if total_score >= 78.0 and red_count == 0 and p_score >= 6:
             recommendation = "STRONG BUY"
             confidence = "HIGH"
-        elif total_score >= 60:
+        elif total_score >= 65.0 and red_count <= 1:
             recommendation = "BUY"
             confidence = "MODERATE-HIGH"
-        elif total_score >= 45:
+        elif total_score >= 50.0:
             recommendation = "HOLD / WATCHLIST"
             confidence = "MODERATE"
-        elif total_score >= 30:
+        elif total_score >= 35.0:
             recommendation = "AVOID"
             confidence = "MODERATE"
         else:
             recommendation = "STRONG AVOID"
             confidence = "HIGH"
-        
-        # ============================================================
-        # BUILD SCORECARD
-        # ============================================================
+
         scorecard = {
             "ticker": self.ticker,
             "company": company_name,
             "sector": sector,
             "sector_chapter": sector_chapter,
             "current_price": current_price,
-            
+            "archetype": archetype,
             "scores": {
                 "ten_minute_test": {
-                    "score": round(ten_min_score, 1),
-                    "max": 25,
-                    "verdict": ten_min_result.get("overall_verdict", "UNKNOWN")
+                    "score": round(score_tm, 1),
+                    "max": w_tm,
+                    "verdict": ten_min_result.get("overall_verdict", "PASS")
                 },
                 "moat": {
-                    "score": moat_score,
-                    "max": 30,
+                    "score": round(score_moat, 1),
+                    "max": w_moat,
                     "rating": moat_result.get("moat_rating", "Unknown")
                 },
                 "financial_health": {
-                    "score": health_score,
-                    "max": 20,
+                    "score": round(score_health, 1),
+                    "max": w_health,
                     "rating": health_result.get("health_rating", "Unknown"),
-                    "red_flags": red_flag_count
+                    "red_flags": red_count,
+                    "piotroski_f_score": p_score
                 },
                 "valuation": {
-                    "score": val_score,
-                    "max": 25,
-                    "assessment": valuation_assessment,
-                    "margin_of_safety": f"{margin_of_safety:.1f}%"
+                    "score": round(score_val, 1),
+                    "max": w_val,
+                    "assessment": val_assessment,
+                    "margin_of_safety": f"{margin_of_safety:+.1f}%",
+                    "combined_intrinsic_value": combined_val.get("combined_value")
                 }
             },
-            
             "total_score": round(total_score, 1),
-            "max_score": max_score,
-            "percentage": f"{(total_score/max_score)*100:.0f}%",
-            
+            "max_score": 100,
+            "percentage": f"{(total_score/100)*100:.0f}%",
             "recommendation": recommendation,
             "confidence": confidence,
-            
             "dorsey_five_rules_check": {
                 "1_do_homework": ten_min_result.get("passed", False),
                 "2_find_moats": moat_result.get("moat_rating", "") in ["Wide Moat", "Narrow Moat"],
-                "3_margin_of_safety": margin_of_safety > 20,
+                "3_margin_of_safety": margin_of_safety > 15.0,
                 "4_hold_long_term": moat_result.get("moat_rating", "") == "Wide Moat",
-                "5_know_when_to_sell": len(health_result.get("red_flags", [])) == 0
+                "5_know_when_to_sell": red_count == 0
             },
-            
-            "summary": self._generate_summary(
-                ten_min_result, moat_result, health_result, 
-                valuation_assessment, margin_of_safety, recommendation
-            ),
-            
-            "key_risks": health_result.get("red_flags", []) + health_result.get("amber_flags", []),
-            
-            "detailed_results": {
-                "ten_minute_test": ten_min_result,
-                "moat_analysis": moat_result,
-                "financial_health": health_result,
-                "valuation": valuation_result,
-                "sector_analysis": sector_result
-            }
+            "summary": f"{recommendation} ({total_score:.0f}/100) — [{archetype.get('name')}] with {health_result.get('health_rating', 'Health')} balance sheet. Trading at {margin_of_safety:+.1f}% margin of safety to combined intrinsic value.",
+            "key_risks": health_result.get("red_flags", []) + health_result.get("amber_flags", [])
         }
-        
+
         return scorecard
-    
-    def _generate_summary(self, ten_min, moat, health, valuation_assess, mos, recommendation):
-        """Generate a human-readable summary."""
-        
-        summary_parts = []
-        
-        # Ten-minute test
-        if ten_min.get("passed"):
-            summary_parts.append("Passes basic quality screens")
-        else:
-            summary_parts.append("Some quality concerns in initial screen")
-        
-        # Moat
-        moat_rating = moat.get("moat_rating", "Unknown")
-        if "Wide" in moat_rating:
-            summary_parts.append("Has sustainable competitive advantages")
-        elif "Narrow" in moat_rating:
-            summary_parts.append("Has some competitive advantages")
-        else:
-            summary_parts.append("Limited competitive moat")
-        
-        # Health
-        health_rating = health.get("health_rating", "Unknown")
-        if health_rating == "ROBUST":
-            summary_parts.append("Strong financial health")
-        elif health_rating == "RISKY":
-            summary_parts.append("Financial health concerns present")
-        
-        # Valuation
-        summary_parts.append(f"{valuation_assess} at current price")
-        
-        if mos > 20:
-            summary_parts.append(f"with {mos:.0f}% margin of safety")
-        
-        return ". ".join(summary_parts) + "."
-    
+
     def get_quick_summary(self):
-        """
-        Get a brief summary without full analysis details.
-        """
-        scorecard = self.generate_scorecard()
-        
+        """Returns concise summary for batch screening."""
+        sc = self.generate_scorecard()
         return {
-            "ticker": scorecard["ticker"],
-            "company": scorecard["company"],
-            "score": f"{scorecard['total_score']}/{scorecard['max_score']}",
-            "recommendation": scorecard["recommendation"],
-            "moat": scorecard["scores"]["moat"]["rating"],
-            "valuation": scorecard["scores"]["valuation"]["assessment"],
-            "health": scorecard["scores"]["financial_health"]["rating"],
-            "summary": scorecard["summary"]
+            "ticker": sc["ticker"],
+            "company": sc["company"],
+            "score": f"{sc['total_score']}/{sc['max_score']}",
+            "recommendation": sc["recommendation"],
+            "moat": sc["scores"]["moat"]["rating"],
+            "valuation": sc["scores"]["valuation"]["assessment"],
+            "health": sc["scores"]["financial_health"]["rating"],
+            "summary": sc["summary"]
         }
-
-
-if __name__ == "__main__":
-    # Test
-    test_tickers = ["TCS.NS", "HDFCBANK.NS", "HINDUNILVR.NS"]
-    
-    for ticker in test_tickers:
-        print(f"\n{'='*70}")
-        print(f"DORSEY SCORECARD: {ticker}")
-        print('='*70)
-        
-        scorecard = DorseyScorecard(ticker)
-        result = scorecard.get_quick_summary()
-        
-        print(f"\nCompany: {result['company']}")
-        print(f"Score: {result['score']}")
-        print(f"Recommendation: {result['recommendation']}")
-        print(f"\nMoat: {result['moat']}")
-        print(f"Valuation: {result['valuation']}")
-        print(f"Health: {result['health']}")
-        print(f"\nSummary: {result['summary']}")
